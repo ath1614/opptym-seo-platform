@@ -76,43 +76,74 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchData()
+      
+      // Add a timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        console.log('Dashboard loading timeout - forcing loading to false')
+        setLoading(false)
+      }, 10000) // 10 second timeout
+      
+      return () => clearTimeout(timeout)
     }
   }, [status])
 
   const fetchData = async () => {
     try {
+      console.log('Fetching dashboard data...')
+      
       // Fetch both usage stats and analytics in parallel
       const [usageResponse, analyticsResponse] = await Promise.all([
         fetch('/api/dashboard/usage'),
         fetch('/api/dashboard/analytics')
       ])
 
+      console.log('Usage response status:', usageResponse.status)
+      console.log('Analytics response status:', analyticsResponse.status)
+
       if (usageResponse.ok) {
         const usageData = await usageResponse.json()
+        console.log('Usage data:', usageData)
         setUsageStats(usageData)
       } else {
-        console.error('Failed to fetch usage stats')
+        const errorText = await usageResponse.text()
+        console.error('Failed to fetch usage stats:', errorText)
       }
 
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json()
+        console.log('Analytics data:', analyticsData)
         setAnalytics(analyticsData)
       } else {
-        console.error('Failed to fetch analytics')
+        const errorText = await analyticsResponse.text()
+        console.error('Failed to fetch analytics:', errorText)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
+      console.log('Setting loading to false')
       setLoading(false)
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Add a timeout to prevent infinite loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard data...</p>
+          <p className="text-sm text-muted-foreground mt-2">If this takes too long, please refresh the page</p>
         </div>
       </div>
     )
