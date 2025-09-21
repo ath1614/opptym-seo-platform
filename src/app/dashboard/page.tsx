@@ -75,15 +75,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
+      // Set loading to false immediately to prevent infinite loading
+      setLoading(false)
+      
+      // Try to fetch data in background
       fetchData()
-      
-      // Add a timeout to prevent infinite loading
-      const timeout = setTimeout(() => {
-        console.log('Dashboard loading timeout - forcing loading to false')
-        setLoading(false)
-      }, 10000) // 10 second timeout
-      
-      return () => clearTimeout(timeout)
     }
   }, [status])
 
@@ -156,7 +152,7 @@ export default function DashboardPage() {
   const user = session.user as ExtendedUser
   const currentPlan = usageStats?.plan || user?.plan || 'free'
 
-  // Use real data from analytics API
+  // Use real data from analytics API with fallbacks
   const stats = {
     projects: analytics?.projects || 0,
     submissions: analytics?.submissions || 0,
@@ -182,9 +178,22 @@ export default function DashboardPage() {
     reports: 0
   }
 
+  // Show a message if data is still loading
+  const isDataLoading = !usageStats && !analytics
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Data Loading Indicator */}
+        {isDataLoading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-blue-800 text-sm">Loading dashboard data...</span>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <StatsCards stats={stats} trends={trends} />
 

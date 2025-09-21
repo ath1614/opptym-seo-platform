@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Project from '@/models/Project'
+import User from '@/models/User'
 import { trackUsage } from '@/lib/limit-middleware'
+import { getPlanLimitsWithCustom } from '@/lib/subscription-limits'
 import { logActivity } from '@/lib/activity-logger'
 import mongoose from 'mongoose'
 
@@ -47,15 +49,27 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     
-    // Check if user can create a new project
-    const canCreate = await trackUsage(session.user.id, 'projects', 1)
+    // Check current project count first
+    await connectDB()
+    const existingProjects = await Project.countDocuments({ 
+      userId: new mongoose.Types.ObjectId(session.user.id) 
+    })
     
-    if (!canCreate) {
+    // Get user's plan limits
+    const user = await User.findById(session.user.id)
+    const plan = user?.plan || 'free'
+    const limits = await getPlanLimitsWithCustom(plan)
+    
+    // Check if user can create a new project
+    if (existingProjects >= limits.projects && limits.projects !== -1) {
       return NextResponse.json(
         { 
           error: 'Project limit exceeded',
           limitType: 'projects',
-          message: 'You have reached your project limit. Please upgrade your plan to create more projects.'
+          currentUsage: existingProjects,
+          limit: limits.projects,
+          plan: plan,
+          message: `You have reached your project limit (${existingProjects}/${limits.projects}). Please upgrade your plan to create more projects.`
         },
         { status: 403 }
       )
@@ -70,6 +84,9 @@ export async function POST(request: NextRequest) {
     })
 
     await project.save()
+
+    // Update usage tracking after successful creation
+    await trackUsage(session.user.id, 'projects', 1)
 
     // Log project creation activity
     await logActivity({
