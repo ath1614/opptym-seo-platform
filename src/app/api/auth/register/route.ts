@@ -69,6 +69,8 @@ export async function POST(request: NextRequest) {
       companyName: companyName || '',
       emailVerificationToken: verificationToken,
       emailVerificationExpires: verificationExpires,
+      // Auto-verify in production to avoid email issues
+      verified: process.env.NODE_ENV === 'production'
     })
 
     await user.save()
