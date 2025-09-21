@@ -11,14 +11,10 @@ export default function ProjectsPage() {
   const router = useRouter()
 
   useEffect(() => {
-    console.log('Projects page - Status:', status)
-    console.log('Projects page - Session:', session)
-    
     if (status === 'unauthenticated') {
-      console.log('Projects page - Redirecting to login')
       router.push('/auth/login')
     }
-  }, [status, router, session])
+  }, [status, router])
 
   if (status === 'loading') {
     return (
