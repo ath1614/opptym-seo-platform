@@ -103,6 +103,13 @@ export default function DashboardPage() {
       } else {
         const errorText = await usageResponse.text()
         console.error('Failed to fetch usage stats:', errorText)
+        // Set default usage stats if API fails
+        setUsageStats({
+          plan: 'free',
+          limits: { projects: 1, submissions: 1, seoTools: 5, backlinks: 0, reports: 1 },
+          usage: { projects: 0, submissions: 0, seoTools: 0, backlinks: 0, reports: 0 },
+          isAtLimit: { projects: false, submissions: false, seoTools: false, backlinks: false, reports: false }
+        })
       }
 
       if (analyticsResponse.ok) {
@@ -112,9 +119,37 @@ export default function DashboardPage() {
       } else {
         const errorText = await analyticsResponse.text()
         console.error('Failed to fetch analytics:', errorText)
+        // Set default analytics if API fails
+        setAnalytics({
+          projects: 0,
+          submissions: 0,
+          backlinks: 0,
+          successRate: 0,
+          ranking: 0,
+          trends: { projects: 0, submissions: 0, backlinks: 0, successRate: 0, ranking: 0 },
+          activeProjects: 0,
+          completedProjects: 0
+        })
       }
     } catch (error) {
       console.error('Error fetching data:', error)
+      // Set default data if all fails
+      setUsageStats({
+        plan: 'free',
+        limits: { projects: 1, submissions: 1, seoTools: 5, backlinks: 0, reports: 1 },
+        usage: { projects: 0, submissions: 0, seoTools: 0, backlinks: 0, reports: 0 },
+        isAtLimit: { projects: false, submissions: false, seoTools: false, backlinks: false, reports: false }
+      })
+      setAnalytics({
+        projects: 0,
+        submissions: 0,
+        backlinks: 0,
+        successRate: 0,
+        ranking: 0,
+        trends: { projects: 0, submissions: 0, backlinks: 0, successRate: 0, ranking: 0 },
+        activeProjects: 0,
+        completedProjects: 0
+      })
     } finally {
       console.log('Setting loading to false')
       setLoading(false)
@@ -184,6 +219,19 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {/* Dashboard Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome to your SEO command center</p>
+          </div>
+          {!isDataLoading && (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+              <span className="text-green-800 text-sm font-medium">✅ Dashboard Loaded</span>
+            </div>
+          )}
+        </div>
+
         {/* Data Loading Indicator */}
         {isDataLoading && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -195,17 +243,22 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Cards */}
-        <StatsCards stats={stats} trends={trends} />
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Overview</h2>
+          <StatsCards stats={stats} trends={trends} />
+        </div>
 
         {/* Current Plan and Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Current Plan Card */}
           <div className="lg:col-span-1">
+            <h2 className="text-xl font-semibold mb-4">Current Plan</h2>
             <CurrentPlanCard plan={currentPlan} usage={usage} />
           </div>
 
           {/* Quick Actions */}
           <div className="lg:col-span-2">
+            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
             <QuickActions />
           </div>
         </div>

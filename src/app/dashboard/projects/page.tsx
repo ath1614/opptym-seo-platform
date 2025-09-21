@@ -33,10 +33,6 @@ export default function ProjectsPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-4 p-4 bg-green-100 border border-green-300 rounded-lg">
-        <h2 className="text-green-800 font-semibold">✅ Projects Page Loaded Successfully!</h2>
-        <p className="text-green-700 text-sm">If you can see this message, the projects page is working correctly.</p>
-      </div>
       <ProjectList />
     </DashboardLayout>
   )
