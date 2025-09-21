@@ -62,11 +62,7 @@ const nextConfig = {
   // Redirects
   async redirects() {
     return [
-      {
-        source: '/dashboard',
-        destination: '/dashboard/projects',
-        permanent: true,
-      },
+      // No redirects needed - dashboard should stay on /dashboard
     ];
   },
 };
