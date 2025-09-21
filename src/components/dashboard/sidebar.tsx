@@ -118,6 +118,10 @@ export function Sidebar({ className }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => {
+                console.log(`Clicked on ${item.name}, navigating to ${item.href}`)
+                console.log('Current pathname:', pathname)
+              }}
               className={cn(
                 "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 isActive
