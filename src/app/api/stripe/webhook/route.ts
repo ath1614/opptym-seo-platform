@@ -4,16 +4,31 @@ import Stripe from 'stripe'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-})
+// Initialize Stripe only when needed (not at module level)
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not defined')
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-08-27.basil',
+  })
+}
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+function getWebhookSecret() {
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    throw new Error('STRIPE_WEBHOOK_SECRET is not defined')
+  }
+  return process.env.STRIPE_WEBHOOK_SECRET
+}
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')!
+
+    // Initialize Stripe and webhook secret
+    const stripe = getStripe()
+    const webhookSecret = getWebhookSecret()
 
     let event: Stripe.Event
 
@@ -176,6 +191,7 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   try {
+    const stripe = getStripe()
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
     const userId = subscription.metadata?.userId
 
@@ -199,6 +215,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   }
 
   try {
+    const stripe = getStripe()
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
     const userId = subscription.metadata?.userId
 

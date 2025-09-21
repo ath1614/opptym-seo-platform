@@ -22,11 +22,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Experimental features
-  experimental: {
-    // Disable static optimization for API routes to prevent build-time execution
-    serverComponentsExternalPackages: ['mongoose'],
-  },
+  // External packages for server components
+  serverExternalPackages: ['mongoose', 'stripe'],
   
   // Image optimization
   images: {

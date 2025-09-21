@@ -3,9 +3,15 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-})
+// Initialize Stripe only when needed (not at module level)
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not defined')
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-08-27.basil',
+  })
+}
 
 // Plan pricing configuration (in INR - Indian Rupees)
 const planPricing = {
@@ -66,6 +72,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Initialize Stripe
+    const stripe = getStripe()
 
     // Create or get product
     const productName = `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan`
