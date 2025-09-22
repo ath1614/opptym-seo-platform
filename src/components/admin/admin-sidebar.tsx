@@ -12,7 +12,8 @@ import {
   Link as LinkIcon, 
   Activity,
   BarChart3,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react'
 
 const adminNavItems = [
@@ -35,6 +36,11 @@ const adminNavItems = [
     title: 'Projects',
     href: '/dashboard/admin/projects',
     icon: FolderOpen
+  },
+  {
+    title: 'Submissions',
+    href: '/dashboard/admin/submissions',
+    icon: FileText
   },
   {
     title: 'Pricing Plans',
