@@ -50,6 +50,7 @@ export function CurrentPlanCard({ plan, usage }: CurrentPlanCardProps) {
   }
 
   const handleUpgradeClick = (limitType: string, currentUsage: number) => {
+    console.log('Current plan card upgrade clicked:', { limitType, currentUsage, currentPlan: plan })
     setUpgradeReason({ limitType, currentUsage })
     setShowUpgradeModal(true)
   }

@@ -76,11 +76,14 @@ export function UpgradeModal({ isOpen, onClose, currentPlan, limitType, currentU
   const fetchPlans = async () => {
     try {
       setLoading(true)
+      console.log('Fetching pricing plans for upgrade modal...')
       const response = await fetch('/api/pricing', {
         credentials: 'include'
       })
+      console.log('Pricing API response:', response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log('Pricing data received:', data)
         // Transform database plans to component format
         const transformedPlans = data.plans.map((plan: { _id: string; name: string; description?: string; price: number; features: string[]; maxProjects: number; maxSubmissions: number; maxSeoTools: number }, index: number) => ({
           id: plan.name.toLowerCase(), // Use plan name instead of MongoDB ObjectId
@@ -115,6 +118,8 @@ export function UpgradeModal({ isOpen, onClose, currentPlan, limitType, currentU
   }
 
   const handleUpgrade = async (planId: string, planName: string) => {
+    console.log('UpgradeModal handleUpgrade called:', { planId, planName, currentPlan, stripeConfigured })
+    
     if (planName.toLowerCase() === 'free') {
       showToast({
         title: 'Free Plan',
@@ -135,6 +140,7 @@ export function UpgradeModal({ isOpen, onClose, currentPlan, limitType, currentU
 
     // Check if Stripe is configured
     if (stripeConfigured === false) {
+      console.log('Stripe not configured, showing error message')
       showToast({
         title: 'Payment System Not Available',
         description: 'Payment processing is currently not configured. Please contact support for manual upgrades.',

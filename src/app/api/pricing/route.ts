@@ -4,6 +4,7 @@ import PricingPlan from '@/models/PricingPlan'
 
 export async function GET() {
   try {
+    console.log('Pricing API called - connecting to database...')
     await connectDB()
 
     // Get all active pricing plans from database
@@ -11,7 +12,7 @@ export async function GET() {
       .sort({ price: 1 })
       .lean()
 
-    console.log(`Found ${plans.length} pricing plans in database`)
+    console.log(`Found ${plans.length} pricing plans in database:`, plans.map(p => ({ name: p.name, price: p.price })))
 
     // If no plans exist, return empty array
     if (plans.length === 0) {
@@ -19,6 +20,7 @@ export async function GET() {
       return NextResponse.json({ plans: [] })
     }
 
+    console.log('Returning pricing plans:', plans)
     return NextResponse.json({ plans })
 
   } catch (error) {

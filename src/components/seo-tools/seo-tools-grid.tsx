@@ -211,6 +211,7 @@ export function SEOToolsGrid() {
   }
 
   const handleUpgrade = () => {
+    console.log('Upgrade button clicked - redirecting to pricing page')
     router.push('/dashboard/pricing')
   }
 
