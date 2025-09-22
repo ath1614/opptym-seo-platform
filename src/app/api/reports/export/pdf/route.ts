@@ -26,6 +26,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate report data structure
+    if (!reportData.project || !reportData.project.projectName) {
+      return NextResponse.json(
+        { error: 'Invalid report data: project information is required' },
+        { status: 400 }
+      )
+    }
+
     await connectDB()
     
     // Verify project belongs to user
@@ -42,61 +50,95 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate HTML content for PDF
-    const htmlContent = generateReportHTML(reportData)
+    let htmlContent
+    try {
+      htmlContent = generateReportHTML(reportData)
+    } catch (htmlError) {
+      console.error('HTML generation error:', htmlError)
+      throw new Error('Failed to generate HTML content for PDF')
+    }
+    
+    // Check if Puppeteer is available
+    if (!puppeteer) {
+      throw new Error('Puppeteer is not available for PDF generation')
+    }
 
     // Launch Puppeteer with production-friendly settings
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ]
-    })
+    let browser
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--disable-gpu'
+        ]
+      })
 
-    const page = await browser.newPage()
-    
-    // Set content and wait for any dynamic content
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
-    
-    // Generate PDF
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
+      const page = await browser.newPage()
+      
+      // Set timeout for page operations
+      page.setDefaultTimeout(30000) // 30 seconds
+      
+      // Set content and wait for any dynamic content
+      await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
+      
+      // Generate PDF with timeout
+      const pdfBuffer = await Promise.race([
+        page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '20mm',
+            right: '20mm',
+            bottom: '20mm',
+            left: '20mm'
+          }
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('PDF generation timeout')), 30000)
+        )
+      ]) as Buffer
+
+      await browser.close()
+      
+      // Return PDF as response
+      return new NextResponse(pdfBuffer as BodyInit, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="seo-report-${project.projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf"`
+        }
+      })
+    } catch (puppeteerError) {
+      if (browser) {
+        await browser.close()
       }
-    })
-
-    await browser.close()
-
-    // Return PDF as response
-    return new NextResponse(pdfBuffer as BodyInit, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="seo-report-${project.projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf"`
-      }
-    })
+      throw puppeteerError
+    }
 
   } catch (error) {
     console.error('PDF export error:', error)
+    
+    // Handle error with proper type checking
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorName = error instanceof Error ? error.name : 'Error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
     console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+      message: errorMessage,
+      stack: errorStack,
+      name: errorName
     })
+    
     return NextResponse.json(
       { 
         error: 'Failed to generate PDF report',
-        details: error.message,
-        type: error.name
+        details: errorMessage,
+        type: errorName
       },
       { status: 500 }
     )
