@@ -44,10 +44,18 @@ export async function POST(request: NextRequest) {
     // Generate HTML content for PDF
     const htmlContent = generateReportHTML(reportData)
 
-    // Launch Puppeteer
+    // Launch Puppeteer with production-friendly settings
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
     })
 
     const page = await browser.newPage()
@@ -79,8 +87,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('PDF export error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { error: 'Failed to generate PDF report' },
+      { 
+        error: 'Failed to generate PDF report',
+        details: error.message,
+        type: error.name
+      },
       { status: 500 }
     )
   }

@@ -38,7 +38,7 @@ const SubmissionSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', UserSchema)
 const Submission = mongoose.models.Submission || mongoose.model('Submission', SubmissionSchema)
 
-async function testBookmarkletSubmission() {
+async function debugSubmissionCounter() {
   try {
     console.log('Connecting to MongoDB...')
     await mongoose.connect(process.env.MONGODB_URI)
@@ -59,12 +59,27 @@ async function testBookmarkletSubmission() {
     const allSubmissions = await Submission.find({ userId: user._id }).sort({ createdAt: -1 })
     console.log(`\n=== All Submissions (${allSubmissions.length}) ===`)
     
-    allSubmissions.forEach((submission, index) => {
-      console.log(`${index + 1}. ${submission.directory} - ${submission.status} - ${submission.createdAt.toISOString()}`)
-      console.log(`   Project: ${submission.projectId}`)
-      console.log(`   Link: ${submission.linkId}`)
-      console.log(`   Notes: ${submission.notes}`)
-    })
+    if (allSubmissions.length === 0) {
+      console.log('❌ No submissions found')
+      console.log('\n💡 Possible reasons:')
+      console.log('1. User has not used the bookmarklet yet')
+      console.log('2. Bookmarklet is not working properly')
+      console.log('3. API is failing silently')
+      console.log('4. Token validation is failing')
+      console.log('\n🔧 To test:')
+      console.log('1. Go to your project in the dashboard')
+      console.log('2. Generate a bookmarklet for a directory')
+      console.log('3. Use the bookmarklet on a test page')
+      console.log('4. Check if submission counter increases')
+      console.log('5. Check browser console for any errors')
+    } else {
+      allSubmissions.forEach((submission, index) => {
+        console.log(`${index + 1}. ${submission.directory} - ${submission.status} - ${submission.createdAt.toISOString()}`)
+        console.log(`   Project: ${submission.projectId}`)
+        console.log(`   Link: ${submission.linkId}`)
+        console.log(`   Notes: ${submission.notes}`)
+      })
+    }
 
     // Get submissions by status
     const pendingSubmissions = await Submission.countDocuments({ 
@@ -141,6 +156,22 @@ async function testBookmarkletSubmission() {
       })
     }
 
+    // Check if there are any submissions from the last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const recentHourSubmissions = await Submission.find({ 
+      userId: user._id,
+      createdAt: { $gte: oneHourAgo }
+    }).sort({ createdAt: -1 })
+
+    console.log(`\n=== Recent Submissions (Last 1 hour) ===`)
+    if (recentHourSubmissions.length === 0) {
+      console.log('No submissions in the last hour')
+    } else {
+      recentHourSubmissions.forEach((submission, index) => {
+        console.log(`${index + 1}. ${submission.directory} - ${submission.status} - ${submission.createdAt.toISOString()}`)
+      })
+    }
+
   } catch (error) {
     console.error('Error:', error)
   } finally {
@@ -149,4 +180,4 @@ async function testBookmarkletSubmission() {
   }
 }
 
-testBookmarkletSubmission()
+debugSubmissionCounter()
