@@ -369,7 +369,10 @@ export async function GET(request: NextRequest) {
         xhr.send(JSON.stringify({
           token: token,
           projectId: projectId,
-          linkId: linkId
+          linkId: linkId,
+          url: window.location.href,
+          title: document.title || 'Untitled Page',
+          description: document.querySelector('meta[name="description"]')?.content || 'No description available'
         }));
       } catch (error) {
         var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ Submission tracking failed';

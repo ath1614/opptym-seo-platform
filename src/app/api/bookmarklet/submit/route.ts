@@ -21,7 +21,7 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, projectId, linkId } = await request.json()
+    const { token, projectId, linkId, url, title, description } = await request.json()
 
     if (!token || !projectId || !linkId) {
       return NextResponse.json({ error: 'Missing required parameters' }, { 
@@ -163,14 +163,20 @@ export async function POST(request: NextRequest) {
       status: 'success',
       submittedAt: new Date(),
       completedAt: new Date(),
-      notes: `Bookmarklet submission - Usage: ${updatedTokenData.usageCount}/${updatedTokenData.maxUsage}`
+      notes: `Bookmarklet submission - Usage: ${updatedTokenData.usageCount}/${updatedTokenData.maxUsage}
+URL: ${url || 'N/A'}
+Title: ${title || 'N/A'}
+Description: ${description || 'N/A'}`
     })
 
     console.log('Creating submission:', {
       userId: tokenData.userId,
       projectId: projectId,
       linkId: linkId,
-      directory: link.name || link.url || 'Unknown Directory'
+      directory: link.name || link.url || 'Unknown Directory',
+      url: url,
+      title: title,
+      description: description
     })
     
     await submission.save()
