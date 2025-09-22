@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -186,6 +187,7 @@ export function SEOToolsGrid() {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const { showToast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     fetchUsageStats()
@@ -193,7 +195,9 @@ export function SEOToolsGrid() {
 
   const fetchUsageStats = async () => {
     try {
-      const response = await fetch('/api/dashboard/usage')
+      const response = await fetch('/api/dashboard/usage', {
+        credentials: 'include' // Include cookies for authentication
+      })
       const data = await response.json()
       
       if (response.ok) {
@@ -206,6 +210,10 @@ export function SEOToolsGrid() {
     }
   }
 
+  const handleUpgrade = () => {
+    router.push('/dashboard/pricing')
+  }
+
   const handleToolClick = (tool: SEOTool) => {
     if (!usageStats) return
 
@@ -216,6 +224,10 @@ export function SEOToolsGrid() {
         description: 'You have reached your SEO tools limit. Upgrade your plan to continue.',
         variant: 'destructive'
       })
+      // Redirect to pricing page
+      setTimeout(() => {
+        router.push('/dashboard/pricing')
+      }, 2000)
       return
     }
 
@@ -223,9 +235,13 @@ export function SEOToolsGrid() {
     if (tool.isPremium && usageStats.plan === 'free') {
       showToast({
         title: 'Premium Tool',
-        description: 'This tool is available for Pro and higher plans. Upgrade to access.',
+        description: 'This tool is available for Pro and higher plans. Redirecting to pricing...',
         variant: 'destructive'
       })
+      // Redirect to pricing page
+      setTimeout(() => {
+        router.push('/dashboard/pricing')
+      }, 2000)
       return
     }
 
@@ -269,14 +285,23 @@ export function SEOToolsGrid() {
       {usageStats?.plan === 'free' && (
         <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50">
           <CardContent className="pt-6">
-            <div className="flex items-center space-x-2">
-              <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">Free Plan Active</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  You have access to {availableTools.length} SEO tools. Upgrade to Pro for access to all 14 tools.
-                </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div>
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100">Free Plan Active</h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    You have access to {availableTools.length} SEO tools. Upgrade to Pro for access to all 14 tools.
+                  </p>
+                </div>
               </div>
+              <Button 
+                size="sm" 
+                onClick={handleUpgrade}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Upgrade Now
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -357,7 +382,7 @@ export function SEOToolsGrid() {
                 )
               })}
             </div>
-            <Button className="w-full mt-4">
+            <Button className="w-full mt-4" onClick={handleUpgrade}>
               Upgrade to Pro
             </Button>
           </CardContent>
