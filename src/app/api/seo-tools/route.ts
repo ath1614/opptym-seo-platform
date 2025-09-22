@@ -51,11 +51,19 @@ export async function POST(request: NextRequest) {
     
     if (!canUse) {
       console.log('SEO tools limit exceeded for user:', session.user.id)
+      
+      // Get current usage stats for better error message
+      const { getUsageStats } = await import('@/lib/limit-middleware')
+      const usageStats = await getUsageStats(session.user.id)
+      
       return NextResponse.json(
         { 
           error: 'SEO tools limit exceeded',
           limitType: 'seoTools',
-          message: 'You have reached your SEO tools limit. Please upgrade your plan to continue.'
+          message: 'You have reached your SEO tools limit. Please upgrade your plan to continue.',
+          currentUsage: usageStats?.usage.seoTools || 0,
+          limit: usageStats?.limits.seoTools || 5,
+          plan: usageStats?.plan || 'free'
         },
         { status: 403 }
       )

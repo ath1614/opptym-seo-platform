@@ -109,7 +109,9 @@ export function isLimitExceededWithCustom(
   // -1 means unlimited
   if (limit === -1) return false
   
-  return currentUsage >= limit
+  // If limit is 5, user can use 0,1,2,3,4,5 tools (6 different values)
+  // They exceed the limit only when they try to use more than 5
+  return currentUsage > limit
 }
 
 export function getRemainingUsage(
