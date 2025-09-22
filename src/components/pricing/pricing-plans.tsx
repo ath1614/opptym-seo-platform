@@ -45,9 +45,21 @@ export function PricingPlans() {
   const [currentPlan, setCurrentPlan] = useState<string>('free')
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
+  const [stripeConfigured, setStripeConfigured] = useState<boolean | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
+    const checkStripeConfiguration = async () => {
+      try {
+        const response = await fetch('/api/stripe/test')
+        const data = await response.json()
+        setStripeConfigured(data.configured)
+      } catch (error) {
+        console.error('Failed to check Stripe configuration:', error)
+        setStripeConfigured(false)
+      }
+    }
+
     const fetchPlans = async () => {
       try {
         setLoading(true)
@@ -107,6 +119,9 @@ export function PricingPlans() {
     if (session?.user) {
       fetchUserPlan()
     }
+
+    // Check Stripe configuration
+    checkStripeConfiguration()
   }, [session?.user, showToast])
 
   const handleUpgrade = async (planId: string, planName: string) => {
@@ -124,6 +139,16 @@ export function PricingPlans() {
         title: 'Current Plan',
         description: 'You are already on this plan.',
         variant: 'default'
+      })
+      return
+    }
+
+    // Check if Stripe is configured
+    if (stripeConfigured === false) {
+      showToast({
+        title: 'Payment System Not Available',
+        description: 'Payment processing is currently not configured. Please contact support for manual upgrades.',
+        variant: 'destructive'
       })
       return
     }
@@ -219,6 +244,21 @@ export function PricingPlans() {
           Select the perfect plan for your SEO needs. All plans include our core features with different usage limits.
         </p>
         
+        {/* Stripe Configuration Warning */}
+        {stripeConfigured === false && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-2xl mx-auto">
+            <div className="flex items-center space-x-2">
+              <div className="text-yellow-600">⚠️</div>
+              <div>
+                <h3 className="font-semibold text-yellow-800">Payment System Not Configured</h3>
+                <p className="text-sm text-yellow-700">
+                  Payment processing is currently not available. Please contact support for manual plan upgrades.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Billing Toggle */}
         <div className="flex items-center justify-center space-x-4 mt-8">
           <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -322,7 +362,7 @@ export function PricingPlans() {
                 className="w-full"
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleUpgrade(plan.id, plan.name)}
-                disabled={loadingPlan === plan.id || plan.name.toLowerCase() === currentPlan.toLowerCase()}
+                disabled={loadingPlan === plan.id || plan.name.toLowerCase() === currentPlan.toLowerCase() || stripeConfigured === false}
               >
                 {loadingPlan === plan.id ? (
                   <>
@@ -333,6 +373,8 @@ export function PricingPlans() {
                   'Current Plan'
                 ) : plan.id === 'free' ? (
                   'Downgrade'
+                ) : stripeConfigured === false ? (
+                  'Contact Support'
                 ) : (
                   <>
                     Upgrade to {plan.name}
