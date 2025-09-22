@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable standalone output for Docker
-  output: 'standalone',
+  // Disable standalone output for more reliable Docker builds
+  // output: 'standalone',
   
   // Production optimizations
   compress: true,
