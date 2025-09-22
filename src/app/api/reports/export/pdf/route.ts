@@ -124,7 +124,7 @@ function generateReportHTML(reportData: {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>SEO Report - ${project.name}</title>
+      <title>SEO Report - ${project.projectName}</title>
       <style>
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -234,7 +234,7 @@ function generateReportHTML(reportData: {
     <body>
       <div class="header">
         <h1>SEO Performance Report</h1>
-        <p>${project.name} - Generated on ${new Date().toLocaleDateString()}</p>
+        <p>${project.projectName} - Generated on ${new Date().toLocaleDateString()}</p>
         <p>Website: ${project.websiteURL}</p>
       </div>
 

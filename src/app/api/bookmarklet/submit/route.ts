@@ -135,7 +135,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Track usage before creating submission
+    console.log('Tracking submission usage for user:', tokenData.userId)
     const canSubmit = await trackUsage(tokenData.userId, 'submissions', 1)
+    console.log('Can submit result:', canSubmit)
     if (!canSubmit) {
       return new NextResponse(JSON.stringify({ 
         error: 'Submission limit exceeded',
@@ -164,7 +166,15 @@ export async function POST(request: NextRequest) {
       notes: `Bookmarklet submission - Usage: ${updatedTokenData.usageCount}/${updatedTokenData.maxUsage}`
     })
 
+    console.log('Creating submission:', {
+      userId: tokenData.userId,
+      projectId: projectId,
+      linkId: linkId,
+      directory: link.name || link.url || 'Unknown Directory'
+    })
+    
     await submission.save()
+    console.log('Submission saved successfully:', submission._id)
 
     // Log submission activity
     await logActivity({

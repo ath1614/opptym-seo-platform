@@ -164,6 +164,13 @@ export async function getUsageStats(userId: string) {
     const actualProjects = await Project.countDocuments({ userId: new mongoose.Types.ObjectId(userId) })
     console.log(`Actual projects in database: ${actualProjects}`)
     
+    // Get actual submission count from database
+    const actualSubmissions = await Submission.countDocuments({ 
+      userId: new mongoose.Types.ObjectId(userId),
+      status: 'success'
+    })
+    console.log(`Actual submissions in database: ${actualSubmissions}`)
+    
     const usage = user.usage || {
       projects: 0,
       submissions: 0,
@@ -173,12 +180,13 @@ export async function getUsageStats(userId: string) {
     }
     console.log(`Cached usage:`, usage)
 
-    // Use actual project count instead of cached counter
+    // Use actual counts instead of cached counters
     const realUsage = {
       ...usage,
-      projects: actualProjects
+      projects: actualProjects,
+      submissions: actualSubmissions
     }
-    console.log(`Real usage (with actual projects):`, realUsage)
+    console.log(`Real usage (with actual counts):`, realUsage)
 
     const result = {
       plan,
