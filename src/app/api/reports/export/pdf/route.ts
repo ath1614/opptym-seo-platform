@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
 function generateReportHTML(reportData: {
   project: {
-    name: string
+    projectName: string
     websiteURL: string
   }
   analytics: {
