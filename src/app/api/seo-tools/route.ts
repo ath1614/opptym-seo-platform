@@ -45,9 +45,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user can use SEO tools
+    console.log('Checking SEO tools limit for user:', session.user.id)
     const canUse = await trackUsage(session.user.id, 'seoTools', 1)
+    console.log('Can use SEO tools result:', canUse)
     
     if (!canUse) {
+      console.log('SEO tools limit exceeded for user:', session.user.id)
       return NextResponse.json(
         { 
           error: 'SEO tools limit exceeded',

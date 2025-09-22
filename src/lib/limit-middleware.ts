@@ -113,6 +113,37 @@ export async function trackUsage(
     const plan = user.plan || 'free'
     console.log(`User plan: ${plan}`)
     
+    // Get actual current usage from database instead of cached counter
+    let actualCurrentUsage = 0
+    
+    if (limitType === 'projects') {
+      actualCurrentUsage = await Project.countDocuments({ userId: new mongoose.Types.ObjectId(userId) })
+    } else if (limitType === 'submissions') {
+      actualCurrentUsage = await Submission.countDocuments({ 
+        userId: new mongoose.Types.ObjectId(userId),
+        status: 'success'
+      })
+    } else if (limitType === 'seoTools') {
+      const SeoToolUsage = (await import('@/models/SeoToolUsage')).default
+      actualCurrentUsage = await SeoToolUsage.countDocuments({ 
+        userId: new mongoose.Types.ObjectId(userId)
+      })
+    } else {
+      // For other types, use cached counter as fallback
+      actualCurrentUsage = user.usage?.[limitType] || 0
+    }
+    
+    const newUsage = actualCurrentUsage + increment
+    console.log(`Actual current usage: ${actualCurrentUsage}, New usage: ${newUsage}`)
+
+    // Check if this would exceed the limit
+    const limits = await getPlanLimitsWithCustom(plan)
+    if (isLimitExceededWithCustom(limits, limitType, newUsage)) {
+      console.log(`Usage would exceed limit: ${newUsage} > ${limits[limitType]}`)
+      return false
+    }
+
+    // Update cached usage counter for consistency
     if (!user.usage) {
       user.usage = {
         projects: 0,
@@ -122,19 +153,6 @@ export async function trackUsage(
         reports: 0
       }
     }
-
-    const currentUsage = user.usage[limitType] || 0
-    const newUsage = currentUsage + increment
-    console.log(`Current usage: ${currentUsage}, New usage: ${newUsage}`)
-
-    // Check if this would exceed the limit
-    const limits = await getPlanLimitsWithCustom(plan)
-    if (isLimitExceededWithCustom(limits, limitType, newUsage)) {
-      console.log(`Usage would exceed limit: ${newUsage} > ${limits[limitType]}`)
-      return false
-    }
-
-    // Update usage
     user.usage[limitType] = newUsage
     await user.save()
     console.log(`Usage updated successfully: ${limitType} = ${newUsage}`)
