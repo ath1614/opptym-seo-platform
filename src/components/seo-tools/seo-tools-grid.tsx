@@ -23,6 +23,7 @@ import {
   Zap,
   Lock
 } from 'lucide-react'
+import { LimitExceededPopup } from '@/components/ui/limit-exceeded-popup'
 
 interface SEOTool {
   id: string
@@ -186,6 +187,14 @@ const categoryColors = {
 export function SEOToolsGrid() {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showLimitPopup, setShowLimitPopup] = useState(false)
+  const [limitPopupData, setLimitPopupData] = useState<{
+    limitType: 'projects' | 'submissions' | 'seoTools' | 'backlinks' | 'reports'
+    currentUsage: number
+    limit: number | string
+    plan: string
+    featureName: string
+  } | null>(null)
   const { showToast } = useToast()
   const router = useRouter()
 
@@ -219,30 +228,28 @@ export function SEOToolsGrid() {
     if (!usageStats) return
 
     // Check if user has reached their limit
-    if (usageStats.isAtLimit.seoTools && usageStats.plan === 'free') {
-      showToast({
-        title: 'Usage Limit Reached',
-        description: 'You have reached your SEO tools limit. Upgrade your plan to continue.',
-        variant: 'destructive'
+    if (usageStats.isAtLimit.seoTools) {
+      setLimitPopupData({
+        limitType: 'seoTools',
+        currentUsage: usageStats.usage.seoTools,
+        limit: usageStats.limits.seoTools,
+        plan: usageStats.plan,
+        featureName: tool.name
       })
-      // Redirect to pricing page
-      setTimeout(() => {
-        router.push('/dashboard/pricing')
-      }, 2000)
+      setShowLimitPopup(true)
       return
     }
 
     // Check if tool is premium and user is on free plan
     if (tool.isPremium && usageStats.plan === 'free') {
-      showToast({
-        title: 'Premium Tool',
-        description: 'This tool is available for Pro and higher plans. Redirecting to pricing...',
-        variant: 'destructive'
+      setLimitPopupData({
+        limitType: 'seoTools',
+        currentUsage: usageStats.usage.seoTools,
+        limit: usageStats.limits.seoTools,
+        plan: usageStats.plan,
+        featureName: tool.name
       })
-      // Redirect to pricing page
-      setTimeout(() => {
-        router.push('/dashboard/pricing')
-      }, 2000)
+      setShowLimitPopup(true)
       return
     }
 
@@ -388,6 +395,22 @@ export function SEOToolsGrid() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Limit Exceeded Popup */}
+      {limitPopupData && (
+        <LimitExceededPopup
+          isOpen={showLimitPopup}
+          onClose={() => {
+            setShowLimitPopup(false)
+            setLimitPopupData(null)
+          }}
+          limitType={limitPopupData.limitType}
+          currentUsage={limitPopupData.currentUsage}
+          limit={limitPopupData.limit}
+          plan={limitPopupData.plan}
+          featureName={limitPopupData.featureName}
+        />
       )}
     </div>
   )

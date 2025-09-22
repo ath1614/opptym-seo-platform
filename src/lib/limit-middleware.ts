@@ -171,6 +171,13 @@ export async function getUsageStats(userId: string) {
     })
     console.log(`Actual submissions in database: ${actualSubmissions}`)
     
+    // Get actual SEO tools usage count from database
+    const SeoToolUsage = (await import('@/models/SeoToolUsage')).default
+    const actualSeoTools = await SeoToolUsage.countDocuments({ 
+      userId: new mongoose.Types.ObjectId(userId)
+    })
+    console.log(`Actual SEO tools usage in database: ${actualSeoTools}`)
+    
     const usage = user.usage || {
       projects: 0,
       submissions: 0,
@@ -184,7 +191,8 @@ export async function getUsageStats(userId: string) {
     const realUsage = {
       ...usage,
       projects: actualProjects,
-      submissions: actualSubmissions
+      submissions: actualSubmissions,
+      seoTools: actualSeoTools
     }
     console.log(`Real usage (with actual counts):`, realUsage)
 
