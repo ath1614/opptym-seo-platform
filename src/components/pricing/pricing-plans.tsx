@@ -72,7 +72,7 @@ export function PricingPlans() {
           const data = await response.json()
           // Transform database plans to component format
           const transformedPlans = data.plans.map((plan: { _id: string; name: string; description?: string; price: number; features: string[]; maxProjects: number; maxSubmissions: number; maxSeoTools: number }, index: number) => ({
-            id: plan._id,
+            id: plan.name.toLowerCase(), // Use plan name instead of MongoDB ObjectId
             name: plan.name,
             description: plan.description || `Perfect for ${plan.name.toLowerCase()} users`,
             monthlyPrice: plan.price,
@@ -161,6 +161,8 @@ export function PricingPlans() {
 
     setLoadingPlan(planId)
     
+    console.log('Creating checkout session for:', { planId, planName, billingCycle: isYearly ? 'yearly' : 'monthly' })
+    
     try {
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
@@ -176,13 +178,16 @@ export function PricingPlans() {
 
       const data = await response.json()
 
+      console.log('Checkout response:', { status: response.status, data })
+
       if (response.ok && data.url) {
         // Redirect to Stripe Checkout
         window.location.href = data.url
       } else {
+        console.error('Checkout failed:', { status: response.status, error: data })
         showToast({
           title: 'Error',
-          description: data.error || 'Failed to create checkout session.',
+          description: data.error || data.message || 'Failed to create checkout session.',
           variant: 'destructive'
         })
       }
