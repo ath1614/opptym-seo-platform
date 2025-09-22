@@ -129,7 +129,9 @@ export function QuickActions() {
   useEffect(() => {
     const fetchUsageStats = async () => {
       try {
-        const response = await fetch('/api/dashboard/usage')
+        const response = await fetch('/api/dashboard/usage', {
+          credentials: 'include' // Include cookies for authentication
+        })
         const data = await response.json()
         
         if (response.ok) {

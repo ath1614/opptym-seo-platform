@@ -89,8 +89,8 @@ export default function DashboardPage() {
       
       // Fetch both usage stats and analytics in parallel
       const [usageResponse, analyticsResponse] = await Promise.all([
-        fetch('/api/dashboard/usage'),
-        fetch('/api/dashboard/analytics')
+        fetch('/api/dashboard/usage', { credentials: 'include' }),
+        fetch('/api/dashboard/analytics', { credentials: 'include' })
       ])
 
       console.log('Usage response status:', usageResponse.status)

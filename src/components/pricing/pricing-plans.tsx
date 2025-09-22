@@ -51,7 +51,9 @@ export function PricingPlans() {
   useEffect(() => {
     const checkStripeConfiguration = async () => {
       try {
-        const response = await fetch('/api/stripe/test')
+        const response = await fetch('/api/stripe/test', {
+          credentials: 'include' // Include cookies for authentication
+        })
         const data = await response.json()
         setStripeConfigured(data.configured)
       } catch (error) {
@@ -63,7 +65,9 @@ export function PricingPlans() {
     const fetchPlans = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/pricing')
+        const response = await fetch('/api/pricing', {
+          credentials: 'include' // Include cookies for authentication
+        })
         if (response.ok) {
           const data = await response.json()
           // Transform database plans to component format
@@ -102,7 +106,9 @@ export function PricingPlans() {
 
     const fetchUserPlan = async () => {
       try {
-        const response = await fetch('/api/dashboard/usage')
+        const response = await fetch('/api/dashboard/usage', {
+          credentials: 'include' // Include cookies for authentication
+        })
         if (response.ok) {
           const data = await response.json()
           console.log('User plan data from API:', data)
@@ -161,6 +167,7 @@ export function PricingPlans() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           planId,
           billingCycle: isYearly ? 'yearly' : 'monthly'
