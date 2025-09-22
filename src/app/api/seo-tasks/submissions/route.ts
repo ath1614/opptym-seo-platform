@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { trackUsage } from '@/lib/limit-middleware'
+import connectDB from '@/lib/mongodb'
+import Submission from '@/models/Submission'
+import mongoose from 'mongoose'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,19 +41,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log the submission (in a real app, you might want to store this in a database)
-    console.log('SEO Task Submission:', {
+    // Create actual submission record in database
+    await connectDB()
+    
+    const submission = new Submission({
+      userId: new mongoose.Types.ObjectId(session.user.id),
+      projectId: projectId ? new mongoose.Types.ObjectId(projectId) : undefined,
+      linkId: new mongoose.Types.ObjectId(linkId),
+      directory: `SEO Task - ${action}`,
+      category: 'seo-task',
+      status: 'success',
+      submittedAt: new Date(),
+      completedAt: new Date(),
+      notes: `SEO Task submission - Action: ${action}`
+    })
+
+    console.log('Creating SEO task submission:', {
       userId: session.user.id,
       linkId,
       projectId,
-      action,
-      timestamp: new Date().toISOString()
+      action
     })
+    
+    await submission.save()
+    console.log('SEO task submission saved successfully:', submission._id)
 
     return NextResponse.json({
       success: true,
-      message: 'Submission tracked successfully',
+      message: 'Submission created and tracked successfully',
       data: {
+        submissionId: submission._id,
         linkId,
         projectId,
         action,
