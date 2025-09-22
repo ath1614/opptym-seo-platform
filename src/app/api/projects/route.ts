@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
     await project.save()
 
     // Update usage tracking after successful creation
-    await trackUsage(session.user.id, 'projects', 1)
+    console.log('Updating usage tracking for project creation...')
+    const usageUpdated = await trackUsage(session.user.id, 'projects', 1)
+    console.log('Usage tracking result:', usageUpdated)
 
     // Log project creation activity
     await logActivity({

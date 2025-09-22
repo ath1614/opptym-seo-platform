@@ -4,6 +4,7 @@ import User from '@/models/User'
 import Project from '@/models/Project'
 import Submission from '@/models/Submission'
 import { isLimitExceeded, getPlanLimits, getPlanLimitsWithCustom, isLimitExceededWithCustom } from './subscription-limits'
+import mongoose from 'mongoose'
 
 interface LimitCheckOptions {
   limitType: 'projects' | 'submissions' | 'seoTools' | 'backlinks' | 'reports'
@@ -100,12 +101,17 @@ export async function trackUsage(
   increment: number = 1
 ): Promise<boolean> {
   try {
+    console.log(`Tracking usage: ${limitType} +${increment} for user ${userId}`)
     await connectDB()
     
     const user = await User.findById(userId)
-    if (!user) return false
+    if (!user) {
+      console.log('User not found for usage tracking')
+      return false
+    }
 
     const plan = user.plan || 'free'
+    console.log(`User plan: ${plan}`)
     
     if (!user.usage) {
       user.usage = {
@@ -119,16 +125,19 @@ export async function trackUsage(
 
     const currentUsage = user.usage[limitType] || 0
     const newUsage = currentUsage + increment
+    console.log(`Current usage: ${currentUsage}, New usage: ${newUsage}`)
 
     // Check if this would exceed the limit
     const limits = await getPlanLimitsWithCustom(plan)
     if (isLimitExceededWithCustom(limits, limitType, newUsage)) {
+      console.log(`Usage would exceed limit: ${newUsage} > ${limits[limitType]}`)
       return false
     }
 
     // Update usage
     user.usage[limitType] = newUsage
     await user.save()
+    console.log(`Usage updated successfully: ${limitType} = ${newUsage}`)
     
     return true
   } catch (error) {
@@ -139,13 +148,21 @@ export async function trackUsage(
 
 export async function getUsageStats(userId: string) {
   try {
+    console.log(`Getting usage stats for user: ${userId}`)
     await connectDB()
     
     const user = await User.findById(userId)
-    if (!user) return null
+    if (!user) {
+      console.log('User not found for usage stats')
+      return null
+    }
 
     const plan = user.plan || 'free'
     const limits = await getPlanLimitsWithCustom(plan)
+    
+    // Get actual project count from database
+    const actualProjects = await Project.countDocuments({ userId: new mongoose.Types.ObjectId(userId) })
+    console.log(`Actual projects in database: ${actualProjects}`)
     
     const usage = user.usage || {
       projects: 0,
@@ -154,19 +171,29 @@ export async function getUsageStats(userId: string) {
       backlinks: 0,
       reports: 0
     }
+    console.log(`Cached usage:`, usage)
 
-    return {
+    // Use actual project count instead of cached counter
+    const realUsage = {
+      ...usage,
+      projects: actualProjects
+    }
+    console.log(`Real usage (with actual projects):`, realUsage)
+
+    const result = {
       plan,
       limits,
-      usage: usage,
+      usage: realUsage,
       isAtLimit: {
-        projects: isLimitExceededWithCustom(limits, 'projects', usage.projects),
-        submissions: isLimitExceededWithCustom(limits, 'submissions', usage.submissions),
-        seoTools: isLimitExceededWithCustom(limits, 'seoTools', usage.seoTools),
-        backlinks: isLimitExceededWithCustom(limits, 'backlinks', usage.backlinks),
-        reports: isLimitExceededWithCustom(limits, 'reports', usage.reports)
+        projects: isLimitExceededWithCustom(limits, 'projects', realUsage.projects),
+        submissions: isLimitExceededWithCustom(limits, 'submissions', realUsage.submissions),
+        seoTools: isLimitExceededWithCustom(limits, 'seoTools', realUsage.seoTools),
+        backlinks: isLimitExceededWithCustom(limits, 'backlinks', realUsage.backlinks),
+        reports: isLimitExceededWithCustom(limits, 'reports', realUsage.reports)
       }
     }
+    console.log('Usage stats result:', result)
+    return result
   } catch (error) {
     console.error('Get usage stats error:', error)
     return null
