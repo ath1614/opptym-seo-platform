@@ -211,6 +211,12 @@ Description: ${description || 'N/A'}`
       userId: tokenData.userId,
       status: 'success'
     })
+    
+    console.log('Updated submission count:', {
+      userId: tokenData.userId,
+      totalSubmissions: totalSubmissions,
+      submissionId: submission._id
+    })
 
     // Get user's plan limits (user already fetched above)
     const planLimits = getPlanLimits(user?.plan || 'free')

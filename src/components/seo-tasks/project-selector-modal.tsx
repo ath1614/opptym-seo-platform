@@ -153,6 +153,15 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
       const bookmarkletCode = `
 javascript:(function(){
   try {
+    // Set bookmarklet properties for better bookmark display
+    var bookmarkTitle = 'Opptym Bookmarklet - ${project.projectName}';
+    var bookmarkIcon = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzAwN2JmZiI+PHBhdGggZD0iTTEyIDJMMiA3bDEwIDUgMTAtNS0xMC01ek0yIDE3bDEwIDUgMTAtNU0yIDEybDEwIDUgMTAtNSIvPjwvc3ZnPg==';
+    
+    // Try to set bookmark properties (works in some browsers)
+    if (window.external && window.external.AddFavorite) {
+      window.external.AddFavorite(window.location.href, bookmarkTitle);
+    }
+    
     var xhr = new XMLHttpRequest();
     xhr.open('GET', '${window.location.origin}/api/bookmarklet/script?token=${data.token}&projectId=${project._id}&linkId=${link._id}&t=' + Date.now(), true);
     xhr.onreadystatechange = function() {
@@ -371,6 +380,7 @@ javascript:(function(){
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/uri-list', bookmarkletCode)
                   e.dataTransfer.setData('text/plain', bookmarkletCode)
+                  e.dataTransfer.setData('text/html', `<a href="${bookmarkletCode}" title="Opptym Bookmarklet - ${selectedProject?.projectName}">🚀 Fill Form - ${selectedProject?.projectName}</a>`)
                   e.dataTransfer.effectAllowed = 'copy'
                   e.dataTransfer.setDragImage(e.currentTarget, 0, 0)
                 }}

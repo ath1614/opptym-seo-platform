@@ -192,7 +192,13 @@ export async function getUsageStats(userId: string) {
       userId: new mongoose.Types.ObjectId(userId),
       status: 'success'
     })
-    console.log(`Actual submissions in database: ${actualSubmissions}`)
+    console.log(`Actual submissions in database for user ${userId}: ${actualSubmissions}`)
+    
+    // Also log all submissions for debugging
+    const allSubmissions = await Submission.find({ 
+      userId: new mongoose.Types.ObjectId(userId)
+    }).select('status createdAt')
+    console.log(`All submissions for user ${userId}:`, allSubmissions.map(s => ({ status: s.status, createdAt: s.createdAt })))
     
     // Get actual SEO tools usage count from database
     const SeoToolUsage = (await import('@/models/SeoToolUsage')).default
