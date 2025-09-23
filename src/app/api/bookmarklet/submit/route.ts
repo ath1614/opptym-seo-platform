@@ -212,8 +212,7 @@ Description: ${description || 'N/A'}`
       status: 'success'
     })
 
-    // Get user's plan limits
-    const user = await User.findById(tokenData.userId)
+    // Get user's plan limits (user already fetched above)
     const planLimits = getPlanLimits(user?.plan || 'free')
 
     // Transform -1 limits to 'unlimited' for frontend
