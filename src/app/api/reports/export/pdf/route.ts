@@ -67,7 +67,11 @@ export async function POST(request: NextRequest) {
     
     // Check if Puppeteer is available
     if (!puppeteer) {
-      throw new Error('Puppeteer is not available for PDF generation')
+      console.error('Puppeteer is not available for PDF generation')
+      return NextResponse.json(
+        { error: 'PDF generation service is not available' },
+        { status: 503 }
+      )
     }
 
     // Launch Puppeteer with production-friendly settings

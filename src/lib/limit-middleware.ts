@@ -142,10 +142,10 @@ export async function trackUsage(
     console.log(`Checking ${limitType}: ${newUsage} vs limit ${limits[limitType]}`)
     
     if (isLimitExceededWithCustom(limits, limitType, newUsage)) {
-      console.log(`❌ Usage would exceed limit: ${newUsage} >= ${limits[limitType]}`)
+      console.log(`❌ Usage would exceed limit: ${newUsage} > ${limits[limitType]}`)
       return false
     } else {
-      console.log(`✅ Usage is within limit: ${newUsage} < ${limits[limitType]}`)
+      console.log(`✅ Usage is within limit: ${newUsage} <= ${limits[limitType]}`)
     }
 
     // Update cached usage counter for consistency

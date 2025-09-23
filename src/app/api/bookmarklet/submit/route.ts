@@ -182,6 +182,9 @@ Description: ${description || 'N/A'}`
     await submission.save()
     console.log('Submission saved successfully:', submission._id)
 
+    // Get user for logging
+    const user = await User.findById(tokenData.userId)
+    
     // Log submission activity
     await logActivity({
       userId: tokenData.userId,

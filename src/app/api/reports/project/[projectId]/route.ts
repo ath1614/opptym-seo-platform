@@ -225,7 +225,8 @@ export async function GET(
     const reportData = {
       project: {
         id: project._id,
-        name: project.projectName,
+        projectName: project.projectName,
+        name: project.projectName, // Keep both for compatibility
         websiteURL: project.websiteURL,
         category: project.category,
         status: project.status,
