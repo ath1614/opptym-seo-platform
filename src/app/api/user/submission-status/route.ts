@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Submission from '@/models/Submission'
 import { getPlanLimits, isLimitExceeded, getRemainingUsage } from '@/lib/subscription-limits'
+import mongoose from 'mongoose'
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Get current submission count
     const currentSubmissions = await Submission.countDocuments({ 
-      userId: session.user.id,
+      userId: new mongoose.Types.ObjectId(session.user.id),
       status: 'success'
     })
 

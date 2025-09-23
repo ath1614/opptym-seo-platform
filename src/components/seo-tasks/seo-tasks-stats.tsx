@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
-import { Link, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react'
+import { Link, CheckCircle, AlertCircle, TrendingUp, RefreshCw } from 'lucide-react'
 
 interface UsageStats {
   plan: string
@@ -53,6 +53,13 @@ export function SEOTasksStats() {
 
   useEffect(() => {
     fetchUsageStats()
+    
+    // Add periodic refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchUsageStats()
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [fetchUsageStats])
 
   if (isLoading) {
@@ -86,7 +93,17 @@ export function SEOTasksStats() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Submissions Used</CardTitle>
-          <Link className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchUsageStats}
+              className="h-6 w-6 p-0"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+            <Link className="h-4 w-4 text-muted-foreground" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats.usage.submissions}</div>
