@@ -27,12 +27,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate report data structure
-    if (!reportData.project || !reportData.project.projectName) {
+    if (!reportData || typeof reportData !== 'object') {
       return NextResponse.json(
-        { error: 'Invalid report data: project information is required' },
+        { error: 'Invalid report data: report data is required' },
         { status: 400 }
       )
     }
+
+    // Debug: Log the report data structure
+    console.log('Report data received:', {
+      hasProject: !!reportData.project,
+      projectKeys: reportData.project ? Object.keys(reportData.project) : [],
+      reportDataKeys: Object.keys(reportData)
+    })
 
     await connectDB()
     
@@ -110,7 +117,7 @@ export async function POST(request: NextRequest) {
       return new NextResponse(pdfBuffer as BodyInit, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="seo-report-${project.projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf"`
+          'Content-Disposition': `attachment; filename="seo-report-${(project.projectName || project._id || 'project').replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf"`
         }
       })
     } catch (puppeteerError) {
@@ -147,8 +154,11 @@ export async function POST(request: NextRequest) {
 
 function generateReportHTML(reportData: {
   project: {
-    projectName: string
-    websiteURL: string
+    projectName?: string
+    websiteURL?: string
+    _id?: string
+    category?: string
+    status?: string
   }
   analytics: {
     totalSeoToolsUsed: number
@@ -183,7 +193,7 @@ function generateReportHTML(reportData: {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>SEO Report - ${project.projectName}</title>
+      <title>SEO Report - ${project.projectName || project._id || 'Project'}</title>
       <style>
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -293,8 +303,8 @@ function generateReportHTML(reportData: {
     <body>
       <div class="header">
         <h1>SEO Performance Report</h1>
-        <p>${project.projectName} - Generated on ${new Date().toLocaleDateString()}</p>
-        <p>Website: ${project.websiteURL}</p>
+        <p>${project.projectName || project._id || 'Project'} - Generated on ${new Date().toLocaleDateString()}</p>
+        <p>Website: ${project.websiteURL || 'No website URL'}</p>
       </div>
 
       <div class="section">
