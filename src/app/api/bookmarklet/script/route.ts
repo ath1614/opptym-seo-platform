@@ -219,10 +219,6 @@ export async function GET(request: NextRequest) {
     // Get the base URL for API calls
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
-    // Safely stringify data to prevent syntax errors
-    const safeProjectData = JSON.stringify(projectData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
-    const safeLinkData = JSON.stringify(linkData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
-    
     const script = `
 (function(){
   try {
@@ -236,7 +232,7 @@ export async function GET(request: NextRequest) {
     document.head.appendChild(favicon);
     
     // Embedded project data
-    var projectData = ${safeProjectData};
+    var projectData = ${JSON.stringify(projectData)};
     var usageInfo = {
       maxUsage: ${maxUsage},
       currentUsage: ${currentUsage},
@@ -244,7 +240,7 @@ export async function GET(request: NextRequest) {
     };
     
     // Embedded link data
-    var linkData = ${safeLinkData};
+    var linkData = ${JSON.stringify(linkData)};
     
     // API configuration
     var apiBaseUrl = '${baseUrl}';
