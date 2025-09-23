@@ -162,7 +162,8 @@ export function ReportsDashboard() {
     
     setIsExporting(true)
     try {
-      const response = await fetch('/api/reports/export/pdf', {
+      // Try alternative PDF export first
+      let response = await fetch('/api/reports/export/pdf-alternative', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,35 +174,75 @@ export function ReportsDashboard() {
         }),
       })
 
-      if (response.ok) {
-        // Create blob and download
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `seo-report-${reportData.project.projectName.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        showToast({
-          title: 'PDF Exported!',
-          description: 'Your SEO report has been downloaded successfully.',
-          variant: 'success'
+      // If alternative fails, try original method
+      if (!response.ok) {
+        console.log('Alternative PDF export failed, trying original method...')
+        response = await fetch('/api/reports/export/pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            projectId: selectedProjectId,
+            reportData: reportData
+          }),
         })
+      }
+
+      if (response.ok) {
+        const contentType = response.headers.get('content-type')
+        
+        if (contentType === 'application/pdf') {
+          // PDF file - download directly
+          const blob = await response.blob()
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `seo-report-${(reportData.project.projectName || reportData.project._id || 'project').replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(url)
+          document.body.removeChild(a)
+          
+          showToast({
+            title: 'PDF Exported!',
+            description: 'Your SEO report has been downloaded successfully.',
+            variant: 'success'
+          })
+        } else if (contentType === 'text/html') {
+          // HTML file - open in new tab for printing
+          const htmlContent = await response.text()
+          const newWindow = window.open('', '_blank')
+          if (newWindow) {
+            newWindow.document.write(htmlContent)
+            newWindow.document.close()
+            
+            showToast({
+              title: 'Report Ready!',
+              description: 'Report opened in new tab. Press Ctrl+P to save as PDF.',
+              variant: 'success'
+            })
+          } else {
+            showToast({
+              title: 'Popup Blocked',
+              description: 'Please allow popups and try again, or use the original PDF export.',
+              variant: 'destructive'
+            })
+          }
+        }
       } else {
         const data = await response.json()
         showToast({
           title: 'Export Failed',
-          description: data.error || 'Failed to export PDF report.',
+          description: data.error || 'Failed to export PDF report. Please try again.',
           variant: 'destructive'
         })
       }
-    } catch {
+    } catch (error) {
+      console.error('PDF export error:', error)
       showToast({
         title: 'Export Failed',
-        description: 'Network error while exporting PDF.',
+        description: 'Network error while exporting PDF. Please try again.',
         variant: 'destructive'
       })
     } finally {
