@@ -11,6 +11,7 @@ import {
   ArrowRight, 
   ArrowLeft, 
   X, 
+  Plus,
   Search, 
   FileText, 
   Link, 
