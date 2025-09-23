@@ -2,10 +2,10 @@
 
 import { useSession } from 'next-auth/react'
 import { ProfileDropdown } from './profile-dropdown'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
-import { Home, Sun, Moon } from 'lucide-react'
+import { Home } from 'lucide-react'
 import Link from 'next/link'
-import { useTheme } from 'next-themes'
 
 interface ExtendedUser {
   id: string
@@ -19,7 +19,6 @@ interface ExtendedUser {
 
 export function DashboardNavbar() {
   const { data: session } = useSession()
-  const { theme, setTheme } = useTheme()
 
   if (!session?.user) return null
 
@@ -46,16 +45,7 @@ export function DashboardNavbar() {
           </Link>
 
           {/* Theme Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          <ThemeToggle />
 
           {/* Profile Dropdown */}
           <ProfileDropdown />

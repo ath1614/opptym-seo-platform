@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,7 +11,6 @@ import {
   ArrowRight, 
   ArrowLeft, 
   X, 
-  Plus, 
   Search, 
   FileText, 
   Link, 
@@ -35,11 +33,6 @@ interface TutorialStep {
   description: string
   icon: React.ComponentType<any>
   content: React.ReactNode
-  action?: {
-    text: string
-    href: string
-    onClick?: () => void
-  }
 }
 
 interface OnboardingTutorialProps {
@@ -50,8 +43,6 @@ interface OnboardingTutorialProps {
 
 export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: OnboardingTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0)
-  const [completedSteps, setCompletedSteps] = useState<string[]>([])
-  const router = useRouter()
 
   const steps: TutorialStep[] = [
     {
@@ -140,15 +131,7 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
             </div>
           </div>
         </div>
-      ),
-      action: {
-        text: 'Create Project',
-        href: '/dashboard/projects/new',
-        onClick: () => {
-          setCompletedSteps(prev => [...prev, 'create-project'])
-          router.push('/dashboard/projects/new')
-        }
-      }
+      )
     },
     {
       id: 'seo-tools',
@@ -244,15 +227,7 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
             </div>
           </div>
         </div>
-      ),
-      action: {
-        text: 'Explore SEO Tools',
-        href: '/dashboard/seo-tools',
-        onClick: () => {
-          setCompletedSteps(prev => [...prev, 'seo-tools'])
-          router.push('/dashboard/seo-tools')
-        }
-      }
+      )
     },
     {
       id: 'directory-submission',
@@ -324,15 +299,7 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
             </div>
           </div>
         </div>
-      ),
-      action: {
-        text: 'Learn About Bookmarklet',
-        href: '/dashboard/projects',
-        onClick: () => {
-          setCompletedSteps(prev => [...prev, 'directory-submission'])
-          router.push('/dashboard/projects')
-        }
-      }
+      )
     },
     {
       id: 'generate-reports',
@@ -413,15 +380,7 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
             </div>
           </div>
         </div>
-      ),
-      action: {
-        text: 'Generate Report',
-        href: '/dashboard/reports',
-        onClick: () => {
-          setCompletedSteps(prev => [...prev, 'generate-reports'])
-          router.push('/dashboard/reports')
-        }
-      }
+      )
     },
     {
       id: 'complete',
@@ -489,29 +448,9 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
             <h4 className="font-bold text-lg text-gray-900 mb-2">Ready to boost your SEO?</h4>
             <p className="text-gray-600 mb-4">
-              Start with creating your first project and begin your journey to better search rankings!
+              You now have all the knowledge you need to get started with Opptym AI SEO. 
+              Use the navigation to explore different sections and begin your SEO journey!
             </p>
-            <div className="flex justify-center space-x-3">
-              <Button 
-                onClick={() => {
-                  setCompletedSteps(prev => [...prev, 'complete'])
-                  router.push('/dashboard/projects/new')
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Project
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setCompletedSteps(prev => [...prev, 'complete'])
-                  router.push('/dashboard')
-                }}
-              >
-                Go to Dashboard
-              </Button>
-            </div>
           </div>
         </div>
       )
@@ -525,6 +464,8 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
+    } else {
+      onClose()
     }
   }
 
@@ -538,16 +479,6 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
     onClose()
   }
 
-  const handleActionClick = () => {
-    if (currentStepData.action?.onClick) {
-      currentStepData.action.onClick()
-    }
-    if (currentStep < steps.length - 1) {
-      handleNext()
-    } else {
-      onClose()
-    }
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -597,17 +528,10 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
               <Button variant="ghost" onClick={handleSkip}>
                 Skip Tutorial
               </Button>
-              {currentStepData.action ? (
-                <Button onClick={handleActionClick}>
-                  {currentStepData.action.text}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button onClick={handleNext}>
-                  {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              )}
+              <Button onClick={handleNext}>
+                {currentStep === steps.length - 1 ? 'Finish' : 'Next'}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
           </div>
         </div>
