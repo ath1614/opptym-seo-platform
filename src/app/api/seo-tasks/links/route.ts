@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
+    const location = searchParams.get('location')
     const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '2000')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -38,6 +39,10 @@ export async function GET(request: NextRequest) {
         'other': 'More SEO'
       }
       query.classification = categoryMap[category] || category
+    }
+    
+    if (location && location !== 'all') {
+      query.country = location
     }
     
     if (search) {

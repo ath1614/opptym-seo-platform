@@ -23,7 +23,7 @@ export function Logo({
     <div className={cn("flex items-center space-x-2", className)}>
       <Image
         src="/logo.png"
-        alt="Opptym SEO Platform"
+        alt="Opptym AI SEO Platform"
         width={width}
         height={height}
         className="object-contain"
@@ -31,7 +31,7 @@ export function Logo({
       />
       {showText && (
         <span className="font-bold text-xl text-foreground">
-          Opptym SEO
+          Opptym AI SEO
         </span>
       )}
     </div>

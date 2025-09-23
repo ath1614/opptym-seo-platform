@@ -39,6 +39,16 @@ const PricingPlanSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 5
+  },
+  maxReports: {
+    type: Number,
+    required: true,
+    default: 1
+  },
+  maxBacklinks: {
+    type: Number,
+    required: true,
+    default: 0
   }
 }, {
   timestamps: true
@@ -66,6 +76,8 @@ const pricingPlans = [
     maxProjects: 1,
     maxSubmissions: 1,
     maxSeoTools: 5,
+    maxReports: 1,
+    maxBacklinks: 0,
     active: true
   },
   {
@@ -87,6 +99,8 @@ const pricingPlans = [
     maxProjects: 5,
     maxSubmissions: 50,
     maxSeoTools: 14,
+    maxReports: 10,
+    maxBacklinks: 25,
     active: true
   },
   {
@@ -108,6 +122,8 @@ const pricingPlans = [
     maxProjects: -1, // Unlimited
     maxSubmissions: 200,
     maxSeoTools: 14,
+    maxReports: 50,
+    maxBacklinks: 100,
     active: true
   },
   {
@@ -128,7 +144,9 @@ const pricingPlans = [
     ],
     maxProjects: -1, // Unlimited
     maxSubmissions: -1, // Unlimited
-    maxSeoTools: 14,
+    maxSeoTools: -1, // Unlimited
+    maxReports: -1, // Unlimited
+    maxBacklinks: -1, // Unlimited
     active: true
   }
 ]

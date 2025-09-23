@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import Project from '@/models/Project'
+import { trackUsage } from '@/lib/limit-middleware'
 import puppeteer from 'puppeteer'
 
 export async function POST(request: NextRequest) {
@@ -40,6 +41,20 @@ export async function POST(request: NextRequest) {
       projectKeys: reportData.project ? Object.keys(reportData.project) : [],
       reportDataKeys: Object.keys(reportData)
     })
+
+    // Check if user can generate reports
+    const canGenerate = await trackUsage(session.user.id, 'reports', 1)
+    
+    if (!canGenerate) {
+      return NextResponse.json(
+        { 
+          error: 'Reports limit exceeded',
+          limitType: 'reports',
+          message: 'You have reached your reports limit. Please upgrade your plan to continue.'
+        },
+        { status: 403 }
+      )
+    }
 
     await connectDB()
     

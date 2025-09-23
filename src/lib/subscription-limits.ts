@@ -61,8 +61,8 @@ export async function getCustomPlanLimits(planName: string): Promise<Subscriptio
           projects: customPlan.maxProjects === -1 ? -1 : customPlan.maxProjects,
           submissions: customPlan.maxSubmissions === -1 ? -1 : customPlan.maxSubmissions,
           seoTools: customPlan.maxSeoTools === -1 ? -1 : customPlan.maxSeoTools,
-          backlinks: 0, // Not in current schema
-          reports: 1 // Not in current schema
+          backlinks: customPlan.maxBacklinks === -1 ? -1 : customPlan.maxBacklinks,
+          reports: customPlan.maxReports === -1 ? -1 : customPlan.maxReports
         }
       }
     }

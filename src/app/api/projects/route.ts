@@ -120,8 +120,28 @@ export async function POST(request: NextRequest) {
     console.error('Create project error:', error)
     
     if (error instanceof Error && error.name === 'ValidationError') {
+      // Parse Mongoose validation errors to provide detailed field-specific messages
+      const validationErrors: Record<string, string> = {}
+      
+      if (error.message) {
+        // Handle Mongoose validation error format
+        const errorMessages = error.message.split(', ')
+        errorMessages.forEach(msg => {
+          const match = msg.match(/^(.+): (.+)$/)
+          if (match) {
+            const field = match[1].trim()
+            const message = match[2].trim()
+            validationErrors[field] = message
+          }
+        })
+      }
+      
       return NextResponse.json(
-        { error: 'Validation error', details: error.message },
+        { 
+          error: 'Validation failed',
+          validationErrors,
+          message: 'Please fix the following errors and try again'
+        },
         { status: 400 }
       )
     }

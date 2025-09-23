@@ -7,6 +7,10 @@ import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { CurrentPlanCard } from '@/components/dashboard/current-plan-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
+import { OnboardingTutorial } from '@/components/onboarding/onboarding-tutorial'
+import { useOnboarding } from '@/hooks/use-onboarding'
+import { Button } from '@/components/ui/button'
+import { RefreshCw, HelpCircle } from 'lucide-react'
 
 interface ExtendedUser {
   id: string
@@ -66,6 +70,8 @@ export default function DashboardPage() {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const { showOnboarding, hideOnboarding, markOnboardingAsSeen, showOnboardingAgain } = useOnboarding()
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -83,8 +89,22 @@ export default function DashboardPage() {
     }
   }, [status])
 
-  const fetchData = async () => {
+  // Add periodic refresh for submission counter
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const interval = setInterval(() => {
+        fetchData(true) // Refresh data every 30 seconds
+      }, 30000)
+
+      return () => clearInterval(interval)
+    }
+  }, [status])
+
+  const fetchData = async (isRefresh = false) => {
     try {
+      if (isRefresh) {
+        setRefreshing(true)
+      }
       console.log('Fetching dashboard data...')
       
       // Fetch both usage stats and analytics in parallel
@@ -153,7 +173,14 @@ export default function DashboardPage() {
     } finally {
       console.log('Setting loading to false')
       setLoading(false)
+      if (isRefresh) {
+        setRefreshing(false)
+      }
     }
+  }
+
+  const handleRefresh = () => {
+    fetchData(true)
   }
 
   if (status === 'loading') {
@@ -218,6 +245,16 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+      {/* Onboarding Tutorial */}
+      <OnboardingTutorial 
+        isOpen={showOnboarding}
+        onClose={() => {
+          hideOnboarding()
+          markOnboardingAsSeen()
+        }}
+        userPlan={usageStats?.plan || 'free'}
+      />
+      
       <div className="space-y-6">
         {/* Dashboard Header */}
         <div className="flex items-center justify-between">
@@ -225,11 +262,30 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground">Welcome to your SEO command center</p>
           </div>
-          {!isDataLoading && (
-            <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-              <span className="text-green-800 text-sm font-medium">✅ Dashboard Loaded</span>
-            </div>
-          )}
+                 <div className="flex items-center space-x-3">
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     onClick={showOnboardingAgain}
+                   >
+                     <HelpCircle className="h-4 w-4 mr-2" />
+                     Tutorial
+                   </Button>
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     onClick={handleRefresh}
+                     disabled={refreshing}
+                   >
+                     <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                     Refresh
+                   </Button>
+            {!isDataLoading && (
+              <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                <span className="text-green-800 text-sm font-medium">✅ Dashboard Loaded</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Data Loading Indicator */}
@@ -248,7 +304,23 @@ export default function DashboardPage() {
           <StatsCards stats={stats} trends={trends} />
         </div>
 
-        {/* Current Plan and Quick Actions */}
+        {/* Quick Actions - Made More Prominent */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-blue-900">Quick Actions</h2>
+              <p className="text-blue-700">Get started with your SEO tasks right away</p>
+            </div>
+            <div className="text-blue-600">
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          <QuickActions />
+        </div>
+
+        {/* Current Plan */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Current Plan Card */}
           <div className="lg:col-span-1">
@@ -256,10 +328,40 @@ export default function DashboardPage() {
             <CurrentPlanCard plan={currentPlan} usage={usage} />
           </div>
 
-          {/* Quick Actions */}
+          {/* Additional Info */}
           <div className="lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-            <QuickActions />
+            <h2 className="text-xl font-semibold mb-4">Getting Started</h2>
+            <div className="bg-white border rounded-lg p-6">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-600 font-bold">1</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Create Your First Project</h3>
+                    <p className="text-sm text-muted-foreground">Set up a project to start tracking your website's SEO performance</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 font-bold">2</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Run SEO Analysis</h3>
+                    <p className="text-sm text-muted-foreground">Use our comprehensive SEO tools to analyze your website</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-600 font-bold">3</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Generate Reports</h3>
+                    <p className="text-sm text-muted-foreground">Create detailed SEO reports to track your progress</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

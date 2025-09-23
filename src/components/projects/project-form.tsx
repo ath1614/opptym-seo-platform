@@ -27,6 +27,7 @@ interface CustomField {
 export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const router = useRouter()
   const { showToast } = useToast()
 
@@ -190,6 +191,15 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         [field]: value
       }))
     }
+    
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
   }
 
   const handleArrayFieldChange = (field: string, value: string) => {
@@ -197,8 +207,115 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     handleInputChange(field, array)
   }
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    
+    // Required field validations
+    if (!formData.projectName?.trim()) {
+      errors.projectName = 'Project name is required'
+    } else if (formData.projectName.length > 100) {
+      errors.projectName = 'Project name cannot exceed 100 characters'
+    }
+    
+    if (!formData.title?.trim()) {
+      errors.title = 'Title is required'
+    } else if (formData.title.length > 200) {
+      errors.title = 'Title cannot exceed 200 characters'
+    }
+    
+    if (!formData.websiteURL?.trim()) {
+      errors.websiteURL = 'Website URL is required'
+    } else if (!/^https?:\/\/.+/.test(formData.websiteURL)) {
+      errors.websiteURL = 'Please enter a valid URL (must start with http:// or https://)'
+    }
+    
+    if (!formData.email?.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address'
+    }
+    
+    if (!formData.category?.trim()) {
+      errors.category = 'Category is required'
+    }
+    
+    if (!formData.companyName?.trim()) {
+      errors.companyName = 'Company name is required'
+    } else if (formData.companyName.length > 100) {
+      errors.companyName = 'Company name cannot exceed 100 characters'
+    }
+    
+    if (!formData.phone?.trim()) {
+      errors.phone = 'Phone number is required'
+    }
+    
+    if (!formData.businessDescription?.trim()) {
+      errors.businessDescription = 'Business description is required'
+    } else if (formData.businessDescription.length > 2000) {
+      errors.businessDescription = 'Business description cannot exceed 2000 characters'
+    }
+    
+    // Address validations
+    if (!formData.address.addressLine1?.trim()) {
+      errors['address.addressLine1'] = 'Address line 1 is required'
+    }
+    
+    if (!formData.address.district?.trim()) {
+      errors['address.district'] = 'District is required'
+    }
+    
+    if (!formData.address.city?.trim()) {
+      errors['address.city'] = 'City is required'
+    }
+    
+    if (!formData.address.state?.trim()) {
+      errors['address.state'] = 'State is required'
+    }
+    
+    if (!formData.address.country?.trim()) {
+      errors['address.country'] = 'Country is required'
+    }
+    
+    if (!formData.address.pincode?.trim()) {
+      errors['address.pincode'] = 'Pincode is required'
+    }
+    
+    // SEO Metadata validations
+    if (formData.seoMetadata.metaTitle && formData.seoMetadata.metaTitle.length > 60) {
+      errors['seoMetadata.metaTitle'] = 'Meta title cannot exceed 60 characters'
+    }
+    
+    if (formData.seoMetadata.metaDescription && formData.seoMetadata.metaDescription.length > 160) {
+      errors['seoMetadata.metaDescription'] = 'Meta description cannot exceed 160 characters'
+    }
+    
+    // Article submission validations
+    if (formData.articleSubmission.articleTitle && formData.articleSubmission.articleTitle.length > 200) {
+      errors['articleSubmission.articleTitle'] = 'Article title cannot exceed 200 characters'
+    }
+    
+    if (formData.articleSubmission.articleContent && formData.articleSubmission.articleContent.length > 5000) {
+      errors['articleSubmission.articleContent'] = 'Article content cannot exceed 5000 characters'
+    }
+    
+    if (formData.articleSubmission.authorBio && formData.articleSubmission.authorBio.length > 500) {
+      errors['articleSubmission.authorBio'] = 'Author bio cannot exceed 500 characters'
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const addCustomField = () => {
     setCustomFields(prev => [...prev, { key: '', value: '' }])
+  }
+
+  const getFieldError = (fieldName: string): string | undefined => {
+    return validationErrors[fieldName]
+  }
+
+  const getNestedFieldError = (parentField: string, childField: string): string | undefined => {
+    return validationErrors[`${parentField}.${childField}`]
   }
 
   const removeCustomField = (index: number) => {
@@ -295,6 +412,21 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Clear previous validation errors
+    setValidationErrors({})
+    
+    // Perform client-side validation first
+    if (!validateForm()) {
+      const errorCount = Object.keys(validationErrors).length
+      showToast({
+        title: 'Validation Failed',
+        description: `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} before submitting.`,
+        variant: 'destructive'
+      })
+      return
+    }
+    
     setIsLoading(true)
 
     try {
@@ -330,6 +462,15 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
           showToast({
             title: 'Project Limit Exceeded',
             description: data.message || 'You have reached your project limit. Please upgrade your plan.',
+            variant: 'destructive'
+          })
+        } else if (response.status === 400 && data.validationErrors) {
+          // Handle server-side validation errors
+          setValidationErrors(data.validationErrors)
+          const errorFields = Object.keys(data.validationErrors)
+          showToast({
+            title: 'Validation Failed',
+            description: `Please fix the following fields: ${errorFields.join(', ')}`,
             variant: 'destructive'
           })
         } else {
@@ -420,7 +561,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('projectName', e.target.value)}
                       placeholder="Enter project name"
                       required
+                      className={getFieldError('projectName') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('projectName') && (
+                      <p className="text-sm text-red-600">{getFieldError('projectName')}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title">Title *</Label>
@@ -430,7 +575,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('title', e.target.value)}
                       placeholder="Enter title"
                       required
+                      className={getFieldError('title') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('title') && (
+                      <p className="text-sm text-red-600">{getFieldError('title')}</p>
+                    )}
                   </div>
                 </div>
 
@@ -443,7 +592,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     onChange={(e) => handleInputChange('websiteURL', e.target.value)}
                     placeholder="https://example.com"
                     required
+                    className={getFieldError('websiteURL') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('websiteURL') && (
+                    <p className="text-sm text-red-600">{getFieldError('websiteURL')}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -456,7 +609,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       placeholder="contact@example.com"
                       required
+                      className={getFieldError('email') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('email') && (
+                      <p className="text-sm text-red-600">{getFieldError('email')}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>

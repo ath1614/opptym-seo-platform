@@ -16,7 +16,9 @@ import {
   MoreHorizontal,
   Search,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Globe,
+  Filter
 } from 'lucide-react'
 import {
   Pagination,
@@ -28,6 +30,16 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination"
 import { ProjectSelectorModal } from './project-selector-modal'
+
+interface Location {
+  _id: string
+  name: string
+  code: string
+  flag: string
+  description?: string
+  isActive: boolean
+  priority: number
+}
 
 interface Link {
   _id: string
@@ -125,6 +137,7 @@ export function SEOTasksGrid() {
   const [links, setLinks] = useState<Link[]>([])
   const [filteredLinks, setFilteredLinks] = useState<Link[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedLocation, setSelectedLocation] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
@@ -138,6 +151,7 @@ export function SEOTasksGrid() {
     isLimitReached: boolean
     isUnlimited: boolean
   } | null>(null)
+  const [locations, setLocations] = useState<Location[]>([])
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -146,6 +160,18 @@ export function SEOTasksGrid() {
   const [linksPerPage] = useState(20) // Show 20 links per page
   
   const { showToast } = useToast()
+
+  const fetchLocations = useCallback(async () => {
+    try {
+      const response = await fetch('/api/locations?active=true')
+      if (response.ok) {
+        const data = await response.json()
+        setLocations(data)
+      }
+    } catch (error) {
+      console.error('Error fetching locations:', error)
+    }
+  }, [])
 
   const fetchSubmissionStatus = useCallback(async () => {
     try {
@@ -160,7 +186,7 @@ export function SEOTasksGrid() {
     }
   }, [])
 
-  const fetchLinks = useCallback(async (page: number = 1, category: string = 'all', search: string = '') => {
+  const fetchLinks = useCallback(async (page: number = 1, category: string = 'all', search: string = '', location: string = 'all') => {
     try {
       setIsLoading(true)
       const offset = (page - 1) * linksPerPage
@@ -174,6 +200,10 @@ export function SEOTasksGrid() {
       
       if (category !== 'all') {
         params.append('category', category)
+      }
+      
+      if (location !== 'all') {
+        params.append('location', location)
       }
       
       if (search) {
@@ -224,15 +254,16 @@ export function SEOTasksGrid() {
     fetchLinks(1, selectedCategory, searchTerm)
     fetchUsageStats()
     fetchSubmissionStatus()
-  }, [fetchLinks, fetchUsageStats, fetchSubmissionStatus])
+    fetchLocations()
+  }, [fetchLinks, fetchUsageStats, fetchSubmissionStatus, fetchLocations])
 
-  // Handle category change
+  // Handle category and location change
   useEffect(() => {
-    if (selectedCategory !== 'all' || searchTerm) {
+    if (selectedCategory !== 'all' || selectedLocation !== 'all' || searchTerm) {
       setCurrentPage(1)
-      fetchLinks(1, selectedCategory, searchTerm)
+      fetchLinks(1, selectedCategory, searchTerm, selectedLocation)
     }
-  }, [selectedCategory, searchTerm, fetchLinks])
+  }, [selectedCategory, selectedLocation, searchTerm, fetchLinks])
 
   // Handle search with debounce
   useEffect(() => {
@@ -271,6 +302,15 @@ export function SEOTasksGrid() {
     fetchSubmissionStatus()
   }
 
+  // Add periodic refresh for submission status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchSubmissionStatus()
+    }, 30000) // Refresh every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [fetchSubmissionStatus])
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       fetchLinks(page, selectedCategory, searchTerm)
@@ -279,6 +319,8 @@ export function SEOTasksGrid() {
 
   const handleRefresh = () => {
     fetchLinks(currentPage, selectedCategory, searchTerm)
+    fetchSubmissionStatus() // Also refresh submission status
+    fetchUsageStats() // Refresh usage stats
   }
 
   // Note: Category stats are now handled server-side with pagination
@@ -335,6 +377,40 @@ export function SEOTasksGrid() {
                 </Button>
               </div>
 
+      {/* Submission Status Display */}
+      {submissionStatus && (
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="text-sm">
+                  <span className="font-medium">Submissions:</span>
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                    submissionStatus.isLimitReached 
+                      ? 'bg-red-100 text-red-800' 
+                      : submissionStatus.remaining <= 2 
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800'
+                  }`}>
+                    {submissionStatus.current}/{submissionStatus.isUnlimited ? '∞' : submissionStatus.limit}
+                  </span>
+                </div>
+                {!submissionStatus.isUnlimited && (
+                  <div className="text-sm text-muted-foreground">
+                    Remaining: {submissionStatus.remaining}
+                  </div>
+                )}
+              </div>
+              {submissionStatus.isLimitReached && (
+                <Button size="sm" variant="outline" className="text-red-600 border-red-200">
+                  Upgrade Plan
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Category Filter */}
       <div className="flex flex-wrap gap-2">
         <Button
@@ -358,6 +434,31 @@ export function SEOTasksGrid() {
             </Button>
           )
         })}
+      </div>
+
+      {/* Location Filter */}
+      <div className="flex flex-wrap gap-2">
+        <div className="flex items-center space-x-2">
+          <Globe className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground">Location:</span>
+        </div>
+        <Button
+          variant={selectedLocation === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSelectedLocation('all')}
+        >
+          🌍 All Locations
+        </Button>
+        {locations.map((location) => (
+          <Button
+            key={location._id}
+            variant={selectedLocation === location.code ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedLocation(location.code)}
+          >
+            {location.flag} {location.name}
+          </Button>
+        ))}
       </div>
 
       {/* Search */}

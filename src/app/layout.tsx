@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Opptym SEO Platform - Advanced SEO Optimization Tools",
-    template: "%s | Opptym SEO Platform"
+    default: "Opptym AI SEO Platform - Advanced SEO Optimization Tools",
+    template: "%s | Opptym AI SEO Platform"
   },
   description: "Professional SEO optimization platform that helps businesses improve their search engine rankings, analyze competitors, and drive organic traffic growth with advanced tools and insights.",
   keywords: [

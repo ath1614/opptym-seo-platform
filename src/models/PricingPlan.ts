@@ -10,6 +10,8 @@ export interface IPricingPlan extends Document {
   maxProjects: number
   maxSubmissions: number
   maxSeoTools: number
+  maxReports: number
+  maxBacklinks: number
   createdAt: Date
   updatedAt: Date
 }
@@ -51,6 +53,16 @@ const PricingPlanSchema = new Schema<IPricingPlan>({
     type: Number,
     required: true,
     default: 5
+  },
+  maxReports: {
+    type: Number,
+    required: true,
+    default: 1
+  },
+  maxBacklinks: {
+    type: Number,
+    required: true,
+    default: 0
   }
 }, {
   timestamps: true

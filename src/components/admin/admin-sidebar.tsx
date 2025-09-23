@@ -13,7 +13,8 @@ import {
   Activity,
   BarChart3,
   Settings,
-  FileText
+  FileText,
+  Globe
 } from 'lucide-react'
 
 const adminNavItems = [
@@ -41,6 +42,11 @@ const adminNavItems = [
     title: 'Submissions',
     href: '/dashboard/admin/submissions',
     icon: FileText
+  },
+  {
+    title: 'Locations',
+    href: '/dashboard/admin/locations',
+    icon: Globe
   },
   {
     title: 'Pricing Plans',

@@ -8,7 +8,7 @@ export function Footer() {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-lg font-semibold text-foreground mb-4">
-              Opptym SEO Platform
+              Opptym AI SEO Platform
             </h3>
             <p className="text-muted-foreground mb-4 max-w-md">
               The ultimate SEO optimization platform that helps businesses improve their search engine rankings and drive organic traffic growth.
@@ -122,7 +122,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center">
           <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Opptym SEO Platform. All rights reserved.
+            © {new Date().getFullYear()} Opptym AI SEO Platform. All rights reserved.
           </p>
         </div>
       </div>

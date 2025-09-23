@@ -42,6 +42,7 @@ export interface IUser extends Document {
     backlinks: number
     reports: number
   }
+  isNewUser?: boolean
   lastLogin?: Date
   createdAt: Date
   updatedAt: Date
@@ -208,6 +209,10 @@ const UserSchema = new Schema<IUser>({
       type: Number,
       default: 0
     }
+  },
+  isNewUser: {
+    type: Boolean,
+    default: false
   },
   lastLogin: {
     type: Date,

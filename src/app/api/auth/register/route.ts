@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
       emailVerificationToken: verificationToken,
       emailVerificationExpires: verificationExpires,
       // Auto-verify in production to avoid email issues
-      verified: process.env.NODE_ENV === 'production'
+      verified: process.env.NODE_ENV === 'production',
+      // Mark as new user for onboarding
+      isNewUser: true
     })
 
     await user.save()

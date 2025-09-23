@@ -33,6 +33,7 @@ import {
   Image,
   ExternalLink
 } from 'lucide-react'
+import { SEOIssuesAnalysis } from './seo-issues-analysis'
 
 interface Project {
   _id: string
@@ -767,6 +768,19 @@ export function ReportsDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* SEO Issues Analysis */}
+          {reportData.seoToolsUsage.length > 0 && (
+            <SEOIssuesAnalysis 
+              analysisData={{
+                metaTags: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.metaTags,
+                altText: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.altText,
+                brokenLinks: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.brokenLinks,
+                pageSpeed: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.pageSpeed,
+                recommendations: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.recommendations || []
+              }}
+            />
+          )}
 
           {/* Submission History */}
           <Card>

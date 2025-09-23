@@ -12,6 +12,7 @@ import {
   Users, 
   Zap, 
   CheckCircle,
+  XCircle,
   Star,
   ArrowRight,
   Globe,
@@ -57,7 +58,7 @@ export default function Home() {
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
                 Dominate Search Rankings with{" "}
                 <span className="bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Opptym SEO
+                  Opptym AI SEO
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -367,7 +368,7 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Join thousands of successful businesses that trust Opptym SEO Platform 
+              Join thousands of successful businesses that trust Opptym AI SEO Platform 
               to boost their search rankings and drive organic traffic growth.
             </p>
           </motion.div>
@@ -440,6 +441,185 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Why Choose Us Section */}
+      <section id="why-choose-us" className="py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
+              🏆 Why Choose Opptym AI SEO
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
+              The{" "}
+              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                Complete SEO Solution
+              </span>{" "}
+              for Modern Businesses
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto">
+              Unlike other SEO tools that focus on just one aspect, Opptym AI SEO provides a comprehensive, 
+              all-in-one platform that covers every aspect of search engine optimization. Here's why thousands 
+              of businesses trust us with their SEO success.
+            </p>
+          </motion.div>
+
+          {/* Key Advantages Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {[
+              {
+                icon: Zap,
+                title: "AI-Powered Analysis",
+                description: "Our advanced AI algorithms analyze your website 10x faster than manual methods, providing insights that human analysis might miss.",
+                benefits: ["Instant website analysis", "AI-driven recommendations", "Predictive SEO insights", "Automated issue detection"]
+              },
+              {
+                icon: Database,
+                title: "Comprehensive Tool Suite",
+                description: "14+ professional SEO tools in one platform - from keyword research to technical audits, everything you need under one roof.",
+                benefits: ["All-in-one platform", "No tool switching", "Unified reporting", "Cost-effective solution"]
+              },
+              {
+                icon: Target,
+                title: "Location-Based SEO",
+                description: "Target specific geographic markets with our location-wise directory submissions and local SEO optimization tools.",
+                benefits: ["Global reach", "Local market targeting", "Geographic analytics", "Multi-location management"]
+              },
+              {
+                icon: Shield,
+                title: "Enterprise-Grade Security",
+                description: "Your data is protected with bank-level security, GDPR compliance, and regular security audits.",
+                benefits: ["Data encryption", "GDPR compliant", "Regular backups", "Secure hosting"]
+              },
+              {
+                icon: BarChart3,
+                title: "Real-Time Analytics",
+                description: "Track your SEO performance with live dashboards, detailed reports, and actionable insights updated in real-time.",
+                benefits: ["Live performance tracking", "Detailed analytics", "Custom reports", "Progress monitoring"]
+              },
+              {
+                icon: Users,
+                title: "Expert Support",
+                description: "Get help from our team of SEO experts with 24/7 support, personalized consultations, and dedicated account managers.",
+                benefits: ["24/7 expert support", "Personal consultations", "Dedicated managers", "Priority assistance"]
+              }
+            ].map((advantage, index) => (
+              <motion.div
+                key={advantage.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group">
+                  <CardHeader>
+                    <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <advantage.icon className="w-8 h-8 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-gray-900">{advantage.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-base leading-relaxed mb-4 text-gray-600">
+                      {advantage.description}
+                    </CardDescription>
+                    <div className="space-y-2">
+                      {advantage.benefits.map((benefit, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                          <span className="text-sm text-gray-700">{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Comparison Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="bg-white rounded-2xl p-8 shadow-xl border border-gray-200"
+          >
+            <h3 className="text-2xl font-bold text-center mb-8 text-gray-900">
+              Opptym AI SEO vs. Other Platforms
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <h4 className="font-semibold text-lg mb-4 text-gray-800">Other SEO Tools</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">Limited to 1-2 features</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">Expensive subscriptions</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">No AI analysis</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">Basic reporting</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center">
+                <h4 className="font-semibold text-lg mb-4 text-gray-800">Opptym AI SEO</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-600">14+ comprehensive tools</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-600">Affordable pricing</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-600">Advanced AI analysis</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-gray-600">Detailed reports</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center">
+                <h4 className="font-semibold text-lg mb-4 text-gray-800">Enterprise Solutions</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">$1000+ per month</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">Complex setup</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">Requires training</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <XCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-600">Long contracts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Knowledge Base Section */}
       <section id="knowledge-base" className="py-24 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -451,17 +631,18 @@ export default function Home() {
             className="text-center mb-16"
           >
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              📚 Knowledge Base
+              📚 Knowledge Base & Learning Center
             </Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-              Learn SEO with{" "}
+              Master SEO with{" "}
               <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                 Expert Resources
               </span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Master SEO with our comprehensive knowledge base, tutorials, and expert guides. 
-              Stay updated with the latest SEO trends and best practices.
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto">
+              Whether you're a beginner or an SEO expert, our comprehensive knowledge base provides everything 
+              you need to succeed. From basic concepts to advanced strategies, learn from industry experts 
+              and stay ahead of the competition.
             </p>
           </motion.div>
 
@@ -557,7 +738,7 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              See what our customers say about their success with Opptym SEO Platform.
+              See what our customers say about their success with Opptym AI SEO Platform.
             </p>
           </motion.div>
 
@@ -567,7 +748,7 @@ export default function Home() {
                 name: "Sarah Johnson",
                 role: "SEO Manager",
                 company: "TechCorp",
-                content: "Opptym SEO Platform helped us increase our organic traffic by 200% in just 6 months. The tools are incredibly powerful and easy to use.",
+                content: "Opptym AI SEO Platform helped us increase our organic traffic by 200% in just 6 months. The tools are incredibly powerful and easy to use.",
                 rating: 5,
                 avatar: "SJ"
               },
@@ -641,7 +822,7 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Join 10,000+ businesses already using Opptym SEO Platform to boost their search rankings, 
+              Join 10,000+ businesses already using Opptym AI SEO Platform to boost their search rankings, 
               drive organic traffic, and grow their online presence.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
