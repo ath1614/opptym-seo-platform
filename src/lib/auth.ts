@@ -14,30 +14,39 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.log('Missing credentials')
           return null
         }
 
         try {
+          console.log('Attempting to connect to database...')
           await connectDB()
+          console.log('Database connected successfully')
           
           const user = await User.findOne({ email: credentials.email })
+          console.log('User found:', !!user)
           
           if (!user) {
+            console.log('User not found')
             return null
           }
 
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          console.log('Password valid:', isPasswordValid)
           
           if (!isPasswordValid) {
+            console.log('Invalid password')
             return null
           }
 
           if (!user.verified) {
+            console.log('User not verified')
             throw new Error('Please verify your email before logging in')
           }
 
+          console.log('Authentication successful for user:', user.email)
           return {
-            id: user._id,
+            id: user._id.toString(),
             email: user.email,
             name: user.username,
             image: user.profileImage,
