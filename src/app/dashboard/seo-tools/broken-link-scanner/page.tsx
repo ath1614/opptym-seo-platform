@@ -41,7 +41,31 @@ export default function BrokenLinkScannerPage() {
   const [url, setUrl] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedProject, setSelectedProject] = useState<any>(null)
   const { showToast } = useToast()
+
+  // Fetch projects on component mount
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await fetch('/api/projects')
+        const data = await response.json()
+        if (response.ok) {
+          setProjects(data.projects || [])
+          // Auto-select first project if available
+          if (data.projects && data.projects.length > 0) {
+            const firstProject = data.projects[0]
+            setSelectedProject(firstProject)
+            setUrl(firstProject.websiteURL || '')
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch projects:', error)
+      }
+    }
+    fetchProjects()
+  }, [])
 
   const handleAnalyze = async () => {
     if (!url.trim()) {
@@ -112,17 +136,41 @@ export default function BrokenLinkScannerPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex space-x-2">
-              <Input
-                type="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="flex-1"
-              />
-              <Button 
-                onClick={handleAnalyze} 
-                disabled={isAnalyzing}
+            <div className="space-y-4">
+              {/* Project Selector */}
+              {projects.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Select Project (Auto-fills URL)</label>
+                  <select
+                    value={selectedProject?._id || ''}
+                    onChange={(e) => {
+                      const project = projects.find(p => p._id === e.target.value)
+                      setSelectedProject(project)
+                      setUrl(project?.websiteURL || '')
+                    }}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select a project...</option>
+                    {projects.map((project) => (
+                      <option key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              <div className="flex space-x-2">
+                <Input
+                  type="url"
+                  placeholder="https://example.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleAnalyze} 
+                  disabled={isAnalyzing}
                 className="px-6"
               >
                 {isAnalyzing ? (
