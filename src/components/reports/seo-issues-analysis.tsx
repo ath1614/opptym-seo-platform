@@ -17,7 +17,8 @@ import {
   Shield,
   Zap,
   Eye,
-  Settings
+  Settings,
+  FileText
 } from 'lucide-react'
 
 interface SEOIssue {
