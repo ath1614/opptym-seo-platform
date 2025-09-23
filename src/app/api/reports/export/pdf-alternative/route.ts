@@ -43,33 +43,14 @@ export async function POST(request: NextRequest) {
     // Generate HTML content for PDF
     const htmlContent = generateReportHTML(reportData)
     
-    // Use external PDF generation service
-    try {
-      const pdfResponse = await generatePDFWithExternalService(htmlContent)
-      
-      if (pdfResponse.ok) {
-        const pdfBuffer = await pdfResponse.arrayBuffer()
-        
-        return new NextResponse(pdfBuffer, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="seo-report-${(project.projectName || project._id || 'project').replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf"`
-          }
-        })
-      } else {
-        throw new Error('External PDF service failed')
+    // Return HTML content that can be printed as PDF
+    // This is more reliable than trying to generate PDF server-side
+    return new NextResponse(htmlContent, {
+      headers: {
+        'Content-Type': 'text/html',
+        'Content-Disposition': `inline; filename="seo-report-${(project.projectName || project._id || 'project').replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.html"`
       }
-    } catch (externalError) {
-      console.error('External PDF service error:', externalError)
-      
-      // Fallback: Return HTML content that can be printed as PDF
-      return new NextResponse(htmlContent, {
-        headers: {
-          'Content-Type': 'text/html',
-          'Content-Disposition': `inline; filename="seo-report-${(project.projectName || project._id || 'project').replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.html"`
-        }
-      })
-    }
+    })
 
   } catch (error) {
     console.error('PDF export error:', error)
@@ -87,35 +68,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generatePDFWithExternalService(htmlContent: string) {
-  // Try using HTML/CSS to PDF conversion service
-  // This is a placeholder - you can integrate with services like:
-  // - HTML/CSS to PDF API
-  // - wkhtmltopdf service
-  // - Other PDF generation services
-  
-  try {
-    // For now, we'll use a simple approach with print CSS
-    const printOptimizedHTML = htmlContent.replace(
-      '<style>',
-      `<style>
-        @media print {
-          body { margin: 0; }
-          .no-print { display: none; }
-          .page-break { page-break-before: always; }
-        }
-      `
-    )
-    
-    // Return the HTML with print optimization
-    return new Response(printOptimizedHTML, {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' }
-    })
-  } catch (error) {
-    throw new Error('PDF generation service unavailable')
-  }
-}
 
 function generateReportHTML(reportData: {
   project: {
@@ -153,169 +105,311 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
+  // Calculate additional metrics
+  const totalFailedSubmissions = analytics.totalSubmissions - analytics.successfulSubmissions
+  const averageScore = seoToolsUsage.length > 0 ? 
+    Math.round(seoToolsUsage.reduce((sum, tool) => 
+      sum + (tool.results.length > 0 ? 
+        tool.results.reduce((toolSum, r) => toolSum + r.score, 0) / tool.results.length : 0
+      ), 0) / seoToolsUsage.length
+    ) : 0
+  
+  const mostUsedTool = seoToolsUsage.length > 0 ? 
+    seoToolsUsage.reduce((max, tool) => tool.usageCount > max.usageCount ? tool : max) : null
+  
+  const recentSubmissions = submissionsData.slice(0, 10) // Last 10 submissions
+  
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>SEO Report - ${project.projectName || project._id || 'Project'}</title>
+      <title>Comprehensive SEO Report - ${project.projectName || project._id || 'Project'}</title>
       <style>
+        * {
+          box-sizing: border-box;
+        }
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           line-height: 1.6;
-          color: #333;
-          max-width: 800px;
+          color: #1a1a1a;
+          max-width: 1000px;
           margin: 0 auto;
           padding: 20px;
-          background: white;
+          background: #ffffff;
+          font-size: 14px;
         }
         .header {
           text-align: center;
-          border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 20px;
-          margin-bottom: 30px;
+          border-bottom: 3px solid #2563eb;
+          padding-bottom: 30px;
+          margin-bottom: 40px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 40px 20px;
+          border-radius: 10px;
+          margin: -20px -20px 40px -20px;
         }
         .header h1 {
-          color: #1f2937;
           margin: 0;
-          font-size: 28px;
+          font-size: 36px;
+          font-weight: 700;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        .header p {
-          color: #6b7280;
-          margin: 5px 0 0 0;
+        .header .subtitle {
+          font-size: 18px;
+          margin: 10px 0;
+          opacity: 0.9;
+        }
+        .header .project-info {
+          font-size: 16px;
+          margin: 5px 0;
+          opacity: 0.8;
         }
         .section {
-          margin-bottom: 30px;
+          margin-bottom: 40px;
+          background: #f8fafc;
+          padding: 30px;
+          border-radius: 12px;
+          border-left: 5px solid #2563eb;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         .section h2 {
-          color: #1f2937;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 10px;
-          margin-bottom: 20px;
+          color: #1e40af;
+          border-bottom: 2px solid #e5e7eb;
+          padding-bottom: 15px;
+          margin-bottom: 25px;
+          font-size: 24px;
+          font-weight: 600;
         }
         .stats-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 25px;
           margin-bottom: 30px;
         }
         .stat-card {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 20px;
+          background: white;
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 25px;
           text-align: center;
+          transition: transform 0.2s;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-card.primary {
+          border-color: #2563eb;
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+        }
+        .stat-card.success {
+          border-color: #10b981;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+        }
+        .stat-card.warning {
+          border-color: #f59e0b;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+        }
+        .stat-card.danger {
+          border-color: #ef4444;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          color: white;
         }
         .stat-value {
-          font-size: 24px;
-          font-weight: bold;
-          color: #1f2937;
-          margin-bottom: 5px;
+          font-size: 32px;
+          font-weight: 700;
+          margin-bottom: 8px;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         .stat-label {
-          color: #6b7280;
-          font-size: 14px;
+          font-size: 16px;
+          font-weight: 500;
+          opacity: 0.9;
         }
         .table {
           width: 100%;
           border-collapse: collapse;
-          margin-bottom: 20px;
+          margin-bottom: 25px;
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .table th,
         .table td {
           border: 1px solid #e5e7eb;
-          padding: 12px;
+          padding: 15px;
           text-align: left;
         }
         .table th {
-          background: #f9fafb;
+          background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+          color: white;
           font-weight: 600;
-          color: #1f2937;
+          font-size: 16px;
         }
         .table tr:nth-child(even) {
-          background: #f9fafb;
+          background: #f8fafc;
+        }
+        .table tr:hover {
+          background: #e0f2fe;
         }
         .status-success {
           color: #059669;
           font-weight: 600;
+          background: #d1fae5;
+          padding: 4px 8px;
+          border-radius: 6px;
         }
         .status-pending {
           color: #d97706;
           font-weight: 600;
+          background: #fef3c7;
+          padding: 4px 8px;
+          border-radius: 6px;
         }
         .status-rejected {
           color: #dc2626;
           font-weight: 600;
+          background: #fee2e2;
+          padding: 4px 8px;
+          border-radius: 6px;
         }
         .footer {
-          margin-top: 40px;
-          padding-top: 20px;
-          border-top: 1px solid #e5e7eb;
+          margin-top: 50px;
+          padding-top: 30px;
+          border-top: 2px solid #e5e7eb;
           text-align: center;
           color: #6b7280;
           font-size: 14px;
+          background: #f8fafc;
+          padding: 30px;
+          border-radius: 12px;
         }
         .print-instructions {
-          background: #fef3c7;
-          border: 1px solid #f59e0b;
-          border-radius: 8px;
-          padding: 15px;
-          margin-bottom: 20px;
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 2px solid #f59e0b;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 30px;
           color: #92400e;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .print-instructions h3 {
-          margin: 0 0 10px 0;
+          margin: 0 0 15px 0;
           color: #92400e;
+          font-size: 18px;
+          font-weight: 600;
         }
         .print-instructions p {
-          margin: 5px 0;
-          font-size: 14px;
+          margin: 8px 0;
+          font-size: 15px;
+        }
+        .insights {
+          background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+          border: 2px solid #0288d1;
+          border-radius: 12px;
+          padding: 25px;
+          margin: 30px 0;
+        }
+        .insights h3 {
+          color: #01579b;
+          margin: 0 0 15px 0;
+          font-size: 20px;
+        }
+        .insights ul {
+          margin: 0;
+          padding-left: 20px;
+        }
+        .insights li {
+          margin: 8px 0;
+          font-size: 15px;
+          color: #01579b;
+        }
+        .page-break {
+          page-break-before: always;
         }
         @media print {
-          body { margin: 0; }
+          body { 
+            margin: 0; 
+            font-size: 12px;
+          }
           .print-instructions { display: none; }
           .no-print { display: none; }
+          .section {
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+          }
+          .header {
+            margin: 0 0 20px 0;
+            border-radius: 0;
+          }
         }
       </style>
     </head>
     <body>
       <div class="print-instructions">
-        <h3>📄 Print Instructions</h3>
-        <p>• Press Ctrl+P (or Cmd+P on Mac) to print this report</p>
-        <p>• Select "Save as PDF" in the print dialog</p>
-        <p>• Choose "More settings" and select "Background graphics" for better formatting</p>
+        <h3>📄 How to Save as PDF</h3>
+        <p><strong>Windows:</strong> Press Ctrl+P → Select "Save as PDF" → Choose destination → Save</p>
+        <p><strong>Mac:</strong> Press Cmd+P → Click "PDF" dropdown → Select "Save as PDF" → Choose destination → Save</p>
+        <p><strong>Tip:</strong> Enable "Background graphics" in print settings for better formatting</p>
       </div>
       
       <div class="header">
-        <h1>SEO Performance Report</h1>
-        <p>${project.projectName || project._id || 'Project'} - Generated on ${new Date().toLocaleDateString()}</p>
-        <p>Website: ${project.websiteURL || 'No website URL'}</p>
+        <h1>📊 Comprehensive SEO Performance Report</h1>
+        <div class="subtitle">${project.projectName || project._id || 'Project'}</div>
+        <div class="project-info">🌐 Website: ${project.websiteURL || 'No website URL'}</div>
+        <div class="project-info">📅 Generated: ${new Date().toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })}</div>
       </div>
 
       <div class="section">
-        <h2>Project Overview</h2>
+        <h2>📈 Executive Summary</h2>
         <div class="stats-grid">
-          <div class="stat-card">
+          <div class="stat-card primary">
             <div class="stat-value">${analytics.totalSeoToolsUsed}</div>
             <div class="stat-label">SEO Tools Used</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card success">
             <div class="stat-value">${analytics.totalSubmissions}</div>
             <div class="stat-label">Total Submissions</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card success">
             <div class="stat-value">${analytics.successfulSubmissions}</div>
             <div class="stat-label">Successful Submissions</div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card ${analytics.successRate >= 80 ? 'success' : analytics.successRate >= 60 ? 'warning' : 'danger'}">
             <div class="stat-value">${analytics.successRate}%</div>
             <div class="stat-label">Success Rate</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-value">${totalFailedSubmissions}</div>
+            <div class="stat-label">Failed Submissions</div>
+          </div>
+          <div class="stat-card primary">
+            <div class="stat-value">${averageScore}</div>
+            <div class="stat-label">Average SEO Score</div>
           </div>
         </div>
       </div>
 
+      <div class="insights">
+        <h3>🔍 Key Insights</h3>
+        <ul>
+          <li><strong>Success Rate:</strong> ${analytics.successRate}% of submissions were successful</li>
+          <li><strong>Most Active Tool:</strong> ${mostUsedTool ? mostUsedTool.toolName + ' (' + mostUsedTool.usageCount + ' uses)' : 'No tools used yet'}</li>
+          <li><strong>Total Activity:</strong> ${analytics.totalSeoToolsUsed + analytics.totalSubmissions} total actions performed</li>
+          <li><strong>Performance:</strong> ${analytics.successRate >= 80 ? 'Excellent' : analytics.successRate >= 60 ? 'Good' : 'Needs Improvement'} submission success rate</li>
+        </ul>
+      </div>
+
       <div class="section">
-        <h2>SEO Tools Usage</h2>
+        <h2>🛠️ SEO Tools Usage Analysis</h2>
         <table class="table">
           <thead>
             <tr>
@@ -323,23 +417,30 @@ function generateReportHTML(reportData: {
               <th>Usage Count</th>
               <th>Last Used</th>
               <th>Average Score</th>
+              <th>Performance</th>
             </tr>
           </thead>
           <tbody>
-            ${seoToolsUsage.map((tool) => `
-              <tr>
-                <td>${tool.toolName}</td>
-                <td>${tool.usageCount}</td>
-                <td>${new Date(tool.lastUsed).toLocaleDateString()}</td>
-                <td>${tool.results.length > 0 ? Math.round(tool.results.reduce((sum: number, r) => sum + r.score, 0) / tool.results.length) : 'N/A'}</td>
-              </tr>
-            `).join('')}
+            ${seoToolsUsage.length > 0 ? seoToolsUsage.map((tool) => {
+              const avgScore = tool.results.length > 0 ? 
+                Math.round(tool.results.reduce((sum, r) => sum + r.score, 0) / tool.results.length) : 0
+              const performance = avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : avgScore >= 40 ? 'Fair' : 'Poor'
+              return `
+                <tr>
+                  <td><strong>${tool.toolName}</strong></td>
+                  <td>${tool.usageCount}</td>
+                  <td>${new Date(tool.lastUsed).toLocaleDateString()}</td>
+                  <td>${avgScore || 'N/A'}</td>
+                  <td><span class="status-${avgScore >= 80 ? 'success' : avgScore >= 60 ? 'pending' : 'rejected'}">${performance}</span></td>
+                </tr>
+              `
+            }).join('') : '<tr><td colspan="5" style="text-align: center; color: #6b7280; font-style: italic;">No SEO tools used yet</td></tr>'}
           </tbody>
         </table>
       </div>
 
       <div class="section">
-        <h2>Submission History</h2>
+        <h2>📋 Recent Submission History</h2>
         <table class="table">
           <thead>
             <tr>
@@ -350,43 +451,69 @@ function generateReportHTML(reportData: {
             </tr>
           </thead>
           <tbody>
-            ${submissionsData.map((submission) => `
+            ${recentSubmissions.length > 0 ? recentSubmissions.map((submission) => `
               <tr>
                 <td>${new Date(submission.date).toLocaleDateString()}</td>
-                <td>${submission.directory}</td>
+                <td><strong>${submission.directory}</strong></td>
                 <td>${submission.category}</td>
-                <td class="status-${submission.status}">${submission.status}</td>
+                <td><span class="status-${submission.status}">${submission.status.toUpperCase()}</span></td>
               </tr>
-            `).join('')}
+            `).join('') : '<tr><td colspan="4" style="text-align: center; color: #6b7280; font-style: italic;">No submissions recorded yet</td></tr>'}
           </tbody>
         </table>
+        ${submissionsData.length > 10 ? `<p style="text-align: center; color: #6b7280; font-style: italic;">Showing last 10 of ${submissionsData.length} total submissions</p>` : ''}
       </div>
 
       <div class="section">
-        <h2>Monthly Trends</h2>
+        <h2>📊 Monthly Performance Trends</h2>
         <table class="table">
           <thead>
             <tr>
               <th>Month</th>
               <th>Submissions</th>
-              <th>SEO Tools</th>
+              <th>SEO Tools Used</th>
+              <th>Total Activity</th>
             </tr>
           </thead>
           <tbody>
-            ${monthlyTrend.map((trend) => `
+            ${monthlyTrend.length > 0 ? monthlyTrend.map((trend) => `
               <tr>
-                <td>${trend.month}</td>
+                <td><strong>${trend.month}</strong></td>
                 <td>${trend.submissions}</td>
                 <td>${trend.seoTools}</td>
+                <td>${trend.submissions + trend.seoTools}</td>
               </tr>
-            `).join('')}
+            `).join('') : '<tr><td colspan="4" style="text-align: center; color: #6b7280; font-style: italic;">No monthly data available yet</td></tr>'}
           </tbody>
         </table>
       </div>
 
+      <div class="section">
+        <h2>📝 Recommendations</h2>
+        <div class="insights">
+          <h3>🎯 Action Items</h3>
+          <ul>
+            ${analytics.successRate < 80 ? '<li><strong>Improve Submission Success Rate:</strong> Focus on quality submissions and directory selection</li>' : ''}
+            ${seoToolsUsage.length < 3 ? '<li><strong>Expand SEO Tool Usage:</strong> Try more SEO tools to get comprehensive insights</li>' : ''}
+            ${totalFailedSubmissions > 0 ? '<li><strong>Review Failed Submissions:</strong> Analyze why some submissions failed and improve process</li>' : ''}
+            ${averageScore < 70 ? '<li><strong>Improve SEO Scores:</strong> Work on website optimization based on tool recommendations</li>' : ''}
+            <li><strong>Regular Monitoring:</strong> Continue tracking performance monthly for better insights</li>
+            <li><strong>Diversify Strategy:</strong> Explore different directories and submission categories</li>
+          </ul>
+        </div>
+      </div>
+
       <div class="footer">
-        <p>&copy; ${new Date().getFullYear()} Opptym. All rights reserved.</p>
-        <p>Report generated on ${new Date().toLocaleString()}</p>
+        <p><strong>📊 Opptym SEO Platform - Comprehensive Report</strong></p>
+        <p>Report generated on ${new Date().toLocaleString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}</p>
+        <p>&copy; ${new Date().getFullYear()} Opptym. All rights reserved. | Professional SEO Management Platform</p>
       </div>
     </body>
     </html>
