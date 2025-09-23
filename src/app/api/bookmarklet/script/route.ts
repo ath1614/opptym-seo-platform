@@ -186,25 +186,43 @@ export async function GET(request: NextRequest) {
 
     // Generate secure bookmarklet script with embedded data
     const projectData = {
-      projectName: project.projectName || '',
-      title: project.title || '',
-      websiteURL: project.websiteURL || '',
-      email: project.email || '',
-      companyName: project.companyName || '',
-      phone: project.phone || '',
-      whatsapp: project.whatsapp || '',
-      businessDescription: project.businessDescription || '',
-      category: project.category || '',
-      address: project.address || {}
+      projectName: (project.projectName || '').replace(/['"\\]/g, ''),
+      title: (project.title || '').replace(/['"\\]/g, ''),
+      websiteURL: (project.websiteURL || '').replace(/['"\\]/g, ''),
+      email: (project.email || '').replace(/['"\\]/g, ''),
+      companyName: (project.companyName || '').replace(/['"\\]/g, ''),
+      phone: (project.phone || '').replace(/['"\\]/g, ''),
+      whatsapp: (project.whatsapp || '').replace(/['"\\]/g, ''),
+      businessDescription: (project.businessDescription || '').replace(/['"\\]/g, ''),
+      category: (project.category || '').replace(/['"\\]/g, ''),
+      address: project.address || {},
+      seoMetadata: project.seoMetadata || {},
+      social: project.social || {},
+      articleSubmission: project.articleSubmission || {},
+      classified: project.classified || {},
+      businessHours: (project.businessHours || '').replace(/['"\\]/g, ''),
+      establishedYear: (project.establishedYear || '').replace(/['"\\]/g, ''),
+      logoImageURL: (project.logoImageURL || '').replace(/['"\\]/g, '')
     };
     
     const linkData = {
-      requiredFields: link.requiredFields || []
+      requiredFields: (link.requiredFields || []).map((field: any) => ({
+        name: (field.name || '').replace(/['"\\]/g, ''),
+        type: field.type || 'text',
+        required: field.required || false,
+        placeholder: (field.placeholder || '').replace(/['"\\]/g, ''),
+        options: field.options || [],
+        selector: (field.selector || '').replace(/['"\\]/g, '')
+      }))
     };
 
     // Get the base URL for API calls
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
+    // Safely stringify data to prevent syntax errors
+    const safeProjectData = JSON.stringify(projectData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+    const safeLinkData = JSON.stringify(linkData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+    
     const script = `
 (function(){
   try {
@@ -218,7 +236,7 @@ export async function GET(request: NextRequest) {
     document.head.appendChild(favicon);
     
     // Embedded project data
-    var projectData = ${JSON.stringify(projectData)};
+    var projectData = ${safeProjectData};
     var usageInfo = {
       maxUsage: ${maxUsage},
       currentUsage: ${currentUsage},
@@ -226,7 +244,7 @@ export async function GET(request: NextRequest) {
     };
     
     // Embedded link data
-    var linkData = ${JSON.stringify(linkData)};
+    var linkData = ${safeLinkData};
     
     // API configuration
     var apiBaseUrl = '${baseUrl}';
@@ -307,58 +325,79 @@ export async function GET(request: NextRequest) {
   
   // Fill form fields based on link requirements
   var filledCount = 0;
+  var filledFields = [];
   
   // First try to fill fields based on required fields
-  linkData.requiredFields.forEach(function(field) {
-    var element = document.querySelector('input[name="' + field.name + '"], textarea[name="' + field.name + '"], select[name="' + field.name + '"]');
-    if (element) {
-      var value = getFieldValue(field.name, projectData);
-      if (value) {
-        element.value = value;
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-        filledCount++;
+  if (linkData.requiredFields && linkData.requiredFields.length > 0) {
+    linkData.requiredFields.forEach(function(field) {
+      if (!field.name) return;
+      
+      var selectors = [
+        'input[name="' + field.name + '"]',
+        'textarea[name="' + field.name + '"]',
+        'select[name="' + field.name + '"]',
+        'input[id="' + field.name + '"]',
+        'textarea[id="' + field.name + '"]',
+        'select[id="' + field.name + '"]'
+      ];
+      
+      var element = null;
+      for (var i = 0; i < selectors.length; i++) {
+        element = document.querySelector(selectors[i]);
+        if (element) break;
       }
-    }
-  });
+      
+      if (element) {
+        var value = getFieldValue(field.name, projectData);
+        if (value && value.trim() !== '') {
+          element.value = value;
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+          filledCount++;
+          filledFields.push(field.name + ': ' + value);
+        }
+      }
+    });
+  }
   
     // If no fields were filled, try common field patterns with enhanced matching
     if (filledCount === 0) {
       var commonFields = [
-        { pattern: /^title$/i, value: projectData.seoMetadata?.metaTitle || projectData.title || projectData.projectName },
+        { pattern: /^title$/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName },
         { pattern: /^name$/i, value: projectData.projectName },
         { pattern: /url|website|link|site/i, value: projectData.websiteURL },
         { pattern: /email|e-mail/i, value: projectData.email },
         { pattern: /company|business|organization/i, value: projectData.companyName || projectData.projectName },
         { pattern: /phone|contact|telephone|mobile/i, value: projectData.phone },
         { pattern: /whatsapp|whats/i, value: projectData.whatsapp },
-        { pattern: /description|about|summary/i, value: projectData.seoMetadata?.metaDescription || projectData.businessDescription },
+        { pattern: /description|about|summary/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription },
         { pattern: /category|type|industry/i, value: projectData.category },
-        { pattern: /keyword|tag/i, value: (projectData.seoMetadata?.keywords || []).concat(projectData.seoMetadata?.targetKeywords || []).join(', ') },
-        { pattern: /meta.*title/i, value: projectData.seoMetadata?.metaTitle || projectData.title || projectData.projectName },
-        { pattern: /meta.*description/i, value: projectData.seoMetadata?.metaDescription || projectData.businessDescription },
-        { pattern: /address|location/i, value: [projectData.address?.addressLine1, projectData.address?.city, projectData.address?.state, projectData.address?.country].filter(Boolean).join(', ') },
-        { pattern: /city|town/i, value: projectData.address?.city || '' },
-        { pattern: /state|province/i, value: projectData.address?.state || '' },
-        { pattern: /country|nation/i, value: projectData.address?.country || '' },
-        { pattern: /pin|zip|postal/i, value: projectData.address?.pincode || '' },
-        { pattern: /facebook|fb/i, value: projectData.social?.facebook || '' },
-        { pattern: /twitter|x\.com/i, value: projectData.social?.twitter || '' },
-        { pattern: /instagram|insta/i, value: projectData.social?.instagram || '' },
-        { pattern: /linkedin|linked/i, value: projectData.social?.linkedin || '' },
-        { pattern: /youtube|youtu/i, value: projectData.social?.youtube || '' }
+        { pattern: /keyword|tag/i, value: ((projectData.seoMetadata && projectData.seoMetadata.keywords) || []).concat((projectData.seoMetadata && projectData.seoMetadata.targetKeywords) || []).join(', ') },
+        { pattern: /meta.*title/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName },
+        { pattern: /meta.*description/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription },
+        { pattern: /address|location/i, value: [projectData.address && projectData.address.addressLine1, projectData.address && projectData.address.city, projectData.address && projectData.address.state, projectData.address && projectData.address.country].filter(Boolean).join(', ') },
+        { pattern: /city|town/i, value: (projectData.address && projectData.address.city) || '' },
+        { pattern: /state|province/i, value: (projectData.address && projectData.address.state) || '' },
+        { pattern: /country|nation/i, value: (projectData.address && projectData.address.country) || '' },
+        { pattern: /pin|zip|postal/i, value: (projectData.address && projectData.address.pincode) || '' },
+        { pattern: /facebook|fb/i, value: (projectData.social && projectData.social.facebook) || '' },
+        { pattern: /twitter|x\.com/i, value: (projectData.social && projectData.social.twitter) || '' },
+        { pattern: /instagram|insta/i, value: (projectData.social && projectData.social.instagram) || '' },
+        { pattern: /linkedin|linked/i, value: (projectData.social && projectData.social.linkedin) || '' },
+        { pattern: /youtube|youtu/i, value: (projectData.social && projectData.social.youtube) || '' }
       ];
     
-    var inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="url"], textarea');
+    var inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="url"], textarea, select');
     inputs.forEach(function(input) {
       var name = (input.name || input.id || input.placeholder || '').toLowerCase();
       if (name && !input.value) {
         for (var i = 0; i < commonFields.length; i++) {
-          if (commonFields[i].pattern.test(name) && commonFields[i].value) {
+          if (commonFields[i].pattern.test(name) && commonFields[i].value && commonFields[i].value.trim() !== '') {
             input.value = commonFields[i].value;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
             filledCount++;
+            filledFields.push(name + ': ' + commonFields[i].value);
             break;
           }
         }
@@ -380,7 +419,7 @@ export async function GET(request: NextRequest) {
                 'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (Remaining: ' + response.remainingUsage + ')' :
                 'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (LIMIT REACHED - Generate new bookmarklet)';
               
-              var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions;
+              var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions + '\\n\\nFilled fields: ' + filledFields.slice(0, 3).join(', ') + (filledFields.length > 3 ? '...' : '');
               showToast(message, response.remainingUsage > 0 ? 'success' : 'warning');
             } else {
               var errorResponse = JSON.parse(xhr.responseText);
@@ -406,32 +445,34 @@ export async function GET(request: NextRequest) {
     }
     
     function getFieldValue(fieldName, projectData) {
+      if (!fieldName || !projectData) return null;
+      
       var fieldNameLower = fieldName.toLowerCase();
       
       // Enhanced field mapping with better accuracy
       
       // Title fields - prioritize meta title, then project title
       if (fieldNameLower.includes('title') && !fieldNameLower.includes('page') && !fieldNameLower.includes('meta')) {
-        return projectData.seoMetadata?.metaTitle || projectData.title || projectData.projectName;
+        return (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName;
       }
       
       // Meta title specifically
       if (fieldNameLower.includes('meta') && fieldNameLower.includes('title')) {
-        return projectData.seoMetadata?.metaTitle || projectData.title || projectData.projectName;
+        return (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName;
       }
       
       // Meta description
       if (fieldNameLower.includes('meta') && fieldNameLower.includes('description')) {
-        return projectData.seoMetadata?.metaDescription || projectData.businessDescription;
+        return (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription;
       }
       
       // Keywords - handle both meta keywords and target keywords
       if (fieldNameLower.includes('keyword')) {
         var keywords = [];
-        if (projectData.seoMetadata?.keywords && projectData.seoMetadata.keywords.length > 0) {
+        if (projectData.seoMetadata && projectData.seoMetadata.keywords && projectData.seoMetadata.keywords.length > 0) {
           keywords = keywords.concat(projectData.seoMetadata.keywords);
         }
-        if (projectData.seoMetadata?.targetKeywords && projectData.seoMetadata.targetKeywords.length > 0) {
+        if (projectData.seoMetadata && projectData.seoMetadata.targetKeywords && projectData.seoMetadata.targetKeywords.length > 0) {
           keywords = keywords.concat(projectData.seoMetadata.targetKeywords);
         }
         if (projectData.keywords && projectData.keywords.length > 0) {
@@ -442,7 +483,7 @@ export async function GET(request: NextRequest) {
       
       // Description fields - prioritize meta description, then business description
       if (fieldNameLower.includes('description') || fieldNameLower.includes('about') || fieldNameLower.includes('summary')) {
-        return projectData.seoMetadata?.metaDescription || projectData.businessDescription || projectData.description;
+        return (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription || projectData.description;
       }
       
       // Name fields - be more specific
@@ -483,71 +524,71 @@ export async function GET(request: NextRequest) {
       // Address fields
       if (fieldNameLower.includes('address') || fieldNameLower.includes('location')) {
         var addressParts = [];
-        if (projectData.address?.addressLine1) addressParts.push(projectData.address.addressLine1);
-        if (projectData.address?.addressLine2) addressParts.push(projectData.address.addressLine2);
-        if (projectData.address?.city) addressParts.push(projectData.address.city);
-        if (projectData.address?.state) addressParts.push(projectData.address.state);
-        if (projectData.address?.country) addressParts.push(projectData.address.country);
-        if (projectData.address?.pincode) addressParts.push(projectData.address.pincode);
+        if (projectData.address && projectData.address.addressLine1) addressParts.push(projectData.address.addressLine1);
+        if (projectData.address && projectData.address.addressLine2) addressParts.push(projectData.address.addressLine2);
+        if (projectData.address && projectData.address.city) addressParts.push(projectData.address.city);
+        if (projectData.address && projectData.address.state) addressParts.push(projectData.address.state);
+        if (projectData.address && projectData.address.country) addressParts.push(projectData.address.country);
+        if (projectData.address && projectData.address.pincode) addressParts.push(projectData.address.pincode);
         return addressParts.join(', ');
       }
       
       // City specifically
       if (fieldNameLower.includes('city') || fieldNameLower.includes('town')) {
-        return projectData.address?.city || '';
+        return (projectData.address && projectData.address.city) || '';
       }
       
       // State specifically
       if (fieldNameLower.includes('state') || fieldNameLower.includes('province')) {
-        return projectData.address?.state || '';
+        return (projectData.address && projectData.address.state) || '';
       }
       
       // Country specifically
       if (fieldNameLower.includes('country') || fieldNameLower.includes('nation')) {
-        return projectData.address?.country || '';
+        return (projectData.address && projectData.address.country) || '';
       }
       
       // Pincode/ZIP
       if (fieldNameLower.includes('pin') || fieldNameLower.includes('zip') || fieldNameLower.includes('postal')) {
-        return projectData.address?.pincode || '';
+        return (projectData.address && projectData.address.pincode) || '';
       }
       
       // Social media fields
       if (fieldNameLower.includes('facebook') || fieldNameLower.includes('fb')) {
-        return projectData.social?.facebook || '';
+        return (projectData.social && projectData.social.facebook) || '';
       }
       if (fieldNameLower.includes('twitter') || fieldNameLower.includes('x.com')) {
-        return projectData.social?.twitter || '';
+        return (projectData.social && projectData.social.twitter) || '';
       }
       if (fieldNameLower.includes('instagram') || fieldNameLower.includes('insta')) {
-        return projectData.social?.instagram || '';
+        return (projectData.social && projectData.social.instagram) || '';
       }
       if (fieldNameLower.includes('linkedin') || fieldNameLower.includes('linked')) {
-        return projectData.social?.linkedin || '';
+        return (projectData.social && projectData.social.linkedin) || '';
       }
       if (fieldNameLower.includes('youtube') || fieldNameLower.includes('youtu')) {
-        return projectData.social?.youtube || '';
+        return (projectData.social && projectData.social.youtube) || '';
       }
       
       // Article submission fields
       if (fieldNameLower.includes('article') && fieldNameLower.includes('title')) {
-        return projectData.articleSubmission?.articleTitle || projectData.title || projectData.projectName;
+        return (projectData.articleSubmission && projectData.articleSubmission.articleTitle) || projectData.title || projectData.projectName;
       }
       if (fieldNameLower.includes('article') && fieldNameLower.includes('content')) {
-        return projectData.articleSubmission?.articleContent || projectData.businessDescription;
+        return (projectData.articleSubmission && projectData.articleSubmission.articleContent) || projectData.businessDescription;
       }
       if (fieldNameLower.includes('author') && fieldNameLower.includes('name')) {
-        return projectData.articleSubmission?.authorName || projectData.companyName;
+        return (projectData.articleSubmission && projectData.articleSubmission.authorName) || projectData.companyName;
       }
       if (fieldNameLower.includes('author') && fieldNameLower.includes('bio')) {
-        return projectData.articleSubmission?.authorBio || projectData.businessDescription;
+        return (projectData.articleSubmission && projectData.articleSubmission.authorBio) || projectData.businessDescription;
       }
       if (fieldNameLower.includes('tag') && !fieldNameLower.includes('meta')) {
         var tags = [];
-        if (projectData.articleSubmission?.tags && projectData.articleSubmission.tags.length > 0) {
+        if (projectData.articleSubmission && projectData.articleSubmission.tags && projectData.articleSubmission.tags.length > 0) {
           tags = tags.concat(projectData.articleSubmission.tags);
         }
-        if (projectData.seoMetadata?.keywords && projectData.seoMetadata.keywords.length > 0) {
+        if (projectData.seoMetadata && projectData.seoMetadata.keywords && projectData.seoMetadata.keywords.length > 0) {
           tags = tags.concat(projectData.seoMetadata.keywords);
         }
         return tags.length > 0 ? tags.join(', ') : '';
@@ -555,16 +596,16 @@ export async function GET(request: NextRequest) {
       
       // Classified fields
       if (fieldNameLower.includes('product') && fieldNameLower.includes('name')) {
-        return projectData.classified?.productName || projectData.projectName;
+        return (projectData.classified && projectData.classified.productName) || projectData.projectName;
       }
       if (fieldNameLower.includes('price') || fieldNameLower.includes('cost')) {
-        return projectData.classified?.price || '';
+        return (projectData.classified && projectData.classified.price) || '';
       }
       if (fieldNameLower.includes('condition') || fieldNameLower.includes('status')) {
-        return projectData.classified?.condition || '';
+        return (projectData.classified && projectData.classified.condition) || '';
       }
       if (fieldNameLower.includes('image') || fieldNameLower.includes('photo') || fieldNameLower.includes('picture')) {
-        return projectData.classified?.productImageURL || projectData.logoImageURL || '';
+        return (projectData.classified && projectData.classified.productImageURL) || projectData.logoImageURL || '';
       }
       
       // Business hours
