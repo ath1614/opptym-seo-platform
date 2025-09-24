@@ -26,45 +26,45 @@ const getDefaultPlans = (): PricingPlan[] => [
     _id: 'default-free',
     name: 'Free',
     price: 0,
-    features: ['5 SEO tools', '1 project', '1 submission', '1 report'],
+    features: ['Basic SEO analysis', 'Meta tag analyzer', 'Keyword density checker', 'Broken link scanner', 'Sitemap & robots checker', 'Page speed analyzer', 'Mobile checker', 'Schema validator', 'Alt text checker', 'Canonical checker'],
     active: true,
     description: 'Perfect for getting started',
     maxProjects: 1,
-    maxSubmissions: 1,
+    maxSubmissions: 3,
     maxSeoTools: 5
   },
   {
     _id: 'default-pro',
     name: 'Pro',
-    price: 1999,
-    features: ['1000 SEO tools', '15 projects', '750 submissions', '50 reports'],
+    price: 999,
+    features: ['Everything in Free', '5 submissions per project per day', '4 SEO tools per day', 'Keyword researcher', 'Backlink scanner', 'Keyword tracker', 'Competitor analyzer', 'Technical SEO auditor', 'Advanced analytics', 'Priority support', 'Custom reports', 'API access'],
     active: true,
-    description: 'For growing businesses',
-    maxProjects: 15,
-    maxSubmissions: 750,
-    maxSeoTools: 1000,
+    description: 'Advanced SEO tools for growing businesses',
+    maxProjects: 1,
+    maxSubmissions: 150,
+    maxSeoTools: 140,
     popular: true
   },
   {
     _id: 'default-business',
     name: 'Business',
     price: 3999,
-    features: ['5000 SEO tools', '50 projects', '1500 submissions', '200 reports'],
+    features: ['Everything in Pro', '10 submissions per project per day', 'Unlimited SEO tools per project', 'White-label reports', 'Team collaboration', 'Advanced competitor analysis', 'Custom integrations', 'Dedicated account manager', 'Priority processing', 'Custom branding', 'Advanced API limits'],
     active: true,
-    description: 'For established businesses',
-    maxProjects: 50,
+    description: 'Complete SEO solution for established businesses',
+    maxProjects: 5,
     maxSubmissions: 1500,
-    maxSeoTools: 5000
+    maxSeoTools: -1
   },
   {
     _id: 'default-enterprise',
     name: 'Enterprise',
-    price: 9999,
-    features: ['Unlimited SEO tools', 'Unlimited projects', 'Unlimited submissions', 'Unlimited reports'],
+    price: 8999,
+    features: ['Everything in Business', '20 submissions per project', 'Unlimited SEO tools', 'Custom development', 'On-premise deployment', 'Advanced security', 'Custom integrations', 'Dedicated infrastructure', '24/7 phone support', 'Custom training', 'SLA guarantees'],
     active: true,
-    description: 'For large organizations',
-    maxProjects: -1,
-    maxSubmissions: -1,
+    description: 'Enterprise-grade SEO platform with custom solutions',
+    maxProjects: 10,
+    maxSubmissions: 6000,
     maxSeoTools: -1
   }
 ]
@@ -289,8 +289,8 @@ export function LandingPricing() {
                     <Button 
                       className={`w-full ${
                         plan.popular 
-                          ? 'bg-primary hover:bg-primary/90' 
-                          : 'bg-foreground hover:bg-foreground/90'
+                          ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                          : 'bg-foreground hover:bg-foreground/90 text-background'
                       }`}
                       variant={plan.popular ? "default" : "secondary"}
                     >

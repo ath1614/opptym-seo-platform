@@ -87,7 +87,7 @@ const pricingPlans = [
     features: [
       'Everything in Free',
       '5 submissions per project per day',
-      '1 SEO tool per project per day',
+      '4 SEO tools per day',
       'Keyword researcher',
       'Backlink scanner',
       'Keyword tracker',
@@ -98,9 +98,9 @@ const pricingPlans = [
       'Custom reports',
       'API access'
     ],
-    maxProjects: 5,
-    maxSubmissions: 750, // 5 projects * 5 submissions * 30 days
-    maxSeoTools: 150, // 5 projects * 1 tool * 30 days
+    maxProjects: 1,
+    maxSubmissions: 150, // 150 submissions per month
+    maxSeoTools: 140, // 140 SEO tool uses per month
     maxReports: 4,
     maxBacklinks: 25,
     active: true
@@ -122,9 +122,9 @@ const pricingPlans = [
       'Custom branding',
       'Advanced API limits'
     ],
-    maxProjects: 15,
-    maxSubmissions: 4500, // 15 projects * 10 submissions * 30 days
-    maxSeoTools: -1, // Unlimited
+    maxProjects: 5,
+    maxSubmissions: 1500, // 1500 submissions per month
+    maxSeoTools: -1, // Unlimited SEO Tools
     maxReports: 30,
     maxBacklinks: 100,
     active: true
@@ -135,7 +135,7 @@ const pricingPlans = [
     description: 'Enterprise-grade SEO platform with custom solutions',
     features: [
       'Everything in Business',
-      'Unlimited submissions per project',
+      '20 submissions per project',
       'Unlimited SEO tools',
       'Custom development',
       'On-premise deployment',
@@ -146,8 +146,8 @@ const pricingPlans = [
       'Custom training',
       'SLA guarantees'
     ],
-    maxProjects: 40,
-    maxSubmissions: -1, // Unlimited
+    maxProjects: 10,
+    maxSubmissions: 6000, // 6000 submissions per month
     maxSeoTools: -1, // Unlimited
     maxReports: -1, // Unlimited
     maxBacklinks: -1, // Unlimited
