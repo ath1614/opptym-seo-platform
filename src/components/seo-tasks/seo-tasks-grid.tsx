@@ -362,7 +362,7 @@ export function SEOTasksGrid() {
                 <div>
                   <h2 className="text-2xl font-bold">SEO Tasks</h2>
                   <p className="text-muted-foreground">
-                    Showing {filteredLinks.length} of {totalLinks} directories
+                    Showing {filteredLinks.length} of 1,00,000+ directories
                     {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
                   </p>
                 </div>
@@ -418,7 +418,7 @@ export function SEOTasksGrid() {
           size="sm"
           onClick={() => setSelectedCategory('all')}
         >
-          All ({totalLinks})
+          All (1,00,000+)
         </Button>
         {Object.entries(categoryConfig).map(([key, config]) => {
           const IconComponent = config.icon

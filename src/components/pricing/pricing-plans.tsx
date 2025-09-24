@@ -399,6 +399,67 @@ export function PricingPlans() {
         ))}
       </div>
 
+      {/* Custom Plan Card */}
+      <div className="mt-16">
+        <Card className="max-w-2xl mx-auto border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-full bg-primary/10">
+                <Building className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl">Need a Custom Plan?</CardTitle>
+            <CardDescription className="text-base">
+              Have specific requirements? We can create a tailored solution for your business needs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                Custom Features
+              </h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Unlimited projects and submissions</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Custom SEO tools and integrations</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>White-label solutions</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Dedicated account manager</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>24/7 priority support</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Custom development and training</span>
+                </li>
+              </ul>
+            </div>
+            
+            <Button
+              className="w-full"
+              onClick={() => {
+                // Open contact form modal or redirect to contact page
+                window.open('mailto:support@opptym.com?subject=Custom Plan Inquiry', '_blank')
+              }}
+            >
+              Contact Support
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* FAQ Section */}
       <div className="mt-16 space-y-8">
         <h2 className="text-3xl font-bold text-center">Frequently Asked Questions</h2>
