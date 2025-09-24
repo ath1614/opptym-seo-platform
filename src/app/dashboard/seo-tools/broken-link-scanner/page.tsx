@@ -185,6 +185,7 @@ export default function BrokenLinkScannerPage() {
                   </>
                 )}
               </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
