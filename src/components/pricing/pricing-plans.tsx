@@ -82,8 +82,8 @@ export function PricingPlans() {
               projects: plan.maxProjects === -1 ? 'Unlimited' : plan.maxProjects,
               submissions: plan.maxSubmissions === -1 ? 'Unlimited' : plan.maxSubmissions,
               seoTools: plan.maxSeoTools === -1 ? 'Unlimited' : plan.maxSeoTools,
-              backlinks: 0, // Not in current schema
-              reports: 1 // Not in current schema
+              backlinks: plan.maxBacklinks === -1 ? 'Unlimited' : plan.maxBacklinks,
+              reports: plan.maxReports === -1 ? 'Unlimited' : plan.maxReports
             },
             popular: index === 1, // Make second plan popular
             icon: [Star, Zap, Building, Crown][index] || Star,
@@ -374,7 +374,7 @@ export function PricingPlans() {
                 className="w-full"
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleUpgrade(plan.id, plan.name)}
-                disabled={loadingPlan === plan.id || plan.name.toLowerCase() === currentPlan.toLowerCase() || stripeConfigured === false}
+                disabled={loadingPlan === plan.id || plan.name.toLowerCase() === currentPlan.toLowerCase()}
               >
                 {loadingPlan === plan.id ? (
                   <>
