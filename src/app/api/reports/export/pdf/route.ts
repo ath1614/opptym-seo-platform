@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!(session as any)?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Check if user can generate reports
-    const canGenerate = await trackUsage(session.user.id, 'reports', 1)
+    const canGenerate = await trackUsage((session as any).user.id, 'reports', 1)
     
     if (!canGenerate) {
       return NextResponse.json(
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Verify project belongs to user
     const project = await Project.findOne({ 
       _id: projectId, 
-      userId: session.user.id 
+      userId: (session as any).user.id 
     })
 
     if (!project) {

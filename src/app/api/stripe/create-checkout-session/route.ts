@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Creating Stripe checkout session...')
     
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as any
     
     if (!session?.user?.id) {
       console.log('Unauthorized: No session or user ID')
@@ -186,15 +186,15 @@ export async function POST(request: NextRequest) {
         ],
         success_url: `${process.env.NEXTAUTH_URL}/dashboard/pricing/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/pricing?canceled=true`,
-        customer_email: session.user.email || undefined,
+        customer_email: (session.user as any).email || undefined,
         metadata: {
-          userId: session.user.id,
+          userId: (session.user as any).id,
           planId: planId,
           billingCycle: billingCycle,
         },
         subscription_data: {
           metadata: {
-            userId: session.user.id,
+            userId: (session.user as any).id,
             planId: planId,
             billingCycle: billingCycle,
           },
