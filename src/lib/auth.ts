@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
-import connectDB from './mongodb'
-import User from '@/models/User'
+import type { NextAuthOptions } from 'next-auth'
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -14,37 +13,31 @@ export const authOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          console.log('Missing credentials')
           return null
         }
 
         try {
-          console.log('Attempting to connect to database...')
-          await connectDB()
-          console.log('Database connected successfully')
+          // Import User model dynamically to avoid issues
+          const { default: User } = await import('@/models/User')
+          const { default: connectDB } = await import('./mongodb')
           
+          await connectDB()
           const user = await User.findOne({ email: credentials.email })
-          console.log('User found:', !!user)
           
           if (!user) {
-            console.log('User not found')
             return null
           }
 
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-          console.log('Password valid:', isPasswordValid)
           
           if (!isPasswordValid) {
-            console.log('Invalid password')
             return null
           }
 
           if (!user.verified) {
-            console.log('User not verified')
-            throw new Error('Please verify your email before logging in')
+            return null
           }
 
-          console.log('Authentication successful for user:', user.email)
           return {
             id: user._id.toString(),
             email: user.email,
