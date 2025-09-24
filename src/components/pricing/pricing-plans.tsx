@@ -71,7 +71,7 @@ export function PricingPlans() {
         if (response.ok) {
           const data = await response.json()
           // Transform database plans to component format
-          const transformedPlans = data.plans.map((plan: { _id: string; name: string; description?: string; price: number; features: string[]; maxProjects: number; maxSubmissions: number; maxSeoTools: number }, index: number) => ({
+          const transformedPlans = data.plans.map((plan: { _id: string; name: string; description?: string; price: number; features: string[]; maxProjects: number; maxSubmissions: number; maxSeoTools: number; maxBacklinks?: number; maxReports?: number }, index: number) => ({
             id: plan.name.toLowerCase(), // Use plan name instead of MongoDB ObjectId
             name: plan.name,
             description: plan.description || `Perfect for ${plan.name.toLowerCase()} users`,
@@ -82,8 +82,8 @@ export function PricingPlans() {
               projects: plan.maxProjects === -1 ? 'Unlimited' : plan.maxProjects,
               submissions: plan.maxSubmissions === -1 ? 'Unlimited' : plan.maxSubmissions,
               seoTools: plan.maxSeoTools === -1 ? 'Unlimited' : plan.maxSeoTools,
-              backlinks: plan.maxBacklinks === -1 ? 'Unlimited' : plan.maxBacklinks,
-              reports: plan.maxReports === -1 ? 'Unlimited' : plan.maxReports
+              backlinks: plan.maxBacklinks === -1 ? 'Unlimited' : (plan.maxBacklinks || 0),
+              reports: plan.maxReports === -1 ? 'Unlimited' : (plan.maxReports || 1)
             },
             popular: index === 1, // Make second plan popular
             icon: [Star, Zap, Building, Crown][index] || Star,
