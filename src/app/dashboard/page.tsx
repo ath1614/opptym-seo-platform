@@ -93,8 +93,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === 'authenticated') {
       const interval = setInterval(() => {
-        fetchData(true) // Refresh data every 30 seconds
-      }, 30000)
+        fetchData(true) // Refresh data every 10 seconds for real-time updates
+      }, 10000)
 
       return () => clearInterval(interval)
     }
@@ -281,8 +281,8 @@ export default function DashboardPage() {
                      Refresh
                    </Button>
             {!isDataLoading && (
-              <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                <span className="text-green-800 text-sm font-medium">✅ Dashboard Loaded</span>
+              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-lg px-3 py-2">
+                <span className="text-green-800 dark:text-green-200 text-sm font-medium">✅ Dashboard Loaded</span>
               </div>
             )}
           </div>
@@ -290,10 +290,10 @@ export default function DashboardPage() {
 
         {/* Data Loading Indicator */}
         {isDataLoading && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
             <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span className="text-blue-800 text-sm">Loading dashboard data...</span>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              <span className="text-blue-800 dark:text-blue-200 text-sm">Loading dashboard data...</span>
             </div>
           </div>
         )}
@@ -305,13 +305,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions - Made More Prominent */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-blue-900">Quick Actions</h2>
-              <p className="text-blue-700">Get started with your SEO tasks right away</p>
+              <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-100">Quick Actions</h2>
+              <p className="text-blue-700 dark:text-blue-300">Get started with your SEO tasks right away</p>
             </div>
-            <div className="text-blue-600">
+            <div className="text-blue-600 dark:text-blue-400">
               <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
               </svg>
@@ -331,11 +331,11 @@ export default function DashboardPage() {
           {/* Additional Info */}
           <div className="lg:col-span-2">
             <h2 className="text-xl font-semibold mb-4">Getting Started</h2>
-            <div className="bg-white border rounded-lg p-6">
+            <div className="bg-card border rounded-lg p-6">
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-green-600 font-bold">1</span>
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-green-600 dark:text-green-400 font-bold">1</span>
                   </div>
                   <div>
                     <h3 className="font-semibold">Create Your First Project</h3>
@@ -343,8 +343,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-600 font-bold">2</span>
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 dark:text-blue-400 font-bold">2</span>
                   </div>
                   <div>
                     <h3 className="font-semibold">Run SEO Analysis</h3>
@@ -352,8 +352,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-purple-600 font-bold">3</span>
+                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-purple-600 dark:text-purple-400 font-bold">3</span>
                   </div>
                   <div>
                     <h3 className="font-semibold">Generate Reports</h3>

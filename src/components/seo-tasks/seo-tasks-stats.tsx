@@ -54,10 +54,10 @@ export function SEOTasksStats() {
   useEffect(() => {
     fetchUsageStats()
     
-    // Add periodic refresh every 30 seconds
+    // Add periodic refresh every 10 seconds for real-time updates
     const interval = setInterval(() => {
       fetchUsageStats()
-    }, 30000)
+    }, 10000)
 
     return () => clearInterval(interval)
   }, [fetchUsageStats])
@@ -106,7 +106,7 @@ export function SEOTasksStats() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.usage.submissions}</div>
+          <div className="text-2xl font-bold text-primary">{stats.usage.submissions}</div>
           <p className="text-xs text-muted-foreground">
             of {stats.limits.submissions === 'unlimited' ? '∞' : stats.limits.submissions} submissions
           </p>

@@ -250,35 +250,69 @@ export function OnboardingTutorial({ isOpen, onClose, userPlan = 'free' }: Onboa
           <div className="space-y-4">
             <Card className="border-purple-200 bg-purple-50">
               <CardHeader>
-                <CardTitle className="text-lg text-purple-900">How Directory Submission Works:</CardTitle>
+                <CardTitle className="text-lg text-purple-900">How to Use the Bookmarklet:</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                  <div>
-                    <h4 className="font-semibold text-purple-900">Get Your Bookmarklet</h4>
-                    <p className="text-sm text-purple-800">We'll generate a custom bookmarklet for your project</p>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                    <div>
+                      <h4 className="font-semibold text-purple-900">Get Your Bookmarklet</h4>
+                      <p className="text-sm text-purple-800">Go to SEO Tasks → Select a project → Click "Get Bookmarklet"</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                    <div>
+                      <h4 className="font-semibold text-purple-900">Install the Bookmarklet</h4>
+                      <div className="text-sm text-purple-800 space-y-2">
+                        <p><strong>On Windows/Linux:</strong></p>
+                        <ul className="list-disc list-inside ml-4 space-y-1">
+                          <li>Right-click on the bookmarklet button</li>
+                          <li>Select "Add to bookmarks" or "Bookmark this link"</li>
+                          <li>Choose "Bookmarks bar" as the location</li>
+                        </ul>
+                        <p><strong>On Mac:</strong></p>
+                        <ul className="list-disc list-inside ml-4 space-y-1">
+                          <li>Click and drag the bookmarklet to your bookmarks bar</li>
+                          <li>Or right-click and select "Add to Reading List"</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                    <div>
+                      <h4 className="font-semibold text-purple-900">Use the Bookmarklet</h4>
+                      <div className="text-sm text-purple-800 space-y-2">
+                        <p><strong>Step-by-step process:</strong></p>
+                        <ul className="list-disc list-inside ml-4 space-y-1">
+                          <li>Visit any directory submission website</li>
+                          <li>Click your "Opptym Bookmarklet" from the bookmarks bar</li>
+                          <li>Watch as our AI automatically fills all form fields</li>
+                          <li>Review the filled information and submit</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                    <div>
+                      <h4 className="font-semibold text-purple-900">Track Your Progress</h4>
+                      <p className="text-sm text-purple-800">Monitor your submissions and backlinks in the dashboard</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
-                  <div>
-                    <h4 className="font-semibold text-purple-900">Visit Directory Websites</h4>
-                    <p className="text-sm text-purple-800">Go to any directory submission website</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
-                  <div>
-                    <h4 className="font-semibold text-purple-900">Click the Bookmarklet</h4>
-                    <p className="text-sm text-purple-800">Our AI will automatically fill in all the form fields</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
-                  <div>
-                    <h4 className="font-semibold text-purple-900">Submit & Track</h4>
-                    <p className="text-sm text-purple-800">Submit the form and track your progress in the dashboard</p>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <Lightbulb className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <strong>Pro Tip:</strong> The bookmarklet works on any directory submission form. It automatically detects form fields and fills them with your project information!
+                    </div>
                   </div>
                 </div>
               </CardContent>

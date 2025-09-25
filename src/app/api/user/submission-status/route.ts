@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Submission from '@/models/Submission'
-import { getPlanLimits, isLimitExceeded, getRemainingUsage } from '@/lib/subscription-limits'
+import { getPlanLimitsWithCustom, isLimitExceededWithCustom, getRemainingUsage } from '@/lib/subscription-limits'
 import mongoose from 'mongoose'
 
 export async function GET(request: NextRequest) {
@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
       status: 'success'
     })
 
-    // Get plan limits
-    const planLimits = getPlanLimits(user.plan)
-    const isLimitReached = isLimitExceeded(user.plan, 'submissions', currentSubmissions)
-    const remainingUsage = getRemainingUsage(user.plan, 'submissions', currentSubmissions)
+    // Get plan limits from database (consistent with dashboard usage API)
+    const planLimits = await getPlanLimitsWithCustom(user.plan)
+    const isLimitReached = isLimitExceededWithCustom(planLimits, 'submissions', currentSubmissions)
+    const remainingUsage = planLimits.submissions === -1 ? -1 : Math.max(0, planLimits.submissions - currentSubmissions)
 
     // Transform -1 limits to 'unlimited' for frontend
     const transformedPlanLimits = {

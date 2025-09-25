@@ -283,9 +283,13 @@ export function SEOTasksGrid() {
   const handleFillForm = (link: Link) => {
     // Check if user has reached their submission limit
     if (submissionStatus?.isLimitReached) {
+      const usageText = submissionStatus.isUnlimited 
+        ? `${submissionStatus.current} submissions`
+        : `${submissionStatus.current}/${submissionStatus.limit} submissions`
+      
       showToast({
         title: 'Submission Limit Reached',
-        description: `You have used ${submissionStatus.current} of ${submissionStatus.isUnlimited ? 'unlimited' : submissionStatus.limit} submissions. ${submissionStatus.isUnlimited ? '' : 'Upgrade your plan to continue.'}`,
+        description: `You have used ${usageText}. ${submissionStatus.isUnlimited ? '' : 'Upgrade your plan to continue.'}`,
         variant: 'destructive'
       })
       return

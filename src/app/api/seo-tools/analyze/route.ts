@@ -228,6 +228,66 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
     // Parse HTML and extract data
     const analysis = await analyzeHTML(html, url)
     
+    // Return different analysis based on tool type
+    if (toolType === 'canonical-checker') {
+      return {
+        url,
+        timestamp: new Date().toISOString(),
+        canonicalUrl: analysis.metaTags.canonical.content,
+        hasCanonical: !!analysis.metaTags.canonical.content,
+        isSelfReferencing: analysis.metaTags.canonical.content === url,
+        duplicateContent: [], // Would need more complex analysis
+        canonicalIssues: analysis.metaTags.canonical.status === 'warning' ? [
+          {
+            type: 'missing_canonical',
+            message: 'Canonical URL is missing',
+            severity: 'medium' as const
+          }
+        ] : [],
+        recommendations: analysis.metaTags.canonical.status === 'warning' ? [
+          'Add a canonical URL to prevent duplicate content issues',
+          'Ensure canonical URL points to the preferred version of the page',
+          'Use absolute URLs for canonical tags'
+        ] : [
+          'Canonical URL is properly configured',
+          'Consider adding hreflang tags for international SEO'
+        ],
+        score: analysis.metaTags.canonical.status === 'good' ? 90 : 40
+      }
+    }
+    
+    if (toolType === 'alt-text-checker') {
+      const imagesWithAlt = analysis.altText.images.filter(img => img.alt && img.alt.trim() !== '').length
+      const imagesWithoutAlt = analysis.altText.images.length - imagesWithAlt
+      const coverage = analysis.altText.images.length > 0 ? Math.round((imagesWithAlt / analysis.altText.images.length) * 100) : 100
+      
+      return {
+        url,
+        timestamp: new Date().toISOString(),
+        totalImages: analysis.altText.images.length,
+        imagesWithAlt,
+        imagesWithoutAlt,
+        altTextCoverage: coverage,
+        images: analysis.altText.images.map(img => ({
+          src: img.src,
+          alt: img.alt,
+          status: img.alt && img.alt.trim() !== '' ? 'good' as const : 'error' as const,
+          recommendation: img.alt && img.alt.trim() !== '' ? 'Alt text is present' : 'Add descriptive alt text for accessibility'
+        })),
+        recommendations: imagesWithoutAlt > 0 ? [
+          'Add alt text to all images for better accessibility',
+          'Use descriptive alt text that explains the image content',
+          'Avoid using generic alt text like "image" or "photo"',
+          'For decorative images, use empty alt text (alt="")'
+        ] : [
+          'All images have alt text - great for accessibility!',
+          'Consider reviewing alt text for clarity and descriptiveness',
+          'Ensure alt text is relevant to the image content'
+        ],
+        score: coverage >= 90 ? 95 : coverage >= 70 ? 75 : 40
+      }
+    }
+    
     return {
       url,
       timestamp: new Date().toISOString(),

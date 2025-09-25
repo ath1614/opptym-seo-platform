@@ -1,128 +1,116 @@
+// Test bookmarklet submission counter
 const mongoose = require('mongoose')
 require('dotenv').config({ path: '.env.local' })
 
-// Define schemas
+// User Schema
 const UserSchema = new mongoose.Schema({
-  username: String,
-  email: String,
-  password: String,
-  companyName: String,
-  plan: { type: String, default: 'free' },
+  username: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  verified: { type: Boolean, default: false },
+  plan: { type: String, default: 'Free' },
+  companyName: { type: String, default: '' },
+  profileImage: { type: String, default: '' },
   usage: {
     projects: { type: Number, default: 0 },
     submissions: { type: Number, default: 0 },
     seoTools: { type: Number, default: 0 },
-    backlinks: { type: Number, default: 0 },
-    reports: { type: Number, default: 0 }
+    reports: { type: Number, default: 0 },
+    backlinks: { type: Number, default: 0 }
   },
-  verified: { type: Boolean, default: false },
-  emailVerificationToken: String,
-  emailVerificationExpires: Date,
-  passwordResetToken: String,
-  passwordResetExpires: Date,
-  role: { type: String, default: 'user' }
+  isNewUser: { type: Boolean, default: false }
 }, { timestamps: true })
 
-const ProjectSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  projectName: { type: String, required: true },
-  websiteURL: String,
-  businessDescription: String,
-  category: String,
-  status: { type: String, default: 'active' }
-}, { timestamps: true })
-
+// Submission Schema
 const SubmissionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
-  linkId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  projectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
+  linkId: { type: mongoose.Schema.Types.ObjectId, ref: 'Link' },
   directory: { type: String, required: true },
   category: { type: String, required: true },
   status: { type: String, enum: ['pending', 'success', 'rejected'], default: 'pending' },
   submittedAt: { type: Date, default: Date.now },
-  completedAt: Date,
-  notes: String
+  completedAt: { type: Date },
+  notes: { type: String, default: '' }
 }, { timestamps: true })
 
 const User = mongoose.models.User || mongoose.model('User', UserSchema)
-const Project = mongoose.models.Project || mongoose.model('Project', ProjectSchema)
 const Submission = mongoose.models.Submission || mongoose.model('Submission', SubmissionSchema)
 
 async function testBookmarkletSubmission() {
   try {
-    console.log('Connecting to MongoDB...')
+    console.log('🔍 Connecting to MongoDB...')
     await mongoose.connect(process.env.MONGODB_URI)
-    console.log('Connected to MongoDB')
+    console.log('✅ Connected to MongoDB')
 
-    // Find the specific user
-    const user = await User.findOne({ email: 'atharv.soni@adypu.edu.in' })
+    // Find the user
+    const user = await User.findOne({ email: 'shoryataneja5@gmail.com' })
     if (!user) {
-      console.log('User not found')
+      console.log('❌ User not found: shoryataneja5@gmail.com')
       return
     }
+    console.log('✅ User found:', user.email, 'Plan:', user.plan)
 
-    console.log(`\n=== User: ${user.email} ===`)
-    console.log(`Plan: ${user.plan}`)
-    console.log(`Cached Usage:`, user.usage)
+    // Check current submission count
+    const currentSubmissions = await Submission.countDocuments({ 
+      userId: user._id,
+      status: 'success'
+    })
+    console.log('📊 Current successful submissions:', currentSubmissions)
+    console.log('📊 Cached submission count:', user.usage.submissions)
 
-    // Get user's projects
-    const projects = await Project.find({ userId: user._id })
-    console.log(`\n=== User Projects (${projects.length}) ===`)
-    
-    if (projects.length === 0) {
-      console.log('❌ User has no projects - cannot test bookmarklet submission')
-      return
-    }
+    // Get all submissions for this user
+    const allSubmissions = await Submission.find({ userId: user._id })
+    console.log('📋 All submissions for user:')
+    allSubmissions.forEach((sub, index) => {
+      console.log(`  ${index + 1}. Status: ${sub.status}, Directory: ${sub.directory}, Created: ${sub.createdAt}`)
+    })
 
-    const testProject = projects[0]
-    console.log(`Using project: ${testProject.projectName} (${testProject._id})`)
-
-    // Create a test submission to simulate bookmarklet usage
-    console.log(`\n=== Creating Test Submission ===`)
-    
+    // Create a test bookmarklet submission
+    console.log('\n🧪 Creating test bookmarklet submission...')
     const testSubmission = new Submission({
       userId: user._id,
-      projectId: testProject._id,
+      projectId: new mongoose.Types.ObjectId(), // Mock project ID
       linkId: new mongoose.Types.ObjectId(), // Mock link ID
-      directory: 'Test Directory - Bookmarklet Test',
+      directory: 'Test Directory - Bookmarklet',
       category: 'directory',
       status: 'success',
       submittedAt: new Date(),
       completedAt: new Date(),
-      notes: `Test bookmarklet submission - URL: https://example.com, Title: Test Page, Description: Test description`
+      notes: 'Test bookmarklet submission - URL: https://test.com, Title: Test Title, Description: Test Description'
     })
 
     await testSubmission.save()
     console.log('✅ Test submission created:', testSubmission._id)
 
-    // Update user's cached usage
-    console.log(`\n=== Updating User Usage ===`)
-    user.usage.submissions = (user.usage.submissions || 0) + 1
-    await user.save()
-    console.log('✅ User usage updated:', user.usage)
-
-    // Verify the submission was created
-    const allSubmissions = await Submission.find({ userId: user._id }).sort({ createdAt: -1 })
-    console.log(`\n=== All Submissions (${allSubmissions.length}) ===`)
-    
-    allSubmissions.forEach((submission, index) => {
-      console.log(`${index + 1}. ${submission.directory} - ${submission.status} - ${submission.createdAt.toISOString()}`)
+    // Check updated submission count
+    const updatedSubmissions = await Submission.countDocuments({ 
+      userId: user._id,
+      status: 'success'
     })
+    console.log('📊 Updated successful submissions:', updatedSubmissions)
 
-    // Get updated user data
-    const updatedUser = await User.findById(user._id)
-    console.log(`\n=== Updated User Usage ===`)
-    console.log(`Cached submissions: ${updatedUser.usage.submissions}`)
-    console.log(`Actual submissions: ${allSubmissions.length}`)
+    // Update user's cached submission count
+    user.usage.submissions = updatedSubmissions
+    await user.save()
+    console.log('✅ User cached submission count updated to:', updatedSubmissions)
 
-    console.log(`\n✅ Test completed successfully!`)
-    console.log(`📊 Dashboard should now show: ${updatedUser.usage.submissions}/1 submissions`)
+    // Verify the count
+    const finalCount = await Submission.countDocuments({ 
+      userId: user._id,
+      status: 'success'
+    })
+    console.log('📊 Final verification - successful submissions:', finalCount)
+
+    console.log('\n🎉 Bookmarklet submission test completed successfully!')
+    console.log('📈 Submission count increased from', currentSubmissions, 'to', finalCount)
 
   } catch (error) {
-    console.error('Error:', error)
+    console.error('❌ Error:', error.message)
   } finally {
     await mongoose.disconnect()
-    console.log('\nDisconnected from MongoDB')
+    console.log('🔌 Disconnected from MongoDB')
   }
 }
 

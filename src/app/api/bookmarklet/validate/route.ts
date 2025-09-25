@@ -106,10 +106,21 @@ export async function POST(request: NextRequest) {
     // Track usage before creating submission
     const canSubmit = await trackUsage(session.user.id, 'submissions', 1)
     if (!canSubmit) {
+      // Get current usage for better error message
+      const currentSubmissions = await Submission.countDocuments({ 
+        userId: session.user.id,
+        status: 'success'
+      })
+      const user = await User.findById(session.user.id)
+      const planLimits = getPlanLimits(user?.plan || 'free')
+      const limit = planLimits.submissions === -1 ? 'unlimited' : planLimits.submissions
+      
       return NextResponse.json({ 
         error: 'Submission limit exceeded',
         limitType: 'submissions',
-        message: 'You have reached your submissions limit. Please upgrade your plan to continue.'
+        message: `You have used ${currentSubmissions}/${limit} submissions. Upgrade your plan to continue.`,
+        currentUsage: currentSubmissions,
+        limit: limit
       }, { status: 403 })
     }
     
