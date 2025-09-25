@@ -53,6 +53,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Directory {
   _id: string
@@ -240,7 +242,72 @@ export function DirectoryManagement() {
     setShowAddDialog(true)
   }
 
+  const validateForm = () => {
+    const errors: string[] = []
+    
+    if (!formData.name.trim()) {
+      errors.push('Directory name is required')
+    }
+    
+    if (!formData.url.trim()) {
+      errors.push('URL is required')
+    } else {
+      try {
+        new URL(formData.url)
+      } catch {
+        errors.push('Please enter a valid URL (e.g., https://example.com)')
+      }
+    }
+    
+    if (!formData.domain.trim()) {
+      errors.push('Domain is required')
+    } else {
+      // Basic domain validation
+      const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]?\.([a-zA-Z]{2,}|[a-zA-Z]{2,}\.[a-zA-Z]{2,})$/
+      if (!domainRegex.test(formData.domain)) {
+        errors.push('Please enter a valid domain (e.g., example.com)')
+      }
+    }
+    
+    if (!formData.classification.trim()) {
+      errors.push('Classification is required')
+    }
+    
+    if (!formData.category.trim()) {
+      errors.push('Category is required')
+    }
+    
+    if (!formData.country.trim()) {
+      errors.push('Location is required')
+    }
+    
+    if (formData.daScore < 0 || formData.daScore > 100) {
+      errors.push('DA Score must be between 0 and 100')
+    }
+    
+    if (formData.pageRank < 0 || formData.pageRank > 10) {
+      errors.push('Page Rank must be between 0 and 10')
+    }
+    
+    if (formData.priority < 0 || formData.priority > 100) {
+      errors.push('Priority must be between 0 and 100')
+    }
+    
+    return errors
+  }
+
   const handleSaveDirectory = async () => {
+    // Validate form
+    const errors = validateForm()
+    if (errors.length > 0) {
+      showToast({
+        title: 'Validation Error',
+        description: errors.join(', '),
+        variant: 'destructive'
+      })
+      return
+    }
+
     try {
       const url = editingDirectory 
         ? `/api/admin/directories/${editingDirectory._id}`
@@ -248,12 +315,24 @@ export function DirectoryManagement() {
       
       const method = editingDirectory ? 'PUT' : 'POST'
       
+      // Prepare data with proper validation
+      const directoryData = {
+        ...formData,
+        name: formData.name.trim(),
+        url: formData.url.trim(),
+        domain: formData.domain.trim().toLowerCase(),
+        classification: formData.classification.trim(),
+        category: formData.category.trim(),
+        country: formData.country.trim(),
+        description: formData.description.trim()
+      }
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(directoryData),
       })
 
       if (response.ok) {
@@ -270,13 +349,17 @@ export function DirectoryManagement() {
       } else {
         const errorData = await response.json()
         console.error('Failed to save directory:', errorData)
-        throw new Error('Failed to save directory')
+        showToast({
+          title: 'Error',
+          description: errorData.error || 'Failed to save directory',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('Failed to save directory:', error)
       showToast({
         title: 'Error',
-        description: 'Failed to save directory',
+        description: 'Network error. Please try again.',
         variant: 'destructive'
       })
     }
@@ -580,108 +663,180 @@ export function DirectoryManagement() {
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Directory Name</Label>
+              <Label htmlFor="name">Directory Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., DMOZ Directory"
+                className={!formData.name.trim() ? 'border-red-500' : ''}
               />
+              {!formData.name.trim() && (
+                <p className="text-sm text-red-500 mt-1">Directory name is required</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="url">URL</Label>
+              <Label htmlFor="url">URL *</Label>
               <Input
                 id="url"
                 value={formData.url}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                 placeholder="https://example.com"
+                className={!formData.url.trim() ? 'border-red-500' : ''}
               />
+              {!formData.url.trim() && (
+                <p className="text-sm text-red-500 mt-1">URL is required</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="domain">Domain</Label>
+              <Label htmlFor="domain">Domain *</Label>
               <Input
                 id="domain"
                 value={formData.domain}
                 onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
                 placeholder="example.com"
+                className={!formData.domain.trim() ? 'border-red-500' : ''}
               />
+              {!formData.domain.trim() && (
+                <p className="text-sm text-red-500 mt-1">Domain is required</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="classification">Classification</Label>
-              <Input
-                id="classification"
+              <Label htmlFor="classification">Classification *</Label>
+              <Select
                 value={formData.classification}
-                onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
-                placeholder="e.g., Directory Submission"
-              />
-            </div>
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="e.g., General"
-              />
-            </div>
-            <div>
-              <Label htmlFor="country">Location</Label>
-              <select
-                id="country"
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                onValueChange={(value) => setFormData({ ...formData, classification: value })}
               >
-                <option value="">Select Location</option>
-                {locations.map((location) => (
-                  <option key={location._id} value={location.name}>
-                    {location.flag} {location.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className={!formData.classification ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select classification" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Directory Submission">Directory Submission</SelectItem>
+                  <SelectItem value="Article Submission">Article Submission</SelectItem>
+                  <SelectItem value="Press Release">Press Release</SelectItem>
+                  <SelectItem value="Social Bookmarking">Social Bookmarking</SelectItem>
+                  <SelectItem value="Business Listing">Business Listing</SelectItem>
+                  <SelectItem value="Classified Ads">Classified Ads</SelectItem>
+                </SelectContent>
+              </Select>
+              {!formData.classification && (
+                <p className="text-sm text-red-500 mt-1">Classification is required</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="category">Category *</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger className={!formData.category ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="General">General</SelectItem>
+                  <SelectItem value="Business">Business</SelectItem>
+                  <SelectItem value="Technology">Technology</SelectItem>
+                  <SelectItem value="Health">Health</SelectItem>
+                  <SelectItem value="Education">Education</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                  <SelectItem value="Travel">Travel</SelectItem>
+                  <SelectItem value="Food">Food</SelectItem>
+                  <SelectItem value="Entertainment">Entertainment</SelectItem>
+                  <SelectItem value="Sports">Sports</SelectItem>
+                </SelectContent>
+              </Select>
+              {!formData.category && (
+                <p className="text-sm text-red-500 mt-1">Category is required</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="country">Location *</Label>
+              <Select
+                value={formData.country}
+                onValueChange={(value) => setFormData({ ...formData, country: value })}
+              >
+                <SelectTrigger className={!formData.country ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem key={location._id} value={location.name}>
+                      <div className="flex items-center space-x-2">
+                        <span>{location.flag}</span>
+                        <span>{location.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!formData.country && (
+                <p className="text-sm text-red-500 mt-1">Location is required</p>
+              )}
             </div>
             <div>
               <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
+              <Select
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
-              </select>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <Label htmlFor="daScore">DA Score</Label>
+              <Label htmlFor="daScore">DA Score (0-100)</Label>
               <Input
                 id="daScore"
                 type="number"
+                min="0"
+                max="100"
                 value={formData.daScore}
                 onChange={(e) => setFormData({ ...formData, daScore: parseInt(e.target.value) || 0 })}
                 placeholder="0"
+                className={formData.daScore < 0 || formData.daScore > 100 ? 'border-red-500' : ''}
               />
+              {(formData.daScore < 0 || formData.daScore > 100) && (
+                <p className="text-sm text-red-500 mt-1">DA Score must be between 0 and 100</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="pageRank">Page Rank</Label>
+              <Label htmlFor="pageRank">Page Rank (0-10)</Label>
               <Input
                 id="pageRank"
                 type="number"
+                min="0"
+                max="10"
+                step="0.1"
                 value={formData.pageRank}
-                onChange={(e) => setFormData({ ...formData, pageRank: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setFormData({ ...formData, pageRank: parseFloat(e.target.value) || 0 })}
                 placeholder="0"
+                className={formData.pageRank < 0 || formData.pageRank > 10 ? 'border-red-500' : ''}
               />
+              {(formData.pageRank < 0 || formData.pageRank > 10) && (
+                <p className="text-sm text-red-500 mt-1">Page Rank must be between 0 and 10</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority">Priority (0-100)</Label>
               <Input
                 id="priority"
                 type="number"
+                min="0"
+                max="100"
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
                 placeholder="0"
+                className={formData.priority < 0 || formData.priority > 100 ? 'border-red-500' : ''}
               />
+              {(formData.priority < 0 || formData.priority > 100) && (
+                <p className="text-sm text-red-500 mt-1">Priority must be between 0 and 100</p>
+              )}
             </div>
           </div>
           
@@ -695,6 +850,14 @@ export function DirectoryManagement() {
               rows={3}
             />
           </div>
+
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Location-wise Directories:</strong> When you select a location, this directory will be available globally for users in that region. 
+              The location helps users find relevant directories for their target audience and improves submission success rates.
+            </AlertDescription>
+          </Alert>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
@@ -751,41 +914,54 @@ function BulkImportForm({ categories, locations, onImport, onCancel }: BulkImpor
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">Select Category</label>
-        <select
+        <Label>Select Category *</Label>
+        <Select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full px-3 py-2 border border-input bg-background rounded-md"
-          required
+          onValueChange={setCategory}
         >
-          <option value="">Choose a category</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className={!category ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Choose a category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {!category && (
+          <p className="text-sm text-red-500 mt-1">Category is required</p>
+        )}
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">Select Location</label>
-        <select
+        <Label>Select Location *</Label>
+        <Select
           value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          className="w-full px-3 py-2 border border-input bg-background rounded-md"
-          required
+          onValueChange={setLocation}
         >
-          <option value="">Choose a location</option>
-          {locations.map((loc) => (
-            <option key={loc._id} value={loc.name}>
-              {loc.flag} {loc.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className={!location ? 'border-red-500' : ''}>
+            <SelectValue placeholder="Choose a location" />
+          </SelectTrigger>
+          <SelectContent>
+            {locations.map((loc) => (
+              <SelectItem key={loc._id} value={loc.name}>
+                <div className="flex items-center space-x-2">
+                  <span>{loc.flag}</span>
+                  <span>{loc.name}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {!location && (
+          <p className="text-sm text-red-500 mt-1">Location is required</p>
+        )}
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">Upload CSV File</label>
+        <Label>Upload CSV File *</Label>
         <input
           type="file"
           accept=".csv"
@@ -793,7 +969,18 @@ function BulkImportForm({ categories, locations, onImport, onCancel }: BulkImpor
           className="w-full px-3 py-2 border border-input bg-background rounded-md"
           required
         />
+        <p className="text-sm text-muted-foreground mt-1">
+          CSV format: name, url, domain, classification, category, status, daScore, pageRank, priority, description
+        </p>
       </div>
+
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Bulk Import:</strong> All directories will be assigned the selected category and location. 
+          Make sure your CSV file contains valid data for all required fields.
+        </AlertDescription>
+      </Alert>
 
       <div className="flex justify-end space-x-2">
         <Button type="button" variant="outline" onClick={onCancel}>
