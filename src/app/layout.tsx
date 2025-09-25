@@ -20,17 +20,7 @@ export const metadata: Metadata = {
     default: "Opptym AI SEO Platform - Advanced SEO Optimization Tools",
     template: "%s | Opptym AI SEO Platform"
   },
-  description: "Professional SEO optimization platform that helps businesses improve their search engine rankings, analyze competitors, and drive organic traffic growth with advanced tools and insights.",
-  keywords: [
-    "SEO",
-    "search engine optimization",
-    "SEO tools",
-    "keyword research",
-    "competitor analysis",
-    "organic traffic",
-    "search rankings",
-    "SEO platform"
-  ],
+  description: "Professional SEO optimization platform that helps businesses improve search rankings, analyze competitors, and drive organic traffic growth with advanced tools.",
   authors: [{ name: "Opptym SEO Platform" }],
   creator: "Opptym SEO Platform",
   publisher: "Opptym SEO Platform",
@@ -39,7 +29,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://opptym-seo-platform.vercel.app"),
+  metadataBase: new URL("https://opptym.com"),
   alternates: {
     canonical: "/",
   },
@@ -56,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://opptym-seo-platform.vercel.app",
+    url: "https://opptym.com",
     title: "Opptym SEO Platform - Advanced SEO Optimization Tools",
     description: "Professional SEO optimization platform that helps businesses improve their search engine rankings, analyze competitors, and drive organic traffic growth.",
     siteName: "Opptym SEO Platform",

@@ -67,20 +67,21 @@ export default function CanonicalCheckerPage() {
 
     setIsAnalyzing(true)
     try {
-      const response = await fetch('/api/seo-tools/analyze', {
+      const response = await fetch('/api/seo-tools', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          toolId: 'canonical-checker',
           url: url.trim(),
-          toolType: 'canonical-checker'
+          projectId: selectedProject || null
         }),
       })
 
       if (response.ok) {
         const data = await response.json()
-        setAnalysisData(data.analysisResults)
+        setAnalysisData(data.results)
       } else {
         console.error('Analysis failed')
       }

@@ -40,8 +40,41 @@ import Link from "next/link"
 import { LandingPricing } from "@/components/pricing/landing-pricing"
 
 export default function Home() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Opptym AI SEO Platform",
+    "description": "Professional SEO optimization platform that helps businesses improve search rankings, analyze competitors, and drive organic traffic growth with advanced tools.",
+    "url": "https://opptym.com",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "Free plan available"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "Opptym SEO Platform"
+    },
+    "featureList": [
+      "SEO Analysis Tools",
+      "Keyword Research",
+      "Competitor Analysis", 
+      "Backlink Scanner",
+      "Technical SEO Audit",
+      "Page Speed Analysis",
+      "Meta Tag Optimization"
+    ]
+  };
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
