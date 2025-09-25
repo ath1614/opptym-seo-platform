@@ -100,6 +100,7 @@ export function ReportsDashboard() {
   const [isLoadingReport, setIsLoadingReport] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set())
+  const [hasGeneratedReport, setHasGeneratedReport] = useState(false)
   const { showToast } = useToast()
 
   const fetchProjects = useCallback(async () => {
@@ -140,23 +141,41 @@ export function ReportsDashboard() {
       
       if (response.ok) {
         setReportData(data.reportData)
+        setHasGeneratedReport(true)
+        showToast({
+          title: 'Report Generated!',
+          description: 'Comprehensive SEO report has been generated successfully.',
+          variant: 'default'
+        })
       } else {
         showToast({
           title: 'Error',
-          description: data.error || 'Failed to fetch report data.',
+          description: data.error || 'Failed to generate report data.',
           variant: 'destructive'
         })
       }
     } catch {
       showToast({
         title: 'Error',
-        description: 'Network error while fetching report data',
+        description: 'Network error while generating report data',
         variant: 'destructive'
       })
     } finally {
       setIsLoadingReport(false)
     }
   }, [showToast])
+
+  const handleGenerateReport = () => {
+    if (!selectedProjectId) {
+      showToast({
+        title: 'No Project Selected',
+        description: 'Please select a project first.',
+        variant: 'destructive'
+      })
+      return
+    }
+    fetchReportData(selectedProjectId)
+  }
 
   const handleExportPDF = async () => {
     if (!reportData) return
@@ -255,11 +274,12 @@ export function ReportsDashboard() {
     fetchProjects()
   }, [fetchProjects])
 
-  useEffect(() => {
-    if (selectedProjectId) {
-      fetchReportData(selectedProjectId)
-    }
-  }, [selectedProjectId, fetchReportData])
+  // Remove automatic report generation when project is selected
+  // useEffect(() => {
+  //   if (selectedProjectId) {
+  //     fetchReportData(selectedProjectId)
+  //   }
+  // }, [selectedProjectId, fetchReportData])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -361,25 +381,60 @@ export function ReportsDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Select Project</CardTitle>
-          <CardDescription>Choose a project to generate its SEO performance report</CardDescription>
+          <CardDescription>Choose a project to generate its comprehensive SEO performance report</CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-            <SelectTrigger className="w-full max-w-md">
-              <SelectValue placeholder="Select a project" />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((project) => (
-                <SelectItem key={project._id} value={project._id}>
-                  <div className="flex items-center space-x-2">
-                    <Globe className="h-4 w-4" />
-                    <span>{project.projectName}</span>
-                    <Badge variant="secondary">{project.category}</Badge>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center space-x-4">
+            <Select value={selectedProjectId} onValueChange={(value) => {
+              setSelectedProjectId(value)
+              setHasGeneratedReport(false)
+              setReportData(null)
+            }}>
+              <SelectTrigger className="w-full max-w-md">
+                <SelectValue placeholder="Select a project" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map((project) => (
+                  <SelectItem key={project._id} value={project._id}>
+                    <div className="flex items-center space-x-2">
+                      <Globe className="h-4 w-4" />
+                      <span>{project.projectName}</span>
+                      <Badge variant="secondary">{project.category}</Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Button 
+              onClick={handleGenerateReport} 
+              disabled={!selectedProjectId || isLoadingReport}
+              className="min-w-[140px]"
+            >
+              {isLoadingReport ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generate Report
+                </>
+              )}
+            </Button>
+          </div>
+          
+          {selectedProjectId && !hasGeneratedReport && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center space-x-2">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Ready to generate report!</strong> Click "Generate Report" to create a comprehensive SEO analysis report for the selected project.
+                </span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -840,12 +895,44 @@ export function ReportsDashboard() {
             </CardContent>
           </Card>
         </div>
+      ) : selectedProjectId && !hasGeneratedReport ? (
+        <Card className="text-center py-12">
+          <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <CardTitle className="text-2xl mb-2">Ready to Generate Report</CardTitle>
+          <CardDescription className="mb-6">
+            You have selected a project. Click the "Generate Report" button above to create a comprehensive SEO analysis report.
+          </CardDescription>
+          <Button onClick={handleGenerateReport} disabled={isLoadingReport}>
+            {isLoadingReport ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Report...
+              </>
+            ) : (
+              <>
+                <FileText className="mr-2 h-4 w-4" />
+                Generate Report
+              </>
+            )}
+          </Button>
+        </Card>
       ) : (
         <Card className="text-center py-12">
+          <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <CardTitle className="text-2xl mb-2">No Project Selected</CardTitle>
           <CardDescription className="mb-4">
-            Select a project from the dropdown above to generate its SEO performance report.
+            Select a project from the dropdown above to generate its comprehensive SEO performance report.
           </CardDescription>
+          {projects.length === 0 && (
+            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950/50 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                  No projects found. Create a project first to generate reports.
+                </span>
+              </div>
+            </div>
+          )}
         </Card>
       )}
     </div>

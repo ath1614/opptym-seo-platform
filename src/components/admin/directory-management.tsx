@@ -28,7 +28,8 @@ import {
   Save,
   X,
   MapPin,
-  Flag
+  Flag,
+  Info
 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { 
@@ -351,7 +352,7 @@ export function DirectoryManagement() {
         console.error('Failed to save directory:', errorData)
         showToast({
           title: 'Error',
-          description: errorData.error || 'Failed to save directory',
+          description: errorData.error || 'Failed to save directory. Please check all required fields.',
           variant: 'destructive'
         })
       }
@@ -711,12 +712,22 @@ export function DirectoryManagement() {
                   <SelectValue placeholder="Select classification" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Directory Submission">Directory Submission</SelectItem>
-                  <SelectItem value="Article Submission">Article Submission</SelectItem>
-                  <SelectItem value="Press Release">Press Release</SelectItem>
-                  <SelectItem value="Social Bookmarking">Social Bookmarking</SelectItem>
-                  <SelectItem value="Business Listing">Business Listing</SelectItem>
-                  <SelectItem value="Classified Ads">Classified Ads</SelectItem>
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="Directory Submission">Directory Submission</SelectItem>
+                      <SelectItem value="Article Submission">Article Submission</SelectItem>
+                      <SelectItem value="Press Release">Press Release</SelectItem>
+                      <SelectItem value="Social Bookmarking">Social Bookmarking</SelectItem>
+                      <SelectItem value="Business Listing">Business Listing</SelectItem>
+                      <SelectItem value="Classified Ads">Classified Ads</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               {!formData.classification && (
@@ -914,24 +925,35 @@ function BulkImportForm({ categories, locations, onImport, onCancel }: BulkImpor
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label>Select Category *</Label>
+        <Label>Select Classification *</Label>
         <Select
           value={category}
           onValueChange={setCategory}
         >
           <SelectTrigger className={!category ? 'border-red-500' : ''}>
-            <SelectValue placeholder="Choose a category" />
+            <SelectValue placeholder="Choose a classification" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
+            {categories.length > 0 ? (
+              categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))
+            ) : (
+              <>
+                <SelectItem value="Directory Submission">Directory Submission</SelectItem>
+                <SelectItem value="Article Submission">Article Submission</SelectItem>
+                <SelectItem value="Press Release">Press Release</SelectItem>
+                <SelectItem value="Social Bookmarking">Social Bookmarking</SelectItem>
+                <SelectItem value="Business Listing">Business Listing</SelectItem>
+                <SelectItem value="Classified Ads">Classified Ads</SelectItem>
+              </>
+            )}
           </SelectContent>
         </Select>
         {!category && (
-          <p className="text-sm text-red-500 mt-1">Category is required</p>
+          <p className="text-sm text-red-500 mt-1">Classification is required</p>
         )}
       </div>
       

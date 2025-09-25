@@ -113,6 +113,15 @@ export async function POST(request: NextRequest) {
     }
 
     const directoryData = await request.json()
+    console.log('Received directory data:', directoryData)
+
+    // Validate required fields
+    if (!directoryData.name || !directoryData.url || !directoryData.domain || !directoryData.classification || !directoryData.category || !directoryData.country) {
+      return NextResponse.json(
+        { error: 'Missing required fields: name, url, domain, classification, category, and country are required' },
+        { status: 400 }
+      )
+    }
 
     await connectDB()
 
@@ -124,16 +133,48 @@ export async function POST(request: NextRequest) {
     }
     const directoriesCollection = db.collection('directories')
 
-    // Create new directory
+    // Check if directory already exists
+    const existingDirectory = await directoriesCollection.findOne({
+      $or: [
+        { name: directoryData.name },
+        { url: directoryData.url },
+        { domain: directoryData.domain }
+      ]
+    })
+
+    if (existingDirectory) {
+      return NextResponse.json(
+        { error: 'Directory with this name, URL, or domain already exists' },
+        { status: 409 }
+      )
+    }
+
+    // Create new directory with proper validation
     const newDirectory = {
-      ...directoryData,
+      name: directoryData.name.trim(),
+      url: directoryData.url.trim(),
+      domain: directoryData.domain.trim().toLowerCase(),
+      classification: directoryData.classification.trim(),
+      category: directoryData.category.trim(),
+      country: directoryData.country.trim(),
+      status: directoryData.status || 'active',
+      daScore: parseInt(directoryData.daScore) || 0,
+      pageRank: parseFloat(directoryData.pageRank) || 0,
+      priority: parseInt(directoryData.priority) || 0,
+      description: directoryData.description?.trim() || '',
       createdAt: new Date(),
       updatedAt: new Date()
     }
 
+    console.log('Creating directory with data:', newDirectory)
+
     const result = await directoriesCollection.insertOne(newDirectory)
 
-    console.log('Created new directory:', result.insertedId)
+    if (!result.insertedId) {
+      throw new Error('Failed to insert directory')
+    }
+
+    console.log('Successfully created directory:', result.insertedId)
 
     return NextResponse.json({ 
       success: true, 
@@ -144,7 +185,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating directory:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     )
   }
