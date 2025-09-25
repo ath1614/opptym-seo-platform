@@ -26,7 +26,9 @@ import {
   Filter,
   Eye,
   Save,
-  X
+  X,
+  MapPin,
+  Flag
 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import { 
@@ -59,6 +61,7 @@ interface Directory {
   domain: string
   classification: string
   category: string
+  country: string
   status: string
   daScore?: number
   pageRank?: number
@@ -68,11 +71,23 @@ interface Directory {
   updatedAt: string
 }
 
+interface Location {
+  _id: string
+  name: string
+  code: string
+  flag: string
+  description?: string
+  isActive: boolean
+  priority: number
+}
+
 export function DirectoryManagement() {
   const [directories, setDirectories] = useState<Directory[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedLocation, setSelectedLocation] = useState('')
   const [categories, setCategories] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -85,6 +100,7 @@ export function DirectoryManagement() {
     domain: '',
     classification: '',
     category: '',
+    country: '',
     status: 'active',
     daScore: 0,
     pageRank: 0,
@@ -100,7 +116,8 @@ export function DirectoryManagement() {
         page: page.toString(),
         limit: '50', // Increased limit to show more directories
         ...(searchTerm && { search: searchTerm }),
-        ...(selectedCategory && { category: selectedCategory })
+        ...(selectedCategory && { category: selectedCategory }),
+        ...(selectedLocation && { country: selectedLocation })
       })
 
       const response = await fetch(`/api/admin/directories?${queryParams}`)
@@ -120,7 +137,7 @@ export function DirectoryManagement() {
     } finally {
       setLoading(false)
     }
-  }, [page, searchTerm, selectedCategory, showToast])
+  }, [page, searchTerm, selectedCategory, selectedLocation, showToast])
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -134,15 +151,28 @@ export function DirectoryManagement() {
     }
   }, [])
 
+  const fetchLocations = useCallback(async () => {
+    try {
+      const response = await fetch('/api/locations?active=true')
+      if (response.ok) {
+        const data = await response.json()
+        setLocations(data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch locations:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchDirectories()
     fetchCategories()
+    fetchLocations()
     
     // Auto-refresh every 60 seconds
     const interval = setInterval(fetchDirectories, 60000)
     
     return () => clearInterval(interval)
-  }, [fetchDirectories, fetchCategories])
+  }, [fetchDirectories, fetchCategories, fetchLocations])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,6 +209,7 @@ export function DirectoryManagement() {
       domain: '',
       classification: '',
       category: '',
+      country: '',
       status: 'active',
       daScore: 0,
       pageRank: 0,
@@ -196,6 +227,7 @@ export function DirectoryManagement() {
       domain: directory.domain || '',
       classification: directory.classification || '',
       category: directory.category || '',
+      country: directory.country || '',
       status: directory.status,
       daScore: directory.daScore || 0,
       pageRank: directory.pageRank || 0,
@@ -269,11 +301,12 @@ export function DirectoryManagement() {
     }
   }
 
-  const handleBulkImport = async (file: File, category: string) => {
+  const handleBulkImport = async (file: File, category: string, location: string) => {
     try {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('category', category)
+      formData.append('location', location)
 
       const response = await fetch('/api/admin/directories/bulk-import', {
         method: 'POST',
@@ -382,6 +415,18 @@ export function DirectoryManagement() {
                     </option>
                   ))}
                 </select>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map((location) => (
+                    <option key={location._id} value={location.name}>
+                      {location.flag} {location.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <Button onClick={fetchDirectories} variant="outline" size="sm">
                 Refresh
@@ -405,6 +450,7 @@ export function DirectoryManagement() {
                   <TableRow>
                     <TableHead>Directory Name</TableHead>
                     <TableHead>Domain</TableHead>
+                    <TableHead>Location</TableHead>
                     <TableHead>Classification</TableHead>
                     <TableHead>DA Score</TableHead>
                     <TableHead>Status</TableHead>
@@ -426,6 +472,14 @@ export function DirectoryManagement() {
                           <Globe className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
                             {directory.domain || 'N/A'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {directory.country || 'Global'}
                           </span>
                         </div>
                       </TableCell>
@@ -564,6 +618,22 @@ export function DirectoryManagement() {
               />
             </div>
             <div>
+              <Label htmlFor="country">Location</Label>
+              <select
+                id="country"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+              >
+                <option value="">Select Location</option>
+                {locations.map((location) => (
+                  <option key={location._id} value={location.name}>
+                    {location.flag} {location.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <Label htmlFor="status">Status</Label>
               <select
                 id="status"
@@ -641,6 +711,7 @@ export function DirectoryManagement() {
             </p>
             <BulkImportForm 
               categories={categories}
+              locations={locations}
               onImport={handleBulkImport}
               onCancel={() => setShowBulkImport(false)}
             />
@@ -653,18 +724,20 @@ export function DirectoryManagement() {
 
 interface BulkImportFormProps {
   categories: string[]
-  onImport: (file: File, category: string) => void
+  locations: Location[]
+  onImport: (file: File, category: string, location: string) => void
   onCancel: () => void
 }
 
-function BulkImportForm({ categories, onImport, onCancel }: BulkImportFormProps) {
+function BulkImportForm({ categories, locations, onImport, onCancel }: BulkImportFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [category, setCategory] = useState('')
+  const [location, setLocation] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (file && category) {
-      onImport(file, category)
+    if (file && category && location) {
+      onImport(file, category, location)
     }
   }
 
@@ -688,6 +761,23 @@ function BulkImportForm({ categories, onImport, onCancel }: BulkImportFormProps)
       </div>
       
       <div>
+        <label className="block text-sm font-medium text-foreground mb-2">Select Location</label>
+        <select
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          className="w-full px-3 py-2 border border-input bg-background rounded-md"
+          required
+        >
+          <option value="">Choose a location</option>
+          {locations.map((loc) => (
+            <option key={loc._id} value={loc.name}>
+              {loc.flag} {loc.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div>
         <label className="block text-sm font-medium text-foreground mb-2">Upload CSV File</label>
         <input
           type="file"
@@ -702,7 +792,7 @@ function BulkImportForm({ categories, onImport, onCancel }: BulkImportFormProps)
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={!file || !category}>
+        <Button type="submit" disabled={!file || !category || !location}>
           Import
         </Button>
       </div>

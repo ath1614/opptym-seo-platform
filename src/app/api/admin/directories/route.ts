@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const search = searchParams.get('search') || ''
     const category = searchParams.get('category') || ''
+    const country = searchParams.get('country') || ''
 
     // Use the same approach as SEO tasks - direct MongoDB collection access
     const mongoose = await import('mongoose')
@@ -54,6 +55,10 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query.classification = category
+    }
+
+    if (country) {
+      query.country = country
     }
 
     const skip = (page - 1) * limit

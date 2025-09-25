@@ -27,10 +27,11 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const category = formData.get('category') as string
+    const location = formData.get('location') as string
 
-    if (!file || !category) {
+    if (!file || !category || !location) {
       return NextResponse.json(
-        { error: 'File and category are required' },
+        { error: 'File, category, and location are required' },
         { status: 400 }
       )
     }
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
           domain: values[2] || '',
           classification: category,
           category: values[3] || '',
+          country: location,
           status: values[4] || 'active',
           daScore: values[5] ? parseInt(values[5]) : 0,
           pageRank: values[6] ? parseInt(values[6]) : 0,
