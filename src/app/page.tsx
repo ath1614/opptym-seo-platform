@@ -282,38 +282,38 @@ export default function Home() {
               {
                 icon: Database,
                 title: "Directory Submission",
-                description: "Submit your business to 2,800+ high-quality directories automatically.",
-                count: "2,800+ Directories"
+                description: "Submit your business to 1 Lakh+ high-quality directories automatically.",
+                count: "1 Lakh+ Directories"
               },
               {
                 icon: FileText,
                 title: "Article Submission",
                 description: "Publish articles to top article directories and content platforms.",
-                count: "500+ Platforms"
+                count: "1 Lakh+ Platforms"
               },
               {
                 icon: Megaphone,
                 title: "Press Release",
                 description: "Distribute press releases to major news outlets and PR networks.",
-                count: "200+ Outlets"
+                count: "1 Lakh+ Outlets"
               },
               {
                 icon: Bookmark,
                 title: "Social Bookmarking",
                 description: "Bookmark your content on popular social bookmarking sites.",
-                count: "100+ Sites"
+                count: "1 Lakh+ Sites"
               },
               {
                 icon: Building,
                 title: "Business Listing",
                 description: "List your business on Google My Business and other local directories.",
-                count: "50+ Platforms"
+                count: "1 Lakh+ Platforms"
               },
               {
                 icon: ShoppingCart,
                 title: "Classified Ads",
                 description: "Post classified ads on high-traffic classified websites.",
-                count: "300+ Sites"
+                count: "1 Lakh+ Sites"
               }
             ].map((task, index) => (
               <motion.div
@@ -573,19 +573,19 @@ export default function Home() {
                     <td className="py-4 px-4 font-medium text-gray-700">SEO Tools Available</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">1-2 tools</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600 font-medium">14+ tools</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600">10+ tools</span>
                       </div>
                     </td>
@@ -594,19 +594,19 @@ export default function Home() {
                     <td className="py-4 px-4 font-medium text-gray-700">AI-Powered Analysis</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">Basic</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600 font-medium">Advanced AI</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600">Advanced AI</span>
                       </div>
                     </td>
@@ -615,19 +615,19 @@ export default function Home() {
                     <td className="py-4 px-4 font-medium text-gray-700">Monthly Pricing</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">$50-200</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600 font-medium">₹999-8999</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">$1000+</span>
                       </div>
                     </td>
@@ -636,19 +636,19 @@ export default function Home() {
                     <td className="py-4 px-4 font-medium text-gray-700">Directory Submissions</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">Not included</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600 font-medium">Smart Bookmarklet</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600">Manual process</span>
                       </div>
                     </td>
@@ -657,19 +657,19 @@ export default function Home() {
                     <td className="py-4 px-4 font-medium text-gray-700">Setup Complexity</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600">Easy</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600 font-medium">Very Easy</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">Complex</span>
                       </div>
                     </td>
@@ -678,19 +678,19 @@ export default function Home() {
                     <td className="py-4 px-4 font-medium text-gray-700">Customer Support</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         <span className="text-gray-600">Email only</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600 font-medium">Priority Support</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                         <span className="text-gray-600">Dedicated Manager</span>
                       </div>
                     </td>
@@ -803,11 +803,6 @@ export default function Home() {
                     <CardDescription className="text-base leading-relaxed">
                       {resource.description}
                     </CardDescription>
-                    <div className="mt-4">
-                      <Badge variant="outline" className="text-xs">
-                        Coming Soon
-                      </Badge>
-                    </div>
                   </CardContent>
                 </Card>
               </motion.div>
