@@ -250,6 +250,10 @@ export async function GET(request: NextRequest) {
     
     // Debug info
     console.log('Bookmarklet loaded for project:', projectData.projectName);
+    console.log('Usage info:', usageInfo);
+    console.log('Token:', token.substring(0, 10) + '...');
+    console.log('Project ID:', projectId);
+    console.log('Link ID:', linkId);
     
     // Toast notification system
     function showToast(message, type = 'success') {
@@ -409,6 +413,9 @@ export async function GET(request: NextRequest) {
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
           if (xhr.readyState === 4) {
+            console.log('API Response Status:', xhr.status);
+            console.log('API Response Text:', xhr.responseText);
+            
             if (xhr.status === 200) {
               var response = JSON.parse(xhr.responseText);
               var usageMessage = response.remainingUsage > 0 ? 
@@ -418,9 +425,14 @@ export async function GET(request: NextRequest) {
               var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions + '\\n\\nFilled fields: ' + filledFields.slice(0, 3).join(', ') + (filledFields.length > 3 ? '...' : '');
               showToast(message, response.remainingUsage > 0 ? 'success' : 'warning');
             } else {
-              var errorResponse = JSON.parse(xhr.responseText);
-              var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ ' + (errorResponse.error || 'Submission tracking failed');
-              showToast(message, 'warning');
+              try {
+                var errorResponse = JSON.parse(xhr.responseText);
+                var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ ' + (errorResponse.error || 'Submission tracking failed') + '\\n\\nStatus: ' + xhr.status;
+                showToast(message, 'warning');
+              } catch (parseError) {
+                var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ Submission tracking failed\\n\\nStatus: ' + xhr.status + '\\nResponse: ' + xhr.responseText.substring(0, 100);
+                showToast(message, 'warning');
+              }
             }
           }
         };
@@ -437,7 +449,47 @@ export async function GET(request: NextRequest) {
         showToast(message, 'warning');
       }
     } else {
-      showToast('❌ No matching form fields found. Please fill the form manually.', 'error');
+      // Even if no fields are filled, still record the submission attempt
+      try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', apiBaseUrl + '/api/bookmarklet/submit', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            console.log('API Response Status (no fields):', xhr.status);
+            console.log('API Response Text (no fields):', xhr.responseText);
+            
+            if (xhr.status === 200) {
+              var response = JSON.parse(xhr.responseText);
+              var usageMessage = response.remainingUsage > 0 ? 
+                'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (Remaining: ' + response.remainingUsage + ')' :
+                'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (LIMIT REACHED - Generate new bookmarklet)';
+              
+              var message = '⚠️ No form fields found to fill automatically.\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions + '\\n\\nPlease fill the form manually and submit.';
+              showToast(message, 'warning');
+            } else {
+              try {
+                var errorResponse = JSON.parse(xhr.responseText);
+                var message = '⚠️ No form fields found to fill automatically.\\n\\n❌ ' + (errorResponse.error || 'Submission tracking failed') + '\\n\\nStatus: ' + xhr.status + '\\n\\nPlease fill the form manually and submit.';
+                showToast(message, 'error');
+              } catch (parseError) {
+                var message = '⚠️ No form fields found to fill automatically.\\n\\n❌ Submission tracking failed\\n\\nStatus: ' + xhr.status + '\\nResponse: ' + xhr.responseText.substring(0, 100) + '\\n\\nPlease fill the form manually and submit.';
+                showToast(message, 'error');
+              }
+            }
+          }
+        };
+        xhr.send(JSON.stringify({
+          token: token,
+          projectId: projectId,
+          linkId: linkId,
+          url: window.location.href,
+          title: document.title || 'Untitled Page',
+          description: document.querySelector('meta[name="description"]')?.content || 'No description available'
+        }));
+      } catch (error) {
+        showToast('⚠️ No form fields found to fill automatically.\\n\\n❌ Submission tracking failed\\n\\nPlease fill the form manually and submit.', 'error');
+      }
     }
     
     function getFieldValue(fieldName, projectData) {
