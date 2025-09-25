@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Submission from '@/models/Submission'
-import { getPlanLimits, isLimitExceeded } from '@/lib/subscription-limits'
+import { getPlanLimits, isLimitExceeded, getPlanLimitsWithCustom, isLimitExceededWithCustom } from '@/lib/subscription-limits'
 import { bookmarkletTokens, rateLimitStore, createToken, validateToken, incrementTokenUsage } from '@/lib/bookmarklet-tokens'
 import { trackUsage } from '@/lib/limit-middleware'
 import mongoose from 'mongoose'
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         status: 'success'
       })
       const user = await User.findById(session.user.id)
-      const planLimits = getPlanLimits(user?.plan || 'free')
+      const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free')
       const limit = planLimits.submissions === -1 ? 'unlimited' : planLimits.submissions
       
       return NextResponse.json({ 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     // Get user's plan limits
     const user = await User.findById(session.user.id)
-    const planLimits = getPlanLimits(user?.plan || 'free')
+    const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free')
 
     // Transform -1 limits to 'unlimited' for frontend
     const transformedPlanLimits = {
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
       remainingUsage: updatedTokenData.maxUsage - updatedTokenData.usageCount,
       totalSubmissions: totalSubmissions,
       planLimits: transformedPlanLimits,
-      submissionLimitReached: isLimitExceeded(user?.plan || 'free', 'submissions', totalSubmissions)
+      submissionLimitReached: isLimitExceededWithCustom(planLimits, 'submissions', totalSubmissions)
     })
 
   } catch (error) {
@@ -200,18 +200,18 @@ export async function PUT(request: NextRequest) {
       status: 'success'
     })
 
+    // Get plan limits from database
+    const planLimits = await getPlanLimitsWithCustom(user.plan)
+    
     // Check if user has exceeded their submission limit
-    if (isLimitExceeded(user.plan, 'submissions', currentSubmissions)) {
+    if (isLimitExceededWithCustom(planLimits, 'submissions', currentSubmissions)) {
       return NextResponse.json({ 
         error: 'Submission limit exceeded for your plan',
         limitType: 'submissions',
         currentUsage: currentSubmissions,
-        planLimits: getPlanLimits(user.plan)
+        planLimits: planLimits
       }, { status: 429 })
     }
-
-    // Determine usage limits based on plan
-    const planLimits = getPlanLimits(user.plan)
     let maxUsage = 1 // Default for free plan
     
     if (user.plan === 'pro') {

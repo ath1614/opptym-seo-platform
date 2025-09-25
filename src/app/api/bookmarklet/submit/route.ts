@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Submission from '@/models/Submission'
-import { getPlanLimits, isLimitExceeded } from '@/lib/subscription-limits'
+import { getPlanLimits, isLimitExceeded, getPlanLimitsWithCustom, isLimitExceededWithCustom } from '@/lib/subscription-limits'
 import { validateToken, incrementTokenUsage } from '@/lib/bookmarklet-tokens'
 import { trackUsage } from '@/lib/limit-middleware'
 import { logActivity } from '@/lib/activity-logger'
@@ -144,9 +144,9 @@ export async function POST(request: NextRequest) {
         userId: tokenData.userId,
         status: 'success'
       })
-      const user = await User.findById(tokenData.userId)
-      const planLimits = getPlanLimits(user?.plan || 'free')
-      const limit = planLimits.submissions === -1 ? 'unlimited' : planLimits.submissions
+        const user = await User.findById(tokenData.userId)
+        const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free')
+        const limit = planLimits.submissions === -1 ? 'unlimited' : planLimits.submissions
       
       return new NextResponse(JSON.stringify({ 
         error: 'Submission limit exceeded',
