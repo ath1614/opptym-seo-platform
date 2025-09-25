@@ -210,10 +210,12 @@ export function SEOTasksGrid() {
         params.append('search', search)
       }
       
+      console.log('Fetching SEO tasks with params:', params.toString())
       const response = await fetch(`/api/seo-tasks/links?${params}`)
       const data = await response.json()
       
       if (response.ok) {
+        console.log('Fetched SEO tasks data:', data)
         setLinks(data.links)
         setFilteredLinks(data.links)
         setTotalLinks(data.total)
@@ -322,7 +324,8 @@ export function SEOTasksGrid() {
   }
 
   const handleRefresh = () => {
-    fetchLinks(currentPage, selectedCategory, searchTerm)
+    console.log('Refreshing SEO tasks...')
+    fetchLinks(currentPage, selectedCategory, searchTerm, selectedLocation)
     fetchSubmissionStatus() // Also refresh submission status
     fetchUsageStats() // Refresh usage stats
   }
@@ -473,6 +476,11 @@ export function SEOTasksGrid() {
           className="pl-9"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+            }
+          }}
         />
       </div>
 

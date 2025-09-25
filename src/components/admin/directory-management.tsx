@@ -120,9 +120,11 @@ export function DirectoryManagement() {
         ...(selectedLocation && { country: selectedLocation })
       })
 
+      console.log('Fetching directories with params:', queryParams.toString())
       const response = await fetch(`/api/admin/directories?${queryParams}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched directories data:', data)
         setDirectories(data.directories)
         setTotalPages(data.totalPages)
         setCategories(data.categories || [])
@@ -255,14 +257,19 @@ export function DirectoryManagement() {
       })
 
       if (response.ok) {
+        const result = await response.json()
+        console.log('Directory saved successfully:', result)
         showToast({
           title: 'Success',
           description: editingDirectory ? 'Directory updated successfully' : 'Directory created successfully',
           variant: 'default'
         })
         setShowAddDialog(false)
-        fetchDirectories()
+        // Force refresh directories
+        await fetchDirectories()
       } else {
+        const errorData = await response.json()
+        console.error('Failed to save directory:', errorData)
         throw new Error('Failed to save directory')
       }
     } catch (error) {
