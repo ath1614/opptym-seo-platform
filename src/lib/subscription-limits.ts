@@ -73,7 +73,18 @@ export async function getCustomPlanLimits(planName: string): Promise<Subscriptio
 }
 
 // Enhanced function that checks for custom limits first
-export async function getPlanLimitsWithCustom(plan: string): Promise<SubscriptionLimits> {
+export async function getPlanLimitsWithCustom(plan: string, userRole?: string): Promise<SubscriptionLimits> {
+  // Admin users always get unlimited access
+  if (userRole === 'admin') {
+    return {
+      projects: -1,
+      submissions: -1,
+      seoTools: -1,
+      backlinks: -1,
+      reports: -1
+    }
+  }
+  
   // First try to get custom limits from database
   const customLimits = await getCustomPlanLimits(plan)
   if (customLimits) {

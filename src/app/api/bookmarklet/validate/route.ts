@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         status: 'success'
       })
       const user = await User.findById(session.user.id)
-      const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free')
+      const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free', user?.role)
       const limit = planLimits.submissions === -1 ? 'unlimited' : planLimits.submissions
       
       return NextResponse.json({ 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     // Get user's plan limits
     const user = await User.findById(session.user.id)
-    const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free')
+    const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free', user?.role)
 
     // Transform -1 limits to 'unlimited' for frontend
     const transformedPlanLimits = {

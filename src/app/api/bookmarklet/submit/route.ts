@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
         status: 'success'
       })
         const user = await User.findById(tokenData.userId)
-        const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free')
+        const planLimits = await getPlanLimitsWithCustom(user?.plan || 'free', user?.role)
         const limit = planLimits.submissions === -1 ? 'unlimited' : planLimits.submissions
       
       return new NextResponse(JSON.stringify({ 

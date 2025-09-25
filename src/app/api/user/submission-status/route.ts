@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Get plan limits from database (consistent with dashboard usage API)
-    const planLimits = await getPlanLimitsWithCustom(user.plan)
+    const planLimits = await getPlanLimitsWithCustom(user.plan, user.role)
     const isLimitReached = isLimitExceededWithCustom(planLimits, 'submissions', currentSubmissions)
     const remainingUsage = planLimits.submissions === -1 ? -1 : Math.max(0, planLimits.submissions - currentSubmissions)
 

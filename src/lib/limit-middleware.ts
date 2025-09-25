@@ -38,7 +38,7 @@ export async function checkSubscriptionLimits(
     }
 
     const plan = user.plan || 'free'
-    const limits = await getPlanLimitsWithCustom(plan)
+    const limits = await getPlanLimitsWithCustom(plan, user.role)
     
     // Get current usage from user's usage tracking
     const currentUsage = user.usage?.[options.limitType] || 0
@@ -181,7 +181,7 @@ export async function getUsageStats(userId: string) {
     }
 
     const plan = user.plan || 'free'
-    const limits = await getPlanLimitsWithCustom(plan)
+    const limits = await getPlanLimitsWithCustom(plan, user.role)
     
     // Get actual project count from database
     const actualProjects = await Project.countDocuments({ userId: new mongoose.Types.ObjectId(userId) })
