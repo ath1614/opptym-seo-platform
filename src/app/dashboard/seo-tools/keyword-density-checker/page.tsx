@@ -32,61 +32,6 @@ export default function KeywordDensityCheckerPage() {
     return null
   }
 
-  const mockData = {
-    url: 'https://example.com',
-    totalWords: 1250,
-    totalKeywords: 45,
-    keywordDensity: [
-      {
-        keyword: 'SEO',
-        count: 12,
-        density: 0.96,
-        status: 'good',
-        recommendation: 'Good keyword density for SEO'
-      },
-      {
-        keyword: 'marketing',
-        count: 8,
-        density: 0.64,
-        status: 'good',
-        recommendation: 'Optimal density for marketing keyword'
-      },
-      {
-        keyword: 'digital',
-        count: 15,
-        density: 1.2,
-        status: 'warning',
-        recommendation: 'Slightly high density, consider reducing usage'
-      },
-      {
-        keyword: 'strategy',
-        count: 6,
-        density: 0.48,
-        status: 'good',
-        recommendation: 'Good keyword density for strategy'
-      },
-      {
-        keyword: 'content',
-        count: 20,
-        density: 1.6,
-        status: 'error',
-        recommendation: 'Keyword density too high, risk of keyword stuffing'
-      }
-    ],
-    keywordDistribution: {
-      title: ['SEO', 'marketing'],
-      headings: ['digital', 'strategy', 'content'],
-      body: ['SEO', 'marketing', 'digital', 'strategy', 'content'],
-      meta: ['SEO', 'marketing']
-    },
-    recommendations: [
-      'Reduce the density of "content" keyword to avoid keyword stuffing',
-      'Consider using "digital" keyword more naturally in the content',
-      'Add more semantic variations of your primary keywords',
-      'Ensure keywords appear naturally in headings and subheadings'
-    ],
-    score: 78
-  }
 
 
   return (
@@ -95,7 +40,7 @@ export default function KeywordDensityCheckerPage() {
         toolId="keyword-density-checker"
         toolName="Keyword Density Checker"
         toolDescription="Check keyword density and distribution across your content"
-        mockData={mockData}
+        mockData={null}
       >
         <KeywordDensityResults />
       </SEOToolLayout>

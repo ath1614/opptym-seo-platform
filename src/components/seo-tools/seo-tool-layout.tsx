@@ -288,8 +288,40 @@ export function SEOToolLayout({
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {isAnalyzing && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-12">
+              <div className="mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                <RefreshCw className="h-12 w-12 text-primary animate-spin" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4">Analyzing Your Website</h3>
+              <div className="space-y-3 max-w-md mx-auto">
+                <p className="text-muted-foreground">
+                  Our advanced SEO analysis engine is working to provide you with comprehensive and accurate insights.
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <strong>⏱️ This may take a few minutes</strong><br />
+                    We're performing deep analysis to ensure quality and accurate results. 
+                    Please be patient while we gather comprehensive data about your website.
+                  </p>
+                </div>
+                <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  <span className="ml-2">Processing...</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Results */}
-      {results && (
+      {results && !isAnalyzing && (
         <div className="space-y-6">
           {children}
         </div>
