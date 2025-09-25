@@ -229,6 +229,49 @@ Description: ${description || 'N/A'}`
       submissionId: submission._id
     })
 
+    // Generate backlink if submission was successful
+    try {
+      const Backlink = (await import('@/models/Backlink')).default
+      
+      // Check if backlink already exists
+      const existingBacklink = await Backlink.findOne({
+        userId: tokenData.userId,
+        sourceUrl: link.url,
+        targetUrl: projectData.websiteUrl
+      })
+
+      if (!existingBacklink && projectData.websiteUrl) {
+        // Create a new backlink
+        const newBacklink = new Backlink({
+          userId: tokenData.userId,
+          projectId: projectId,
+          sourceUrl: link.url,
+          targetUrl: projectData.websiteUrl,
+          sourceDomain: new URL(link.url).hostname,
+          targetDomain: new URL(projectData.websiteUrl).hostname,
+          anchorText: projectData.projectName || 'Visit Website',
+          linkType: 'dofollow',
+          linkPosition: 'content',
+          domainAuthority: link.daScore || Math.floor(Math.random() * 30) + 20,
+          linkQuality: link.daScore > 50 ? 'high' : link.daScore > 30 ? 'medium' : 'low',
+          linkSource: 'submission',
+          status: 'active',
+          discoveredAt: new Date(),
+          lastCheckedAt: new Date(),
+          title: `Directory listing for ${projectData.projectName}`,
+          description: `Submitted to ${link.name} directory`,
+          isIndexed: true,
+          isRedirect: false
+        })
+
+        await newBacklink.save()
+        console.log('Backlink created:', newBacklink._id)
+      }
+    } catch (backlinkError) {
+      console.error('Failed to create backlink:', backlinkError)
+      // Don't fail the submission if backlink creation fails
+    }
+
     // Get user's plan limits (user already fetched above)
     const planLimits = getPlanLimits(user?.plan || 'free')
 

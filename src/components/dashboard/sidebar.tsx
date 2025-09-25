@@ -17,7 +17,8 @@ import {
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Shield,
+  Link as LinkIcon
 } from 'lucide-react'
 
 const navigation = [
@@ -40,6 +41,11 @@ const navigation = [
     name: 'SEO Tasks',
     href: '/dashboard/seo-tasks',
     icon: CheckSquare,
+  },
+  {
+    name: 'Backlinks',
+    href: '/dashboard/backlinks',
+    icon: LinkIcon,
   },
   {
     name: 'Reports',

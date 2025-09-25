@@ -128,6 +128,12 @@ export async function trackUsage(
       actualCurrentUsage = await SeoToolUsage.countDocuments({ 
         userId: new mongoose.Types.ObjectId(userId)
       })
+    } else if (limitType === 'backlinks') {
+      const Backlink = (await import('@/models/Backlink')).default
+      actualCurrentUsage = await Backlink.countDocuments({ 
+        userId: new mongoose.Types.ObjectId(userId),
+        status: 'active'
+      })
     } else {
       // For other types, use cached counter as fallback
       actualCurrentUsage = user.usage?.[limitType] || 0
@@ -207,6 +213,14 @@ export async function getUsageStats(userId: string) {
     })
     console.log(`Actual SEO tools usage in database: ${actualSeoTools}`)
     
+    // Get actual backlinks count from database
+    const Backlink = (await import('@/models/Backlink')).default
+    const actualBacklinks = await Backlink.countDocuments({ 
+      userId: new mongoose.Types.ObjectId(userId),
+      status: 'active'
+    })
+    console.log(`Actual backlinks in database: ${actualBacklinks}`)
+    
     const usage = user.usage || {
       projects: 0,
       submissions: 0,
@@ -221,7 +235,8 @@ export async function getUsageStats(userId: string) {
       ...usage,
       projects: actualProjects,
       submissions: actualSubmissions,
-      seoTools: actualSeoTools
+      seoTools: actualSeoTools,
+      backlinks: actualBacklinks
     }
     console.log(`Real usage (with actual counts):`, realUsage)
 
