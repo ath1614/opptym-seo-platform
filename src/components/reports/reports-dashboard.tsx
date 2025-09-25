@@ -38,6 +38,7 @@ import { SEOIssuesAnalysis } from './seo-issues-analysis'
 interface Project {
   _id: string
   projectName: string
+  name: string
   websiteURL: string
   category: string
   status: string
@@ -75,7 +76,44 @@ interface ReportData {
       score: number
       issues: number
       recommendations: number
-      analysisResults: Record<string, unknown> // Full analysis results from SEO tools
+      analysisResults: {
+        metaTags?: {
+          title?: string
+          description?: string
+          keywords?: string
+          viewport?: string
+        }
+        performance?: {
+          images?: number
+          headings?: number
+          links?: number
+          score?: number
+        }
+        isMobileFriendly?: boolean
+        viewport?: {
+          configured?: boolean
+          total?: number
+        }
+        touchTargets?: {
+          total?: number
+        }
+        score?: number
+        issues?: string[]
+        recommendations?: string[]
+        brokenLinks?: number
+        totalLinks?: number
+        workingLinks?: number
+        totalWords?: number
+        uniqueWords?: number
+        topKeywords?: string[]
+        keywordDensity?: Record<string, number>
+        altText?: {
+          totalImages?: number
+          imagesWithAlt?: number
+          imagesWithoutAlt?: number
+        }
+        [key: string]: any
+      }
     }>
   }>
   submissionsData: Array<{
@@ -658,7 +696,7 @@ export function ReportsDashboard() {
                                           <div>
                                             <div className="flex items-center space-x-2 mb-3">
                                               <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                              <span className="font-medium text-sm">Issues Found ({result.analysisResults.issues.length})</span>
+                                              <span className="font-medium text-sm">Issues Found ({result.analysisResults.issues?.length || 0})</span>
                                             </div>
                                             <div className="space-y-2">
                                               {result.analysisResults.issues.map((issue: string, issueIndex: number) => (
@@ -676,7 +714,7 @@ export function ReportsDashboard() {
                                           <div>
                                             <div className="flex items-center space-x-2 mb-3">
                                               <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                              <span className="font-medium text-sm">Recommendations ({result.analysisResults.recommendations.length})</span>
+                                              <span className="font-medium text-sm">Recommendations ({result.analysisResults.recommendations?.length || 0})</span>
                                             </div>
                                             <div className="space-y-2">
                                               {result.analysisResults.recommendations.map((recommendation: string, recIndex: number) => (
@@ -696,12 +734,12 @@ export function ReportsDashboard() {
                                             {result.analysisResults.metaTags && (
                                               <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
                                                 <h6 className="font-medium text-sm mb-2">Meta Tags Analysis</h6>
-                                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                                  <div>Title: {result.analysisResults.metaTags.title ? '✓' : '✗'}</div>
-                                                  <div>Description: {result.analysisResults.metaTags.description ? '✓' : '✗'}</div>
-                                                  <div>Keywords: {result.analysisResults.metaTags.keywords ? '✓' : '✗'}</div>
-                                                  <div>Viewport: {result.analysisResults.metaTags.viewport ? '✓' : '✗'}</div>
-                                                </div>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                              <div>Title: {result.analysisResults.metaTags?.title ? '✓' : '✗'}</div>
+                                              <div>Description: {result.analysisResults.metaTags?.description ? '✓' : '✗'}</div>
+                                              <div>Keywords: {result.analysisResults.metaTags?.keywords ? '✓' : '✗'}</div>
+                                              <div>Viewport: {result.analysisResults.metaTags?.viewport ? '✓' : '✗'}</div>
+                                            </div>
                                               </div>
                                             )}
 
@@ -710,10 +748,10 @@ export function ReportsDashboard() {
                                               <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
                                                 <h6 className="font-medium text-sm mb-2">Performance Analysis</h6>
                                                 <div className="grid grid-cols-2 gap-2 text-xs">
-                                                  <div>Images: {result.analysisResults.performance.images || 0}</div>
-                                                  <div>Headings: {result.analysisResults.performance.headings || 0}</div>
-                                                  <div>Links: {result.analysisResults.performance.links || 0}</div>
-                                                  <div>Score: {result.analysisResults.performance.score || 0}/100</div>
+                                                  <div>Images: {result.analysisResults.performance?.images || 0}</div>
+                                                  <div>Headings: {result.analysisResults.performance?.headings || 0}</div>
+                                                  <div>Links: {result.analysisResults.performance?.links || 0}</div>
+                                                  <div>Score: {result.analysisResults.performance?.score || 0}/100</div>
                                                 </div>
                                               </div>
                                             )}
