@@ -325,7 +325,7 @@ export default function DashboardPage() {
           {/* Current Plan Card */}
           <div className="lg:col-span-1">
             <h2 className="text-xl font-semibold mb-4">Current Plan</h2>
-            <CurrentPlanCard plan={currentPlan} usage={usage} />
+            <CurrentPlanCard plan={currentPlan} usage={usage} limits={usageStats?.limits} />
           </div>
 
           {/* Additional Info */}

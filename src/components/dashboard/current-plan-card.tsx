@@ -18,16 +18,24 @@ interface CurrentPlanCardProps {
     backlinks: number
     reports: number
   }
+  limits?: {
+    projects: number | 'unlimited'
+    submissions: number | 'unlimited'
+    seoTools: number | 'unlimited'
+    backlinks: number | 'unlimited'
+    reports: number | 'unlimited'
+  }
 }
 
-export function CurrentPlanCard({ plan, usage }: CurrentPlanCardProps) {
+export function CurrentPlanCard({ plan, usage, limits: apiLimits }: CurrentPlanCardProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeReason, setUpgradeReason] = useState<{
     limitType: string
     currentUsage: number
   }>({ limitType: '', currentUsage: 0 })
 
-  const limits = getPlanLimits(plan)
+  // Use API limits if provided, otherwise fallback to hardcoded limits
+  const limits = apiLimits || getPlanLimits(plan)
   
   const getPlanIcon = (planName: string) => {
     switch (planName) {
@@ -117,10 +125,12 @@ export function CurrentPlanCard({ plan, usage }: CurrentPlanCardProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           {usageItems.map((item) => {
-            const percentage = getUsagePercentage(plan, item.type, item.used)
-            const remaining = getRemainingUsage(plan, item.type, item.used)
-            const isNearLimit = percentage > 80
-            const isAtLimit = percentage >= 100
+            // Handle 'unlimited' limits
+            const limitValue = typeof item.limit === 'string' && item.limit === 'unlimited' ? -1 : item.limit
+            const percentage = limitValue === -1 ? 0 : (item.used / limitValue) * 100
+            const remaining = limitValue === -1 ? -1 : Math.max(0, limitValue - item.used)
+            const isNearLimit = limitValue !== -1 && percentage > 80
+            const isAtLimit = limitValue !== -1 && percentage >= 100
 
             return (
               <div key={item.type} className="space-y-2">
