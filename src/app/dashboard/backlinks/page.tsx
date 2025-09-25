@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -50,7 +52,8 @@ interface BacklinkStats {
 }
 
 export default function BacklinksPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const { showToast } = useToast()
   const [backlinks, setBacklinks] = useState<Backlink[]>([])
   const [stats, setStats] = useState<BacklinkStats | null>(null)
@@ -62,6 +65,29 @@ export default function BacklinksPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [isScanning, setIsScanning] = useState(false)
   const [scanUrl, setScanUrl] = useState('')
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
+
+  if (status === 'loading') {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
 
   const loadBacklinks = async () => {
     try {
@@ -175,27 +201,28 @@ export default function BacklinksPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Backlinks</h1>
-          <p className="text-muted-foreground">
-            Monitor and analyze your website's backlink profile
-          </p>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Backlinks</h1>
+            <p className="text-muted-foreground">
+              Monitor and analyze your website's backlink profile
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadBacklinks}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadBacklinks}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </div>
 
       {/* Important Disclaimer */}
       <Alert className="border-amber-200 bg-amber-50">
@@ -434,6 +461,7 @@ export default function BacklinksPage() {
           website policies, and external factors beyond our control. Results may vary significantly between different websites and submission attempts.
         </AlertDescription>
       </Alert>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
