@@ -1301,6 +1301,8 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
 
 // Keyword Tracker - Real Analysis
 export async function analyzeKeywordTracking(url: string): Promise<KeywordTrackingAnalysis> {
+  console.log(`🔍 Starting keyword tracking analysis for ${url}`)
+  
   const doc = await fetchAndParseHTML(url)
   
   if (!doc) {

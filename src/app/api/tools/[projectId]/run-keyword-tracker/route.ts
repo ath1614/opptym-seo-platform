@@ -41,7 +41,9 @@ export async function POST(
     }
 
     // Run keyword tracking analysis
+    console.log(`🔍 Starting analysis for project: ${projectId}, URL: ${project.websiteURL}`)
     const analysisResult = await analyzeKeywordTracking(project.websiteURL)
+    console.log(`✅ Analysis completed for project: ${projectId}`)
     
     // Save usage to database
     const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
@@ -65,8 +67,16 @@ export async function POST(
 
   } catch (error) {
     console.error('Keyword tracker error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
