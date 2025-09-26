@@ -1,5 +1,5 @@
 import { JSDOM } from 'jsdom'
-const fetch = require('node-fetch')
+import fetch from 'node-fetch'
 
 export interface MetaTagAnalysis {
   url: string
@@ -349,21 +349,47 @@ export interface CanonicalAnalysis {
 // Utility function to fetch and parse HTML
 async function fetchAndParseHTML(url: string): Promise<Document | null> {
   try {
+    console.log(`🌐 Fetching URL: ${url}`)
+    
     const response = await fetch(url, {
+      method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SEO-Analyzer/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
       },
+      timeout: 30000, // 30 second timeout
     })
     
+    console.log(`📡 Response status: ${response.status}`)
+    
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
     
     const html = await response.text()
-    const dom = new JSDOM(html)
+    console.log(`📄 HTML length: ${html.length} characters`)
+    
+    const dom = new JSDOM(html, {
+      url: url,
+      referrer: url,
+      contentType: "text/html",
+      includeNodeLocations: true,
+      storageQuota: 10000000
+    })
+    
+    console.log(`✅ Successfully parsed HTML for ${url}`)
     return dom.window.document
   } catch (error) {
-    console.error('Error fetching URL:', error)
+    console.error('❌ Error fetching URL:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return null
   }
 }
