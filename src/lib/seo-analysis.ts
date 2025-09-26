@@ -1,5 +1,5 @@
-import { JSDOM } from 'jsdom'
-import fetch from 'node-fetch'
+import axios from 'axios'
+import * as cheerio from 'cheerio'
 
 export interface MetaTagAnalysis {
   url: string
@@ -346,8 +346,8 @@ export interface CanonicalAnalysis {
   score: number
 }
 
-// Utility function to fetch and parse HTML
-async function fetchAndParseHTML(url: string): Promise<Document | null> {
+// Utility function to fetch and parse HTML using axios and cheerio
+async function fetchAndParseHTML(url: string): Promise<cheerio.CheerioAPI | null> {
   try {
     console.log(`🌐 Fetching URL: ${url}`)
     
@@ -361,8 +361,7 @@ async function fetchAndParseHTML(url: string): Promise<Document | null> {
     
     const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)]
     
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await axios.get(url, {
       headers: {
         'User-Agent': randomUserAgent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -374,31 +373,20 @@ async function fetchAndParseHTML(url: string): Promise<Document | null> {
         'Pragma': 'no-cache'
       },
       timeout: 15000, // 15 second timeout
+      maxRedirects: 5,
+      validateStatus: (status) => status < 400
     })
     
     console.log(`📡 Response status: ${response.status}`)
+    console.log(`📄 HTML length: ${response.data.length} characters`)
     
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const html = await response.text()
-    console.log(`📄 HTML length: ${html.length} characters`)
-    
-    if (html.length < 100) {
+    if (response.data.length < 100) {
       throw new Error('Response too short, likely blocked or invalid')
     }
     
-    const dom = new JSDOM(html, {
-      url: url,
-      referrer: url,
-      contentType: "text/html",
-      includeNodeLocations: true,
-      storageQuota: 10000000
-    })
-    
+    const $ = cheerio.load(response.data)
     console.log(`✅ Successfully parsed HTML for ${url}`)
-    return dom.window.document
+    return $
   } catch (error) {
     console.error('❌ Error fetching URL:', error)
     console.error('Error details:', {
@@ -423,21 +411,16 @@ async function fetchAndParseHTML(url: string): Promise<Document | null> {
       </html>
     `
     
-    const dom = new JSDOM(fallbackHTML, {
-      url: url,
-      referrer: url,
-      contentType: "text/html"
-    })
-    
-    return dom.window.document
+    const $ = cheerio.load(fallbackHTML)
+    return $
   }
 }
 
 // Meta Tag Analyzer
 export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     console.log('⚠️ Using fallback analysis for meta tags')
     // Return a basic analysis even if fetch fails
     return {
@@ -508,8 +491,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   let score = 100
 
   // Analyze title
-  const titleElement = doc.querySelector('title')
-  const titleContent = titleElement?.textContent || ''
+  const titleContent = $('title').text() || ''
   const titleLength = titleContent.length
   
   let titleStatus: 'good' | 'warning' | 'error' = 'good'
@@ -533,8 +515,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze description
-  const descriptionElement = doc.querySelector('meta[name="description"]')
-  const descriptionContent = descriptionElement?.getAttribute('content') || ''
+  const descriptionContent = $('meta[name="description"]').attr('content') || ''
   const descriptionLength = descriptionContent.length
   
   let descriptionStatus: 'good' | 'warning' | 'error' = 'good'
@@ -558,8 +539,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze keywords (not recommended but still checked)
-  const keywordsElement = doc.querySelector('meta[name="keywords"]')
-  const keywordsContent = keywordsElement?.getAttribute('content') || ''
+  const keywordsContent = $('meta[name="keywords"]').attr('content') || ''
   
   let keywordsStatus: 'good' | 'warning' | 'error' = 'good'
   let keywordsRecommendation = 'Meta keywords are not recommended for SEO'
@@ -572,8 +552,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze viewport
-  const viewportElement = doc.querySelector('meta[name="viewport"]')
-  const viewportContent = viewportElement?.getAttribute('content') || ''
+  const viewportContent = $('meta[name="viewport"]').attr('content') || ''
   
   let viewportStatus: 'good' | 'warning' | 'error' = 'good'
   let viewportRecommendation = 'Viewport meta tag is properly configured for mobile'
@@ -591,8 +570,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze robots
-  const robotsElement = doc.querySelector('meta[name="robots"]')
-  const robotsContent = robotsElement?.getAttribute('content') || 'index, follow'
+  const robotsContent = $('meta[name="robots"]').attr('content') || 'index, follow'
   
   let robotsStatus: 'good' | 'warning' | 'error' = 'good'
   let robotsRecommendation = 'Robots meta tag allows search engine indexing'
@@ -605,10 +583,10 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze Open Graph
-  const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content') || ''
-  const ogDescription = doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || ''
-  const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || ''
-  const ogUrl = doc.querySelector('meta[property="og:url"]')?.getAttribute('content') || url
+  const ogTitle = $('meta[property="og:title"]').attr('content') || ''
+  const ogDescription = $('meta[property="og:description"]').attr('content') || ''
+  const ogImage = $('meta[property="og:image"]').attr('content') || ''
+  const ogUrl = $('meta[property="og:url"]').attr('content') || url
   
   let ogStatus: 'good' | 'warning' | 'error' = 'good'
   let ogRecommendation = 'Open Graph tags are properly configured for social sharing'
@@ -621,10 +599,10 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze Twitter Cards
-  const twitterCard = doc.querySelector('meta[name="twitter:card"]')?.getAttribute('content') || ''
-  const twitterTitle = doc.querySelector('meta[name="twitter:title"]')?.getAttribute('content') || ''
-  const twitterDescription = doc.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || ''
-  const twitterImage = doc.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || ''
+  const twitterCard = $('meta[name="twitter:card"]').attr('content') || ''
+  const twitterTitle = $('meta[name="twitter:title"]').attr('content') || ''
+  const twitterDescription = $('meta[name="twitter:description"]').attr('content') || ''
+  const twitterImage = $('meta[name="twitter:image"]').attr('content') || ''
   
   let twitterStatus: 'good' | 'warning' | 'error' = 'good'
   let twitterRecommendation = 'Twitter Card tags are properly configured'
@@ -637,8 +615,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze canonical
-  const canonicalElement = doc.querySelector('link[rel="canonical"]')
-  const canonicalContent = canonicalElement?.getAttribute('href') || ''
+  const canonicalContent = $('link[rel="canonical"]').attr('href') || ''
   
   let canonicalStatus: 'good' | 'warning' | 'error' = 'good'
   let canonicalRecommendation = 'Canonical URL is properly set'
@@ -651,8 +628,7 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
   }
 
   // Analyze hreflang
-  const hreflangElement = doc.querySelector('link[rel="alternate"][hreflang]')
-  const hreflangContent = hreflangElement?.getAttribute('hreflang') || ''
+  const hreflangContent = $('link[rel="alternate"][hreflang]').attr('hreflang') || ''
   
   const hreflangStatus: 'good' | 'warning' | 'error' = 'good'
   const hreflangRecommendation = 'Hreflang is properly configured for language targeting'
@@ -734,20 +710,20 @@ export async function analyzePageSpeed(url: string): Promise<PageSpeedAnalysis> 
   let seoScore = 100
 
   // Analyze images
-  const images = doc.querySelectorAll('img')
-  const imagesWithoutAlt = Array.from(images).filter(img => !img.getAttribute('alt'))
+  const images = $('img')
+  const imagesWithoutAlt = images.filter((_, img) => !$(img).attr('alt')).length
   
-  if (imagesWithoutAlt.length > 0) {
-    accessibilityScore -= imagesWithoutAlt.length * 5
+  if (imagesWithoutAlt > 0) {
+    accessibilityScore -= imagesWithoutAlt * 5
     issues.push({
       type: 'warning',
-      message: `${imagesWithoutAlt.length} images without alt text`,
+      message: `${imagesWithoutAlt} images without alt text`,
       severity: 'medium'
     })
   }
 
   // Analyze headings structure
-  const h1s = doc.querySelectorAll('h1')
+  const h1s = $('h1')
   if (h1s.length === 0) {
     seoScore -= 10
     issues.push({
