@@ -777,12 +777,22 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
     }
   })
 
-  const keywordAnalysis = Object.entries(keywordCounts).map(([keyword, count]) => ({
-    keyword,
-    count,
-    density: totalWords > 0 ? (count / totalWords) * 100 : 0,
-    status: (count / totalWords) * 100 > 3 ? 'error' : (count / totalWords) * 100 > 2 ? 'warning' : 'good'
-  }))
+  const keywordAnalysis = Object.entries(keywordCounts).map(([keyword, count]) => {
+    const density = totalWords > 0 ? (count / totalWords) * 100 : 0
+    let status: 'good' | 'warning' | 'error' = 'good'
+    if (density > 3) {
+      status = 'error'
+    } else if (density > 2) {
+      status = 'warning'
+    }
+    
+    return {
+      keyword,
+      count,
+      density,
+      status
+    }
+  })
 
   if (recommendations.length === 0) {
     recommendations.push('Keyword density is within optimal range')
