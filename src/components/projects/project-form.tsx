@@ -207,7 +207,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     handleInputChange(field, array)
   }
 
-  const validateForm = (): boolean => {
+  const validateForm = (): { isValid: boolean; errors: Record<string, string> } => {
     const errors: Record<string, string> = {}
     
     // Required field validations with detailed messages and suggestions
@@ -451,7 +451,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
     
     setValidationErrors(errors)
-    return Object.keys(errors).length === 0
+    return { isValid: Object.keys(errors).length === 0, errors }
   }
 
   const addCustomField = () => {
@@ -620,19 +620,17 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Clear previous validation errors
-    setValidationErrors({})
-    
     // Perform client-side validation first
-    if (!validateForm()) {
-      const errorCount = Object.keys(validationErrors).length
-      const errorFields = Object.keys(validationErrors)
+    const validationResult = validateForm()
+    if (!validationResult.isValid) {
+      const errorCount = Object.keys(validationResult.errors).length
+      const errorFields = Object.keys(validationResult.errors)
       
       // Create detailed error message
       let errorMessage = `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
       errorFields.forEach((field, index) => {
         const fieldName = field.replace(/^address\./, 'Address ').replace(/^seoMetadata\./, 'SEO ').replace(/^articleSubmission\./, 'Article ')
-        errorMessage += `${index + 1}. ${fieldName}: ${validationErrors[field]}\n`
+        errorMessage += `${index + 1}. ${fieldName}: ${validationResult.errors[field]}\n`
       })
       
       showToast({
