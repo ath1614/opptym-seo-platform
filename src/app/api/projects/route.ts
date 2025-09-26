@@ -136,11 +136,18 @@ export async function POST(request: NextRequest) {
         })
       }
       
+      // Create detailed error summary
+      const errorCount = Object.keys(validationErrors).length
+      const errorSummary = Object.entries(validationErrors)
+        .map(([field, message], index) => `${index + 1}. ${field}: ${message}`)
+        .join('\n')
+      
       return NextResponse.json(
         { 
           error: 'Validation failed',
           validationErrors,
-          message: 'Please fix the following errors and try again'
+          message: `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n${errorSummary}`,
+          errorCount
         },
         { status: 400 }
       )

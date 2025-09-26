@@ -210,15 +210,19 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
     
-    // Required field validations
+    // Required field validations with detailed messages and suggestions
     if (!formData.projectName?.trim()) {
       errors.projectName = 'Project name is required'
+    } else if (formData.projectName.length < 3) {
+      errors.projectName = 'Project name must be at least 3 characters long'
     } else if (formData.projectName.length > 100) {
       errors.projectName = 'Project name cannot exceed 100 characters'
     }
     
     if (!formData.title?.trim()) {
       errors.title = 'Title is required'
+    } else if (formData.title.length < 10) {
+      errors.title = 'Title should be at least 10 characters for better SEO'
     } else if (formData.title.length > 200) {
       errors.title = 'Title cannot exceed 200 characters'
     }
@@ -226,38 +230,48 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     if (!formData.websiteURL?.trim()) {
       errors.websiteURL = 'Website URL is required'
     } else if (!/^https?:\/\/.+/.test(formData.websiteURL)) {
-      errors.websiteURL = 'Please enter a valid URL (must start with http:// or https://)'
+      errors.websiteURL = 'Please enter a valid URL starting with http:// or https://'
+    } else if (!/^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(formData.websiteURL)) {
+      errors.websiteURL = 'Please enter a complete URL with domain (e.g., https://example.com)'
     }
     
     if (!formData.email?.trim()) {
-      errors.email = 'Email is required'
-    } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address'
+      errors.email = 'Email address is required'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address (e.g., user@example.com)'
     }
     
     if (!formData.category?.trim()) {
-      errors.category = 'Category is required'
+      errors.category = 'Please select a category for your project'
     }
     
     if (!formData.companyName?.trim()) {
       errors.companyName = 'Company name is required'
+    } else if (formData.companyName.length < 2) {
+      errors.companyName = 'Company name must be at least 2 characters'
     } else if (formData.companyName.length > 100) {
       errors.companyName = 'Company name cannot exceed 100 characters'
     }
     
     if (!formData.phone?.trim()) {
       errors.phone = 'Phone number is required'
+    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/[\s\-\(\)]/g, ''))) {
+      errors.phone = 'Please enter a valid phone number (e.g., +1234567890 or 123-456-7890)'
     }
     
     if (!formData.businessDescription?.trim()) {
       errors.businessDescription = 'Business description is required'
+    } else if (formData.businessDescription.length < 50) {
+      errors.businessDescription = 'Business description should be at least 50 characters for better SEO'
     } else if (formData.businessDescription.length > 2000) {
       errors.businessDescription = 'Business description cannot exceed 2000 characters'
     }
     
-    // Address validations
+    // Address validations with suggestions
     if (!formData.address.addressLine1?.trim()) {
-      errors['address.addressLine1'] = 'Address line 1 is required'
+      errors['address.addressLine1'] = 'Street address is required'
+    } else if (formData.address.addressLine1.length < 5) {
+      errors['address.addressLine1'] = 'Please provide a complete street address'
     }
     
     if (!formData.address.district?.trim()) {
@@ -269,7 +283,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
     
     if (!formData.address.state?.trim()) {
-      errors['address.state'] = 'State is required'
+      errors['address.state'] = 'State/Province is required'
     }
     
     if (!formData.address.country?.trim()) {
@@ -277,29 +291,163 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
     
     if (!formData.address.pincode?.trim()) {
-      errors['address.pincode'] = 'Pincode is required'
+      errors['address.pincode'] = 'Postal/ZIP code is required'
+    } else if (!/^[0-9]{5,6}$/.test(formData.address.pincode)) {
+      errors['address.pincode'] = 'Please enter a valid postal code (5-6 digits)'
     }
     
-    // SEO Metadata validations
-    if (formData.seoMetadata.metaTitle && formData.seoMetadata.metaTitle.length > 60) {
-      errors['seoMetadata.metaTitle'] = 'Meta title cannot exceed 60 characters'
+    // SEO Metadata validations with SEO suggestions
+    if (formData.seoMetadata.metaTitle && formData.seoMetadata.metaTitle.length > 0) {
+      if (formData.seoMetadata.metaTitle.length < 30) {
+        errors['seoMetadata.metaTitle'] = 'Meta title should be at least 30 characters for better SEO'
+      } else if (formData.seoMetadata.metaTitle.length > 60) {
+        errors['seoMetadata.metaTitle'] = 'Meta title should not exceed 60 characters to avoid truncation in search results'
+      }
     }
     
-    if (formData.seoMetadata.metaDescription && formData.seoMetadata.metaDescription.length > 160) {
-      errors['seoMetadata.metaDescription'] = 'Meta description cannot exceed 160 characters'
+    if (formData.seoMetadata.metaDescription && formData.seoMetadata.metaDescription.length > 0) {
+      if (formData.seoMetadata.metaDescription.length < 120) {
+        errors['seoMetadata.metaDescription'] = 'Meta description should be at least 120 characters for better SEO'
+      } else if (formData.seoMetadata.metaDescription.length > 160) {
+        errors['seoMetadata.metaDescription'] = 'Meta description should not exceed 160 characters to avoid truncation'
+      }
     }
     
     // Article submission validations
-    if (formData.articleSubmission.articleTitle && formData.articleSubmission.articleTitle.length > 200) {
-      errors['articleSubmission.articleTitle'] = 'Article title cannot exceed 200 characters'
+    if (formData.articleSubmission.articleTitle && formData.articleSubmission.articleTitle.length > 0) {
+      if (formData.articleSubmission.articleTitle.length < 10) {
+        errors['articleSubmission.articleTitle'] = 'Article title should be at least 10 characters'
+      } else if (formData.articleSubmission.articleTitle.length > 200) {
+        errors['articleSubmission.articleTitle'] = 'Article title cannot exceed 200 characters'
+      }
     }
     
-    if (formData.articleSubmission.articleContent && formData.articleSubmission.articleContent.length > 5000) {
-      errors['articleSubmission.articleContent'] = 'Article content cannot exceed 5000 characters'
+    if (formData.articleSubmission.articleContent && formData.articleSubmission.articleContent.length > 0) {
+      if (formData.articleSubmission.articleContent.length < 100) {
+        errors['articleSubmission.articleContent'] = 'Article content should be at least 100 characters'
+      } else if (formData.articleSubmission.articleContent.length > 5000) {
+        errors['articleSubmission.articleContent'] = 'Article content cannot exceed 5000 characters'
+      }
     }
     
     if (formData.articleSubmission.authorBio && formData.articleSubmission.authorBio.length > 500) {
       errors['articleSubmission.authorBio'] = 'Author bio cannot exceed 500 characters'
+    }
+    
+    // WhatsApp validation
+    if (formData.whatsapp && formData.whatsapp.trim()) {
+      if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.whatsapp.replace(/[\s\-\(\)]/g, ''))) {
+        errors.whatsapp = 'Please enter a valid WhatsApp number (e.g., +1234567890)'
+      }
+    }
+    
+    // Target Audience validation
+    if (formData.targetAudience && formData.targetAudience.length > 500) {
+      errors.targetAudience = 'Target audience description cannot exceed 500 characters'
+    }
+    
+    // Goals validation
+    if (formData.goals && formData.goals.length > 1000) {
+      errors.goals = 'Goals description cannot exceed 1000 characters'
+    }
+    
+    // Notes validation
+    if (formData.notes && formData.notes.length > 2000) {
+      errors.notes = 'Notes cannot exceed 2000 characters'
+    }
+    
+    // Keywords validation
+    if (formData.keywords.length > 20) {
+      errors.keywords = 'Maximum 20 keywords allowed'
+    }
+    
+    // Competitors validation
+    if (formData.competitors.length > 10) {
+      errors.competitors = 'Maximum 10 competitors allowed'
+    }
+    
+    // SEO Keywords validation
+    if (formData.seoMetadata.keywords.length > 15) {
+      errors['seoMetadata.keywords'] = 'Maximum 15 SEO keywords allowed'
+    }
+    
+    if (formData.seoMetadata.targetKeywords.length > 10) {
+      errors['seoMetadata.targetKeywords'] = 'Maximum 10 target keywords allowed'
+    }
+    
+    // Sitemap URL validation
+    if (formData.seoMetadata.sitemapURL && formData.seoMetadata.sitemapURL.trim()) {
+      if (!/^https?:\/\/.+/.test(formData.seoMetadata.sitemapURL)) {
+        errors['seoMetadata.sitemapURL'] = 'Sitemap URL must start with http:// or https://'
+      }
+    }
+    
+    // Robots URL validation
+    if (formData.seoMetadata.robotsURL && formData.seoMetadata.robotsURL.trim()) {
+      if (!/^https?:\/\/.+/.test(formData.seoMetadata.robotsURL)) {
+        errors['seoMetadata.robotsURL'] = 'Robots URL must start with http:// or https://'
+      }
+    }
+    
+    // Article Author Name validation
+    if (formData.articleSubmission.authorName && formData.articleSubmission.authorName.length > 100) {
+      errors['articleSubmission.authorName'] = 'Author name cannot exceed 100 characters'
+    }
+    
+    // Article Tags validation
+    if (formData.articleSubmission.tags.length > 10) {
+      errors['articleSubmission.tags'] = 'Maximum 10 article tags allowed'
+    }
+    
+    // Classified Product Name validation
+    if (formData.classified.productName && formData.classified.productName.length > 200) {
+      errors['classified.productName'] = 'Product name cannot exceed 200 characters'
+    }
+    
+    // Price validation
+    if (formData.classified.price && formData.classified.price.trim()) {
+      if (!/^\d+(\.\d{1,2})?$/.test(formData.classified.price)) {
+        errors['classified.price'] = 'Please enter a valid price (e.g., 99.99)'
+      }
+    }
+    
+    // Product Image URL validation
+    if (formData.classified.productImageURL && formData.classified.productImageURL.trim()) {
+      if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(formData.classified.productImageURL)) {
+        errors['classified.productImageURL'] = 'Please enter a valid image URL (jpg, jpeg, png, gif, webp)'
+      }
+    }
+    
+    // Social Media URL validations
+    const socialFields = ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube']
+    socialFields.forEach(field => {
+      const value = formData.social[field as keyof typeof formData.social]
+      if (value && value.trim()) {
+        if (!/^https?:\/\/.+/.test(value)) {
+          errors[`social.${field}`] = `${field.charAt(0).toUpperCase() + field.slice(1)} URL must start with http:// or https://`
+        }
+      }
+    })
+    
+    // Business Hours validation
+    if (formData.businessHours && formData.businessHours.length > 200) {
+      errors.businessHours = 'Business hours cannot exceed 200 characters'
+    }
+    
+    // Established Year validation
+    if (formData.establishedYear && formData.establishedYear.trim()) {
+      const year = parseInt(formData.establishedYear)
+      const currentYear = new Date().getFullYear()
+      if (isNaN(year) || year < 1800 || year > currentYear) {
+        errors.establishedYear = `Please enter a valid year between 1800 and ${currentYear}`
+      }
+    }
+    
+    // Logo Image URL validation
+    if (formData.logoImageURL && formData.logoImageURL.trim()) {
+      if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/i.test(formData.logoImageURL)) {
+        errors.logoImageURL = 'Please enter a valid logo image URL (jpg, jpeg, png, gif, webp, svg)'
+      }
     }
     
     setValidationErrors(errors)
@@ -316,6 +464,65 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
   const getNestedFieldError = (parentField: string, childField: string): string | undefined => {
     return validationErrors[`${parentField}.${childField}`]
+  }
+
+  const getFieldSuggestion = (fieldName: string): string => {
+    const suggestions: Record<string, string> = {
+      // Basic Info
+      projectName: 'Use a descriptive name that reflects your business or project',
+      title: 'Write a compelling title that includes your main keyword',
+      websiteURL: 'Include the full URL with https:// (e.g., https://yourwebsite.com)',
+      email: 'Use a professional email address (e.g., contact@yourcompany.com)',
+      companyName: 'Enter your official business or company name',
+      phone: 'Include country code if international (e.g., +1-555-123-4567)',
+      whatsapp: 'Include country code for international numbers (e.g., +1234567890)',
+      businessDescription: 'Describe what your business does, your target audience, and key services (aim for 150-300 words)',
+      
+      // Project-specific fields
+      targetAudience: 'Describe your ideal customers, their demographics, and interests',
+      goals: 'List your business objectives and what you want to achieve',
+      notes: 'Add any additional information or special requirements',
+      keywords: 'Enter relevant keywords separated by commas (max 20)',
+      competitors: 'List your main competitors (max 10)',
+      
+      // Address
+      'address.addressLine1': 'Include street number, street name, and any building/suite information',
+      'address.pincode': 'Enter your postal or ZIP code (5-6 digits)',
+      
+      // SEO Metadata
+      'seoMetadata.metaTitle': 'Include your main keyword and keep it under 60 characters',
+      'seoMetadata.metaDescription': 'Write a compelling description that encourages clicks (120-160 characters)',
+      'seoMetadata.keywords': 'Enter SEO keywords separated by commas (max 15)',
+      'seoMetadata.targetKeywords': 'List your primary target keywords (max 10)',
+      'seoMetadata.sitemapURL': 'Enter your sitemap URL (e.g., https://yoursite.com/sitemap.xml)',
+      'seoMetadata.robotsURL': 'Enter your robots.txt URL (e.g., https://yoursite.com/robots.txt)',
+      
+      // Article Submission
+      'articleSubmission.articleTitle': 'Create an engaging title that summarizes your article',
+      'articleSubmission.articleContent': 'Write comprehensive content that provides value to readers',
+      'articleSubmission.authorName': 'Enter the full name of the article author',
+      'articleSubmission.authorBio': 'Write a brief bio about the author (max 500 characters)',
+      'articleSubmission.tags': 'Add relevant tags separated by commas (max 10)',
+      
+      // Classified
+      'classified.productName': 'Enter a clear, descriptive product name',
+      'classified.price': 'Enter the price in decimal format (e.g., 99.99)',
+      'classified.condition': 'Select the condition of your product',
+      'classified.productImageURL': 'Use a high-quality image URL (jpg, jpeg, png, gif, webp)',
+      
+      // Social Media
+      'social.facebook': 'Enter your Facebook page URL (e.g., https://facebook.com/yourpage)',
+      'social.twitter': 'Enter your Twitter profile URL (e.g., https://twitter.com/yourhandle)',
+      'social.instagram': 'Enter your Instagram profile URL (e.g., https://instagram.com/yourhandle)',
+      'social.linkedin': 'Enter your LinkedIn company page URL',
+      'social.youtube': 'Enter your YouTube channel URL',
+      
+      // Optional Fields
+      businessHours: 'Enter your business operating hours (e.g., Mon-Fri 9AM-5PM)',
+      establishedYear: 'Enter the year your business was established',
+      logoImageURL: 'Use a high-quality logo image URL (jpg, jpeg, png, gif, webp, svg)'
+    }
+    return suggestions[fieldName] || ''
   }
 
   const removeCustomField = (index: number) => {
@@ -419,9 +626,18 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     // Perform client-side validation first
     if (!validateForm()) {
       const errorCount = Object.keys(validationErrors).length
+      const errorFields = Object.keys(validationErrors)
+      
+      // Create detailed error message
+      let errorMessage = `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
+      errorFields.forEach((field, index) => {
+        const fieldName = field.replace(/^address\./, 'Address ').replace(/^seoMetadata\./, 'SEO ').replace(/^articleSubmission\./, 'Article ')
+        errorMessage += `${index + 1}. ${fieldName}: ${validationErrors[field]}\n`
+      })
+      
       showToast({
         title: 'Validation Failed',
-        description: `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} before submitting.`,
+        description: errorMessage,
         variant: 'destructive'
       })
       return
@@ -468,9 +684,17 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
           // Handle server-side validation errors
           setValidationErrors(data.validationErrors)
           const errorFields = Object.keys(data.validationErrors)
+          
+          // Create detailed error message
+          let errorMessage = `Please fix ${data.errorCount || errorFields.length} error${(data.errorCount || errorFields.length) > 1 ? 's' : ''}:\n\n`
+          errorFields.forEach((field, index) => {
+            const fieldName = field.replace(/^address\./, 'Address ').replace(/^seoMetadata\./, 'SEO ').replace(/^articleSubmission\./, 'Article ')
+            errorMessage += `${index + 1}. ${fieldName}: ${data.validationErrors[field]}\n`
+          })
+          
           showToast({
             title: 'Validation Failed',
-            description: `Please fix the following fields: ${errorFields.join(', ')}`,
+            description: errorMessage,
             variant: 'destructive'
           })
         } else {
@@ -564,7 +788,10 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       className={getFieldError('projectName') ? 'border-red-500' : ''}
                     />
                     {getFieldError('projectName') && (
-                      <p className="text-sm text-red-600">{getFieldError('projectName')}</p>
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('projectName')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('projectName')}</p>
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -578,7 +805,10 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       className={getFieldError('title') ? 'border-red-500' : ''}
                     />
                     {getFieldError('title') && (
-                      <p className="text-sm text-red-600">{getFieldError('title')}</p>
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('title')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('title')}</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -595,8 +825,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     className={getFieldError('websiteURL') ? 'border-red-500' : ''}
                   />
                   {getFieldError('websiteURL') && (
-                    <p className="text-sm text-red-600">{getFieldError('websiteURL')}</p>
-                  )}
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('websiteURL')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('websiteURL')}</p>
+                      </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -612,7 +845,10 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       className={getFieldError('email') ? 'border-red-500' : ''}
                     />
                     {getFieldError('email') && (
-                      <p className="text-sm text-red-600">{getFieldError('email')}</p>
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('email')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('email')}</p>
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
