@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 const { default: Project } = await import('@/models/Project')
 const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-import { analyzeKeywordDensity } from '@/lib/seo-analysis'
+import { analyzeKeywordDensity } from '@/lib/seo-analysis-fixed'
 import { trackUsage } from '@/lib/limit-middleware'
 
 export async function POST(
