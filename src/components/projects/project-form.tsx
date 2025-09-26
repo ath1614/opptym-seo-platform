@@ -721,12 +721,73 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       const errorCount = Object.keys(validationResult.errors).length
       const errorFields = Object.keys(validationResult.errors)
       
-      // Create detailed error message
-      let errorMessage = `Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
-      errorFields.forEach((field, index) => {
-        const fieldName = field.replace(/^address\./, 'Address ').replace(/^seoMetadata\./, 'SEO ').replace(/^articleSubmission\./, 'Article ')
-        errorMessage += `${index + 1}. ${fieldName}: ${validationResult.errors[field]}\n`
-      })
+      // Create structured error message with better formatting
+      let errorMessage = `❌ Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
+      
+      // Group errors by category for better organization
+      const basicErrors = errorFields.filter(field => 
+        ['projectName', 'title', 'websiteURL', 'email', 'companyName', 'phone', 'businessDescription', 'category'].includes(field)
+      )
+      const addressErrors = errorFields.filter(field => field.startsWith('address.'))
+      const seoErrors = errorFields.filter(field => field.startsWith('seoMetadata.'))
+      const articleErrors = errorFields.filter(field => field.startsWith('articleSubmission.'))
+      const otherErrors = errorFields.filter(field => 
+        !basicErrors.includes(field) && 
+        !addressErrors.includes(field) && 
+        !seoErrors.includes(field) && 
+        !articleErrors.includes(field)
+      )
+      
+      // Add basic info errors
+      if (basicErrors.length > 0) {
+        errorMessage += `📋 Basic Information:\n`
+        basicErrors.forEach((field, index) => {
+          const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
+        })
+        errorMessage += `\n`
+      }
+      
+      // Add address errors
+      if (addressErrors.length > 0) {
+        errorMessage += `🏠 Address Information:\n`
+        addressErrors.forEach((field, index) => {
+          const fieldName = field.replace('address.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
+        })
+        errorMessage += `\n`
+      }
+      
+      // Add SEO errors
+      if (seoErrors.length > 0) {
+        errorMessage += `🔍 SEO Information:\n`
+        seoErrors.forEach((field, index) => {
+          const fieldName = field.replace('seoMetadata.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
+        })
+        errorMessage += `\n`
+      }
+      
+      // Add article errors
+      if (articleErrors.length > 0) {
+        errorMessage += `📝 Article Information:\n`
+        articleErrors.forEach((field, index) => {
+          const fieldName = field.replace('articleSubmission.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
+        })
+        errorMessage += `\n`
+      }
+      
+      // Add other errors
+      if (otherErrors.length > 0) {
+        errorMessage += `📄 Additional Information:\n`
+        otherErrors.forEach((field, index) => {
+          const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
+        })
+      }
+      
+      errorMessage += `\n💡 Tip: Check the red highlighted fields above for specific guidance.`
       
       showToast({
         title: 'Validation Failed',
@@ -777,13 +838,75 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
           // Handle server-side validation errors
           setValidationErrors(data.validationErrors)
           const errorFields = Object.keys(data.validationErrors)
+          const errorCount = data.errorCount || errorFields.length
           
-          // Create detailed error message
-          let errorMessage = `Please fix ${data.errorCount || errorFields.length} error${(data.errorCount || errorFields.length) > 1 ? 's' : ''}:\n\n`
-          errorFields.forEach((field, index) => {
-            const fieldName = field.replace(/^address\./, 'Address ').replace(/^seoMetadata\./, 'SEO ').replace(/^articleSubmission\./, 'Article ')
-            errorMessage += `${index + 1}. ${fieldName}: ${data.validationErrors[field]}\n`
-          })
+          // Create structured error message with better formatting
+          let errorMessage = `❌ Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
+          
+          // Group errors by category for better organization
+          const basicErrors = errorFields.filter(field => 
+            ['projectName', 'title', 'websiteURL', 'email', 'companyName', 'phone', 'businessDescription', 'category'].includes(field)
+          )
+          const addressErrors = errorFields.filter(field => field.startsWith('address.'))
+          const seoErrors = errorFields.filter(field => field.startsWith('seoMetadata.'))
+          const articleErrors = errorFields.filter(field => field.startsWith('articleSubmission.'))
+          const otherErrors = errorFields.filter(field => 
+            !basicErrors.includes(field) && 
+            !addressErrors.includes(field) && 
+            !seoErrors.includes(field) && 
+            !articleErrors.includes(field)
+          )
+          
+          // Add basic info errors
+          if (basicErrors.length > 0) {
+            errorMessage += `📋 Basic Information:\n`
+            basicErrors.forEach((field, index) => {
+              const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
+            })
+            errorMessage += `\n`
+          }
+          
+          // Add address errors
+          if (addressErrors.length > 0) {
+            errorMessage += `🏠 Address Information:\n`
+            addressErrors.forEach((field, index) => {
+              const fieldName = field.replace('address.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
+            })
+            errorMessage += `\n`
+          }
+          
+          // Add SEO errors
+          if (seoErrors.length > 0) {
+            errorMessage += `🔍 SEO Information:\n`
+            seoErrors.forEach((field, index) => {
+              const fieldName = field.replace('seoMetadata.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
+            })
+            errorMessage += `\n`
+          }
+          
+          // Add article errors
+          if (articleErrors.length > 0) {
+            errorMessage += `📝 Article Information:\n`
+            articleErrors.forEach((field, index) => {
+              const fieldName = field.replace('articleSubmission.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
+            })
+            errorMessage += `\n`
+          }
+          
+          // Add other errors
+          if (otherErrors.length > 0) {
+            errorMessage += `📄 Additional Information:\n`
+            otherErrors.forEach((field, index) => {
+              const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
+            })
+          }
+          
+          errorMessage += `\n💡 Tip: Check the red highlighted fields above for specific guidance.`
           
           showToast({
             title: 'Validation Failed',
