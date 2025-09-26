@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
-import { analyzeMobileOptimization } from '@/lib/seo-analysis-fixed'
+import { analyzeMobileOptimization } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 
 export async function POST(
