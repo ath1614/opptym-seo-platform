@@ -1,273 +1,342 @@
 "use client"
 
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { TrendingUp, Search, Target, AlertTriangle, CheckCircle, Info } from 'lucide-react'
+import { TrendingUp, Search, Target, AlertTriangle, CheckCircle, Info, Loader2, Download } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
+
+interface Project {
+  _id: string
+  projectName: string
+  websiteURL: string
+}
+
+interface KeywordData {
+  keyword: string
+  searchVolume: number
+  competition: string
+  difficulty: number
+  cpc: number
+  trend: string
+  intent: string
+}
+
+interface AnalysisResult {
+  url: string
+  seedKeyword: string
+  totalKeywords: number
+  avgSearchVolume: number
+  avgCompetition: string
+  keywords: KeywordData[]
+  recommendations: string[]
+  score: number
+}
 
 export default function KeywordResearcherPage() {
-  return (
-    <SEOToolLayout
-      toolId="keyword-researcher"
-      toolName="Keyword Researcher"
-      toolDescription="Discover high-value keywords with search volume, competition, and trend analysis to boost your SEO strategy."
-    >
-      {/* Results will be displayed here */}
-      <div className="space-y-6">
-        {/* Overall Score */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <span>Keyword Research Results</span>
-            </CardTitle>
-            <CardDescription>
-              Comprehensive keyword analysis with search volume, competition, and opportunity scores
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">156</div>
-                <div className="text-sm text-blue-600">Keywords Found</div>
-              </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">23</div>
-                <div className="text-sm text-green-600">High Opportunity</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">4.2K</div>
-                <div className="text-sm text-purple-600">Avg. Search Volume</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const { showToast } = useToast()
+  
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [seedKeyword, setSeedKeyword] = useState<string>('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
 
-        {/* Top Keywords */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Keyword Opportunities</CardTitle>
-            <CardDescription>
-              High-value keywords with good search volume and manageable competition
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  keyword: "seo optimization tools",
-                  searchVolume: 8900,
-                  competition: "Medium",
-                  opportunity: "High",
-                  cpc: 2.45,
-                  trend: "+12%"
-                },
-                {
-                  keyword: "keyword research software",
-                  searchVolume: 5600,
-                  competition: "Low",
-                  opportunity: "Very High",
-                  cpc: 3.20,
-                  trend: "+8%"
-                },
-                {
-                  keyword: "seo analysis platform",
-                  searchVolume: 3200,
-                  competition: "Medium",
-                  opportunity: "High",
-                  cpc: 2.80,
-                  trend: "+15%"
-                },
-                {
-                  keyword: "website seo checker",
-                  searchVolume: 7800,
-                  competition: "High",
-                  opportunity: "Medium",
-                  cpc: 1.95,
-                  trend: "+5%"
-                },
-                {
-                  keyword: "seo audit tools",
-                  searchVolume: 4500,
-                  competition: "Medium",
-                  opportunity: "High",
-                  cpc: 2.60,
-                  trend: "+18%"
-                }
-              ].map((keyword, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="font-semibold">{keyword.keyword}</h3>
-                      <Badge variant={keyword.opportunity === 'Very High' ? 'default' : keyword.opportunity === 'High' ? 'secondary' : 'outline'}>
-                        {keyword.opportunity}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
-                      <div>
-                        <span className="font-medium">Volume:</span> {keyword.searchVolume.toLocaleString()}
-                      </div>
-                      <div>
-                        <span className="font-medium">Competition:</span> {keyword.competition}
-                      </div>
-                      <div>
-                        <span className="font-medium">CPC:</span> ${keyword.cpc}
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <TrendingUp className="h-3 w-3 text-green-500" />
-                        <span>{keyword.trend}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
 
-        {/* Long-tail Keywords */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Long-tail Keyword Opportunities</CardTitle>
-            <CardDescription>
-              Specific, less competitive keywords with high conversion potential
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                "best free seo tools for small business",
-                "how to improve website seo ranking",
-                "seo audit checklist for ecommerce",
-                "local seo optimization strategies",
-                "technical seo issues to fix",
-                "seo keyword density best practices",
-                "mobile seo optimization guide",
-                "seo backlink analysis tools"
-              ].map((keyword, index) => (
-                <div key={index} className="p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{keyword}</span>
-                    <Badge variant="outline" className="text-xs">
-                      Long-tail
-                    </Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Volume: 890 • Competition: Low • CPC: $1.20
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+  useEffect(() => {
+    if (session?.user) {
+      fetchProjects()
+    }
+  }, [session])
 
-        {/* Recommendations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5 text-primary" />
-              <span>Keyword Strategy Recommendations</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Focus on High-Opportunity Keywords:</strong> Target the 23 high-opportunity keywords identified. These have good search volume with manageable competition.
-                </AlertDescription>
-              </Alert>
-              
-              <Alert>
-                <TrendingUp className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Long-tail Strategy:</strong> Create content around long-tail keywords for better conversion rates and easier ranking.
-                </AlertDescription>
-              </Alert>
-              
-              <Alert>
-                <Search className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Content Clusters:</strong> Group related keywords into content clusters to build topical authority and improve overall rankings.
-                </AlertDescription>
-              </Alert>
-              
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Competitor Analysis:</strong> Monitor competitor keyword strategies and identify gaps in your content strategy.
-                </AlertDescription>
-              </Alert>
-            </div>
-          </CardContent>
-        </Card>
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    }
+  }
 
-        {/* Competitive Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Competitive Landscape</CardTitle>
-            <CardDescription>
-              Analysis of top-ranking pages for your target keywords
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  domain: "example-seo-tools.com",
-                  title: "Best SEO Tools 2024 - Complete Guide",
-                  ranking: 1,
-                  backlinks: 1250,
-                  domainAuthority: 85,
-                  contentLength: 3200
-                },
-                {
-                  domain: "seo-platform.net",
-                  title: "Professional SEO Analysis Tools",
-                  ranking: 2,
-                  backlinks: 890,
-                  domainAuthority: 72,
-                  contentLength: 2800
-                },
-                {
-                  domain: "digital-marketing-pro.com",
-                  title: "SEO Optimization Software Reviews",
-                  ranking: 3,
-                  backlinks: 650,
-                  domainAuthority: 68,
-                  contentLength: 2500
-                }
-              ].map((competitor, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold">{competitor.title}</h4>
-                    <Badge variant="outline">Rank #{competitor.ranking}</Badge>
-                  </div>
-                  <div className="text-sm text-muted-foreground mb-2">{competitor.domain}</div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium">Backlinks:</span> {competitor.backlinks.toLocaleString()}
-                    </div>
-                    <div>
-                      <span className="font-medium">DA:</span> {competitor.domainAuthority}
-                    </div>
-                    <div>
-                      <span className="font-medium">Content:</span> {competitor.contentLength} words
-                    </div>
-                    <div>
-                      <span className="font-medium">Opportunity:</span> 
-                      <span className={`ml-1 ${competitor.domainAuthority < 70 ? 'text-green-600' : 'text-orange-600'}`}>
-                        {competitor.domainAuthority < 70 ? 'High' : 'Medium'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+  const handleAnalyze = async () => {
+    if (!selectedProject) {
+      showToast({
+        title: 'Error',
+        description: 'Please select a project to analyze',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setIsAnalyzing(true)
+    try {
+      const response = await fetch(`/api/tools/${selectedProject}/run-keyword-research`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ seedKeyword })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setAnalysisResult(data.data)
+        showToast({
+          title: 'Analysis Complete',
+          description: 'Keyword research completed successfully',
+          variant: 'success'
+        })
+      } else {
+        showToast({
+          title: 'Analysis Failed',
+          description: data.error || 'Failed to research keywords',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      showToast({
+        title: 'Error',
+        description: 'Network error occurred during analysis',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleExport = () => {
+    if (!analysisResult) return
+    
+    const exportData = analysisResult.keywords.map(kw => ({
+      Keyword: kw.keyword,
+      'Search Volume': kw.searchVolume,
+      Competition: kw.competition,
+      Difficulty: kw.difficulty,
+      CPC: kw.cpc,
+      Trend: kw.trend,
+      Intent: kw.intent
+    }))
+    
+    const csvContent = [
+      Object.keys(exportData[0]).join(','),
+      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'keyword-research.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
-    </SEOToolLayout>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
+
+  return (
+    <DashboardLayout>
+      <SEOToolLayout
+        toolId="keyword-researcher"
+        toolName="Keyword Researcher"
+        toolDescription="Discover high-value keywords with search volume, competition, and trend analysis to boost your SEO strategy."
+        mockData={null}
+      >
+        <div className="space-y-6">
+          {/* Project Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Search className="h-5 w-5 text-primary" />
+                <span>Keyword Research</span>
+              </CardTitle>
+              <CardDescription>
+                Select a project and optionally provide a seed keyword to discover high-value keywords
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Select Project</label>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a project to analyze" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project._id} value={project._id}>
+                          {project.projectName} - {project.websiteURL}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2">Seed Keyword (Optional)</label>
+                  <Input
+                    type="text"
+                    placeholder="e.g., seo tools, digital marketing"
+                    value={seedKeyword}
+                    onChange={(e) => setSeedKeyword(e.target.value)}
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleAnalyze} 
+                  disabled={isAnalyzing || !selectedProject}
+                  className="w-full"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Researching...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Research Keywords
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Analysis Results */}
+          {analysisResult && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Research Results</span>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={analysisResult.score >= 80 ? 'default' : analysisResult.score >= 60 ? 'secondary' : 'destructive'}>
+                        Score: {analysisResult.score}/100
+                      </Badge>
+                      <Button size="sm" onClick={handleExport}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Export CSV
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">{analysisResult.totalKeywords}</div>
+                      <div className="text-sm text-blue-600">Keywords Found</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">{analysisResult.avgSearchVolume.toLocaleString()}</div>
+                      <div className="text-sm text-green-600">Avg Search Volume</div>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">{analysisResult.avgCompetition}</div>
+                      <div className="text-sm text-purple-600">Avg Competition</div>
+                    </div>
+                  </div>
+
+                  {/* Keywords Table */}
+                  {analysisResult.keywords.length > 0 && (
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Keyword Opportunities</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-gray-200">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="border border-gray-200 px-4 py-2 text-left">Keyword</th>
+                              <th className="border border-gray-200 px-4 py-2 text-left">Search Volume</th>
+                              <th className="border border-gray-200 px-4 py-2 text-left">Competition</th>
+                              <th className="border border-gray-200 px-4 py-2 text-left">Difficulty</th>
+                              <th className="border border-gray-200 px-4 py-2 text-left">CPC</th>
+                              <th className="border border-gray-200 px-4 py-2 text-left">Trend</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {analysisResult.keywords.slice(0, 10).map((keyword, index) => (
+                              <tr key={index}>
+                                <td className="border border-gray-200 px-4 py-2 font-medium">{keyword.keyword}</td>
+                                <td className="border border-gray-200 px-4 py-2">{keyword.searchVolume.toLocaleString()}</td>
+                                <td className="border border-gray-200 px-4 py-2">
+                                  <Badge variant={keyword.competition === 'Low' ? 'default' : keyword.competition === 'Medium' ? 'secondary' : 'destructive'}>
+                                    {keyword.competition}
+                                  </Badge>
+                                </td>
+                                <td className="border border-gray-200 px-4 py-2">{keyword.difficulty}/100</td>
+                                <td className="border border-gray-200 px-4 py-2">${keyword.cpc}</td>
+                                <td className="border border-gray-200 px-4 py-2">
+                                  <div className="flex items-center space-x-1">
+                                    <TrendingUp className="h-3 w-3 text-green-500" />
+                                    <span>{keyword.trend}</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recommendations */}
+              {analysisResult.recommendations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      <span>Recommendations</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {analysisResult.recommendations.map((recommendation, index) => (
+                        <Alert key={index}>
+                          <CheckCircle className="h-4 w-4" />
+                          <AlertDescription>{recommendation}</AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      </SEOToolLayout>
+    </DashboardLayout>
   )
 }

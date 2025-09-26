@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Image, CheckCircle, AlertTriangle, XCircle, Eye, FileText, Search, Zap, Loader2 } from 'lucide-react'
+import { Image, CheckCircle, AlertTriangle, XCircle, Eye, FileText, Search, Zap, Loader2, Download } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
 
 interface AnalysisData {
   url: string
@@ -28,19 +29,33 @@ interface AnalysisData {
   score: number
 }
 
+interface Project {
+  _id: string
+  projectName: string
+  websiteURL: string
+}
+
 export default function AltTextCheckerPage() {
   const { data: session, status } = useSession()
-  const [url, setUrl] = useState('')
+  const router = useRouter()
+  const { showToast } = useToast()
+  
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
-  const [projects, setProjects] = useState<any[]>([])
-  const [selectedProject, setSelectedProject] = useState<string>('')
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
+
+  useEffect(() => {
+    if (session?.user) {
       fetchProjects()
     }
-  }, [status])
+  }, [session])
 
   const fetchProjects = async () => {
     try {
@@ -48,51 +63,88 @@ export default function AltTextCheckerPage() {
       if (response.ok) {
         const data = await response.json()
         setProjects(data.projects || [])
-        if (data.projects && data.projects.length > 0) {
-          setSelectedProject(data.projects[0]._id)
-          setUrl(data.projects[0].websiteURL || '')
-        }
       }
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      console.error('Failed to fetch projects:', error)
     }
   }
 
   const handleAnalyze = async () => {
-    if (!url.trim()) return
+    if (!selectedProject) {
+      showToast({
+        title: 'Error',
+        description: 'Please select a project to analyze',
+        variant: 'destructive'
+      })
+      return
+    }
 
     setIsAnalyzing(true)
     try {
-      const response = await fetch('/api/seo-tools/analyze', {
+      const response = await fetch(`/api/tools/${selectedProject}/run-alt-text`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-          toolType: 'alt-text-checker'
-        }),
+        }
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        const data = await response.json()
-        setAnalysisData(data.analysisResults)
+        setAnalysisData(data.data)
+        showToast({
+          title: 'Analysis Complete',
+          description: 'Alt text analysis completed successfully',
+          variant: 'success'
+        })
       } else {
-        console.error('Analysis failed')
+        showToast({
+          title: 'Analysis Failed',
+          description: data.error || 'Failed to analyze alt text',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
-      console.error('Error during analysis:', error)
+      showToast({
+        title: 'Error',
+        description: 'Network error occurred during analysis',
+        variant: 'destructive'
+      })
     } finally {
       setIsAnalyzing(false)
     }
   }
 
+  const handleExport = () => {
+    if (!analysisData) return
+    
+    const exportData = analysisData.images.map(img => ({
+      'Image URL': img.src,
+      'Alt Text': img.alt,
+      Status: img.status,
+      Recommendation: img.recommendation
+    }))
+    
+    const csvContent = [
+      Object.keys(exportData[0]).join(','),
+      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'alt-text-analysis.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -103,72 +155,63 @@ export default function AltTextCheckerPage() {
   }
 
   return (
-    <SEOToolLayout
-      toolId="alt-text-checker"
-      toolName="Alt Text Checker"
-      toolDescription="Check for missing or inadequate alt text on images to improve accessibility and SEO performance."
-    >
-      {/* URL Input Form */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Alt Text Analysis</CardTitle>
-          <CardDescription>
-            Enter a URL to analyze alt text implementation on images
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="project">Select Project</Label>
-              <Select value={selectedProject} onValueChange={(value) => {
-                setSelectedProject(value)
-                const project = projects.find(p => p._id === value)
-                if (project) {
-                  setUrl(project.websiteURL || '')
-                }
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.map((project) => (
-                    <SelectItem key={project._id} value={project._id}>
-                      {project.projectName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="url">Website URL</Label>
-              <Input
-                id="url"
-                type="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button 
-            onClick={handleAnalyze} 
-            disabled={isAnalyzing || !url.trim()}
-            className="w-full md:w-auto"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4 mr-2" />
-                Analyze Alt Text
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+    <DashboardLayout>
+      <SEOToolLayout
+        toolId="alt-text-checker"
+        toolName="Alt Text Checker"
+        toolDescription="Check for missing or inadequate alt text on images to improve accessibility and SEO performance."
+        mockData={null}
+      >
+        <div className="space-y-6">
+          {/* Project Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Image className="h-5 w-5 text-primary" />
+                <span>Alt Text Analysis</span>
+              </CardTitle>
+              <CardDescription>
+                Select a project to analyze alt text implementation on images
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Select Project</label>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a project to analyze" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project._id} value={project._id}>
+                          {project.projectName} - {project.websiteURL}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button 
+                  onClick={handleAnalyze} 
+                  disabled={isAnalyzing || !selectedProject}
+                  className="w-full"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Analyze Alt Text
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Results */}
       {analysisData && (
@@ -176,9 +219,15 @@ export default function AltTextCheckerPage() {
           {/* Overall Score */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Image className="h-5 w-5 text-primary" />
-                <span>Alt Text Analysis Results</span>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Image className="h-5 w-5 text-primary" />
+                  <span>Alt Text Analysis Results</span>
+                </div>
+                <Button size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
               </CardTitle>
               <CardDescription>
                 Analysis for: {analysisData.url}
@@ -289,7 +338,9 @@ export default function AltTextCheckerPage() {
           </Card>
         </div>
       )}
-    </SEOToolLayout>
+        </div>
+      </SEOToolLayout>
+    </DashboardLayout>
   )
 }
 

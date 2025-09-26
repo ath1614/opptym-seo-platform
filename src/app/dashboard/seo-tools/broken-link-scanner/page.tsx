@@ -1,14 +1,17 @@
 "use client"
 
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
-import { Link, AlertTriangle, CheckCircle, ExternalLink, Clock, XCircle, Search, Loader2 } from 'lucide-react'
+import { Link, AlertTriangle, CheckCircle, ExternalLink, Clock, XCircle, Search, Loader2, Download } from 'lucide-react'
 
 interface AnalysisData {
   url: string
@@ -37,41 +40,51 @@ interface AnalysisData {
   }>
 }
 
+interface Project {
+  _id: string
+  projectName: string
+  websiteURL: string
+}
+
 export default function BrokenLinkScannerPage() {
-  const [url, setUrl] = useState('')
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const { showToast } = useToast()
+  
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
-  const [projects, setProjects] = useState<any[]>([])
-  const [selectedProject, setSelectedProject] = useState<any>(null)
-  const { showToast } = useToast()
 
-  // Fetch projects on component mount
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch('/api/projects')
-        const data = await response.json()
-        if (response.ok) {
-          setProjects(data.projects || [])
-          // Auto-select first project if available
-          if (data.projects && data.projects.length > 0) {
-            const firstProject = data.projects[0]
-            setSelectedProject(firstProject)
-            setUrl(firstProject.websiteURL || '')
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch projects:', error)
-      }
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
     }
-    fetchProjects()
-  }, [])
+  }, [status, router])
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchProjects()
+    }
+  }, [session])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    }
+  }
 
   const handleAnalyze = async () => {
-    if (!url.trim()) {
+    if (!selectedProject) {
       showToast({
         title: 'Error',
-        description: 'Please enter a URL to analyze',
+        description: 'Please select a project to analyze',
         variant: 'destructive'
       })
       return
@@ -79,24 +92,48 @@ export default function BrokenLinkScannerPage() {
 
     setIsAnalyzing(true)
     try {
-      const response = await fetch('/api/seo-tools/analyze', {
+      const response = await fetch(`/api/tools/${selectedProject}/run-broken-links`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-          toolType: 'broken-link-scanner'
-        }),
+        }
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        setAnalysisData(data.data)
+        // Transform the API response to match the expected structure
+        const transformedData = {
+          url: data.url,
+          timestamp: new Date().toISOString(),
+          overallScore: data.score,
+          brokenLinks: {
+            total: data.totalLinks,
+            broken: data.brokenLinks.length,
+            working: data.workingLinks,
+            redirects: 0, // Not provided by API
+            healthScore: data.score,
+            links: data.brokenLinks.map((link: any) => ({
+              url: link.url,
+              status: link.status,
+              type: link.url.includes(new URL(data.url).hostname) ? 'internal' : 'external',
+              foundOn: link.page,
+              impact: link.status === 404 ? 'high' : link.status >= 400 ? 'medium' : 'low'
+            }))
+          },
+          recommendations: data.recommendations.map((rec: string) => ({
+            category: 'Link Health',
+            priority: 'high' as const,
+            title: 'Fix Broken Links',
+            description: rec,
+            impact: 'High'
+          }))
+        }
+        
+        setAnalysisData(transformedData)
         showToast({
           title: 'Analysis Complete',
-          description: `Found ${data.data.brokenLinks.broken} broken links out of ${data.data.brokenLinks.total} total links`,
+          description: `Found ${data.brokenLinks.length} broken links out of ${data.totalLinks} total links`,
           variant: 'success'
         })
       } else {
@@ -117,93 +154,125 @@ export default function BrokenLinkScannerPage() {
     }
   }
 
+  const handleExport = () => {
+    if (!analysisData) return
+    
+    const exportData = analysisData.brokenLinks.links.map(link => ({
+      URL: link.url,
+      Status: link.status,
+      Type: link.type,
+      'Found On': link.foundOn,
+      Impact: link.impact
+    }))
+    
+    const csvContent = [
+      Object.keys(exportData[0]).join(','),
+      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'broken-links-analysis.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
+
   return (
-    <SEOToolLayout
-      toolId="broken-link-scanner"
-      toolName="Broken Link Scanner"
-      toolDescription="Find and identify broken links on your website that hurt SEO and user experience."
-    >
-      <div className="space-y-6">
-        {/* URL Input Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Search className="h-5 w-5 text-primary" />
-              <span>Analyze Website</span>
-            </CardTitle>
-            <CardDescription>
-              Enter a website URL to scan for broken links and analyze link health
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Project Selector */}
-              {projects.length > 0 && (
+    <DashboardLayout>
+      <SEOToolLayout
+        toolId="broken-link-scanner"
+        toolName="Broken Link Scanner"
+        toolDescription="Find and identify broken links on your website that hurt SEO and user experience."
+        mockData={null}
+      >
+        <div className="space-y-6">
+          {/* Project Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Search className="h-5 w-5 text-primary" />
+                <span>Broken Link Analysis</span>
+              </CardTitle>
+              <CardDescription>
+                Select a project to scan for broken links and analyze link health
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Select Project (Auto-fills URL)</label>
-                  <select
-                    value={selectedProject?._id || ''}
-                    onChange={(e) => {
-                      const project = projects.find(p => p._id === e.target.value)
-                      setSelectedProject(project)
-                      setUrl(project?.websiteURL || '')
-                    }}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select a project...</option>
-                    {projects.map((project) => (
-                      <option key={project._id} value={project._id}>
-                        {project.projectName} - {project.websiteURL}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium mb-2">Select Project</label>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a project to analyze" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project._id} value={project._id}>
+                          {project.projectName} - {project.websiteURL}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-              
-              <div className="flex space-x-2">
-                <Input
-                  type="url"
-                  placeholder="https://example.com"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="flex-1"
-                />
+                
                 <Button 
                   onClick={handleAnalyze} 
-                  disabled={isAnalyzing}
-                className="px-6"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4 mr-2" />
-                    Analyze
-                  </>
-                )}
-              </Button>
+                  disabled={isAnalyzing || !selectedProject}
+                  className="w-full"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Analyze Broken Links
+                    </>
+                  )}
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* Results */}
         {analysisData && (
           <>
             {/* Overall Score */}
             <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Link className="h-5 w-5 text-primary" />
-              <span>Broken Link Analysis</span>
-            </CardTitle>
-            <CardDescription>
-              Comprehensive scan of all internal and external links on your website
-            </CardDescription>
-          </CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Link className="h-5 w-5 text-primary" />
+                    <span>Broken Link Analysis</span>
+                  </div>
+                  <Button size="sm" onClick={handleExport}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive scan of all internal and external links on your website
+                </CardDescription>
+              </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-red-50 rounded-lg">
@@ -464,7 +533,8 @@ export default function BrokenLinkScannerPage() {
         </Card>
           </>
         )}
-      </div>
-    </SEOToolLayout>
+        </div>
+      </SEOToolLayout>
+    </DashboardLayout>
   )
 }
