@@ -71,7 +71,7 @@ export default function MobileCheckerPage() {
 
     setIsAnalyzing(true)
     try {
-      const response = await fetch(`/api/tools/${selectedProject}/run-mobile-audit`, {
+      const response = await fetch(`/api/tools/${selectedProject}/run-mobile-checker`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

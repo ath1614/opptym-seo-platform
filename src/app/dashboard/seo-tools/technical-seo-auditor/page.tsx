@@ -71,7 +71,7 @@ export default function TechnicalSeoAuditorPage() {
 
     setIsAnalyzing(true)
     try {
-      const response = await fetch(`/api/tools/${selectedProject}/run-technical-seo`, {
+      const response = await fetch(`/api/tools/${selectedProject}/run-technical-seo-auditor`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

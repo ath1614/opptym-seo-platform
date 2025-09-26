@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
-const { default: Project } = await import('@/models/Project')
-const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-import { analyzeMobileFriendly } from '@/lib/seo-analysis'
+import { analyzeSitemapAndRobots } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 
 export async function POST(
@@ -42,16 +40,16 @@ export async function POST(
       }, { status: 429 })
     }
 
-    // Run mobile audit analysis
-    const analysisResult = await analyzeMobileFriendly(project.websiteURL)
+    // Run sitemap and robots analysis
+    const analysisResult = await analyzeSitemapAndRobots(project.websiteURL)
     
     // Save usage to database
     const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
     const seoToolUsage = new SeoToolUsage({
       userId: session.user.id,
       projectId: projectId,
-      toolId: 'mobile-checker',
-      toolName: 'Mobile Checker',
+      toolId: 'sitemap-robots-checker',
+      toolName: 'Sitemap & Robots Checker',
       url: project.websiteURL,
       results: analysisResult,
       createdAt: new Date()
@@ -62,11 +60,11 @@ export async function POST(
     return NextResponse.json({
       success: true,
       data: analysisResult,
-      message: 'Mobile audit completed successfully'
+      message: 'Sitemap and robots analysis completed successfully'
     })
 
   } catch (error) {
-    console.error('Mobile audit error:', error)
+    console.error('Sitemap robots checker error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
