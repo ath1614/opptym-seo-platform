@@ -4,13 +4,12 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { FileText, CheckCircle, XCircle, AlertTriangle, Loader2, Download } from 'lucide-react'
+import { FileText, CheckCircle, XCircle, AlertTriangle, Loader2, Download, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 interface Project {
@@ -89,7 +88,7 @@ export default function MetaTagAnalyzerPage() {
   const { showToast } = useToast()
   
   const [projects, setProjects] = useState<Project[]>([])
-  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [selectedProject, setSelectedProject] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
 
@@ -210,188 +209,190 @@ export default function MetaTagAnalyzerPage() {
 
   return (
     <DashboardLayout>
-      <SEOToolLayout
-        toolId="meta-tag-analyzer"
-        toolName="Meta Tag Analyzer"
-        toolDescription="Analyze meta titles, descriptions, and other meta tags for SEO optimization"
-        mockData={null}
-      >
-        <div className="space-y-6">
-          {/* Project Selection */}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Meta Tag Analyzer</h1>
+              <p className="text-muted-foreground">Analyze and optimize your website's meta tags for better SEO performance</p>
+            </div>
+          </div>
+          {analysisResult && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Project Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <span>Meta Tag Analysis</span>
+            </CardTitle>
+            <CardDescription>
+              Select a project to analyze meta tags for SEO optimization
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing Meta Tags...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Analyze Meta Tags
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analysis Results */}
+        {analysisResult && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <span>Meta Tag Analysis</span>
+              <CardTitle className="flex items-center justify-between">
+                <span>Meta Tag Analysis Results</span>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={analysisResult.score >= 80 ? 'default' : analysisResult.score >= 60 ? 'secondary' : 'destructive'}>
+                    Score: {analysisResult.score}/100
+                  </Badge>
+                </div>
               </CardTitle>
-              <CardDescription>
-                Select a project to analyze its meta tags for SEO optimization
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Title Analysis */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Select Project</label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project to analyze" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project._id} value={project._id}>
-                          {project.projectName} - {project.websiteURL}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <h4 className="font-semibold mb-2 flex items-center">
+                    <span className="mr-2">Title Tag</span>
+                    <Badge variant={analysisResult.title.status === 'good' ? 'default' : analysisResult.title.status === 'warning' ? 'secondary' : 'destructive'}>
+                      {analysisResult.title.status}
+                    </Badge>
+                  </h4>
+                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.title.content || 'No title found'}</p>
+                  <p className="text-xs text-muted-foreground">Length: {analysisResult.title.length} characters</p>
+                  <p className="text-xs text-muted-foreground">{analysisResult.title.recommendation}</p>
                 </div>
-                
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing || !selectedProject}
-                  className="w-full"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Analyze Meta Tags
-                    </>
-                  )}
-                </Button>
+
+                {/* Description Analysis */}
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center">
+                    <span className="mr-2">Meta Description</span>
+                    <Badge variant={analysisResult.description.status === 'good' ? 'default' : analysisResult.description.status === 'warning' ? 'secondary' : 'destructive'}>
+                      {analysisResult.description.status}
+                    </Badge>
+                  </h4>
+                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.description.content || 'No description found'}</p>
+                  <p className="text-xs text-muted-foreground">Length: {analysisResult.description.length} characters</p>
+                  <p className="text-xs text-muted-foreground">{analysisResult.description.recommendation}</p>
+                </div>
+
+                {/* Keywords Analysis */}
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center">
+                    <span className="mr-2">Meta Keywords</span>
+                    <Badge variant={analysisResult.keywords.status === 'good' ? 'default' : analysisResult.keywords.status === 'warning' ? 'secondary' : 'destructive'}>
+                      {analysisResult.keywords.status}
+                    </Badge>
+                  </h4>
+                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.keywords.content || 'No keywords found'}</p>
+                  <p className="text-xs text-muted-foreground">{analysisResult.keywords.recommendation}</p>
+                </div>
+
+                {/* Viewport Analysis */}
+                <div>
+                  <h4 className="font-semibold mb-2 flex items-center">
+                    <span className="mr-2">Viewport Meta Tag</span>
+                    <Badge variant={analysisResult.viewport.status === 'good' ? 'default' : analysisResult.viewport.status === 'warning' ? 'secondary' : 'destructive'}>
+                      {analysisResult.viewport.status}
+                    </Badge>
+                  </h4>
+                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.viewport.content || 'No viewport found'}</p>
+                  <p className="text-xs text-muted-foreground">{analysisResult.viewport.recommendation}</p>
+                </div>
+
+                {/* Issues */}
+                {analysisResult.issues.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Issues Found</h4>
+                    <div className="space-y-2">
+                      {analysisResult.issues.map((issue, index) => (
+                        <Alert key={index}>
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            <strong>{issue.type}:</strong> {issue.message}
+                            <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'secondary' : 'outline'} className="ml-2">
+                              {issue.severity}
+                            </Badge>
+                          </AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {analysisResult.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Recommendations</h4>
+                    <div className="space-y-2">
+                      {analysisResult.recommendations.map((recommendation, index) => (
+                        <Alert key={index}>
+                          <CheckCircle className="h-4 w-4" />
+                          <AlertDescription>{recommendation}</AlertDescription>
+                        </Alert>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
-
-          {/* Analysis Results */}
-          {analysisResult && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Analysis Results</span>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={analysisResult.score >= 80 ? 'default' : analysisResult.score >= 60 ? 'secondary' : 'destructive'}>
-                        Score: {analysisResult.score}/100
-                      </Badge>
-                      <Button size="sm" onClick={handleExport}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Export CSV
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{analysisResult.title.length}</div>
-                      <div className="text-sm text-blue-600">Title Length</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{analysisResult.description.length}</div>
-                      <div className="text-sm text-green-600">Description Length</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{analysisResult.issues.length}</div>
-                      <div className="text-sm text-purple-600">Issues Found</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Title Analysis */}
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">Meta Title</h4>
-                        <Badge variant={analysisResult.title.status === 'good' ? 'default' : analysisResult.title.status === 'warning' ? 'secondary' : 'destructive'}>
-                          {analysisResult.title.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.title.content || 'No title found'}</p>
-                      <p className="text-xs text-muted-foreground">{analysisResult.title.recommendation}</p>
-                    </div>
-                    
-                    {/* Description Analysis */}
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">Meta Description</h4>
-                        <Badge variant={analysisResult.description.status === 'good' ? 'default' : analysisResult.description.status === 'warning' ? 'secondary' : 'destructive'}>
-                          {analysisResult.description.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.description.content || 'No description found'}</p>
-                      <p className="text-xs text-muted-foreground">{analysisResult.description.recommendation}</p>
-                    </div>
-
-                    {/* Keywords Analysis */}
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">Meta Keywords</h4>
-                        <Badge variant={analysisResult.keywords.status === 'good' ? 'default' : analysisResult.keywords.status === 'warning' ? 'secondary' : 'destructive'}>
-                          {analysisResult.keywords.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.keywords.content || 'No keywords found'}</p>
-                      <p className="text-xs text-muted-foreground">{analysisResult.keywords.recommendation}</p>
-                    </div>
-
-                    {/* Viewport Analysis */}
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">Viewport Meta Tag</h4>
-                        <Badge variant={analysisResult.viewport.status === 'good' ? 'default' : analysisResult.viewport.status === 'warning' ? 'secondary' : 'destructive'}>
-                          {analysisResult.viewport.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.viewport.content || 'No viewport found'}</p>
-                      <p className="text-xs text-muted-foreground">{analysisResult.viewport.recommendation}</p>
-                    </div>
-
-                    {/* Issues */}
-                    {analysisResult.issues.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Issues Found</h4>
-                        <div className="space-y-2">
-                          {analysisResult.issues.map((issue, index) => (
-                            <Alert key={index}>
-                              <AlertTriangle className="h-4 w-4" />
-                              <AlertDescription>
-                                <strong>{issue.type}:</strong> {issue.message}
-                                <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'secondary' : 'outline'} className="ml-2">
-                                  {issue.severity}
-                                </Badge>
-                              </AlertDescription>
-                            </Alert>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Recommendations */}
-                    {analysisResult.recommendations.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Recommendations</h4>
-                        <div className="space-y-2">
-                          {analysisResult.recommendations.map((recommendation, index) => (
-                            <Alert key={index}>
-                              <CheckCircle className="h-4 w-4" />
-                              <AlertDescription>{recommendation}</AlertDescription>
-                            </Alert>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-            </>
-          )}
-        </div>
-      </SEOToolLayout>
+        )}
+      </div>
     </DashboardLayout>
   )
 }

@@ -4,14 +4,13 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
-import { Link, AlertTriangle, CheckCircle, ExternalLink, Clock, XCircle, Search, Loader2, Download } from 'lucide-react'
+import { Link, AlertTriangle, CheckCircle, ExternalLink, Clock, XCircle, Search, Loader2, Download, ArrowLeft } from 'lucide-react'
 
 interface AnalysisData {
   url: string
@@ -52,7 +51,7 @@ export default function BrokenLinkScannerPage() {
   const { showToast } = useToast()
   
   const [projects, setProjects] = useState<Project[]>([])
-  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [selectedProject, setSelectedProject] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
 
@@ -112,35 +111,28 @@ export default function BrokenLinkScannerPage() {
             total: data.totalLinks,
             broken: data.brokenLinks.length,
             working: data.workingLinks,
-            redirects: 0, // Not provided by API
-            healthScore: data.score,
+            redirects: data.redirects,
+            healthScore: data.healthScore,
             links: data.brokenLinks.map((link: any) => ({
               url: link.url,
               status: link.status,
-              type: link.url.includes(new URL(data.url).hostname) ? 'internal' : 'external',
-              foundOn: link.page,
-              impact: link.status === 404 ? 'high' : link.status >= 400 ? 'medium' : 'low'
+              type: link.type,
+              foundOn: link.foundOn,
+              impact: link.impact
             }))
           },
-          recommendations: data.recommendations.map((rec: string) => ({
-            category: 'Link Health',
-            priority: 'high' as const,
-            title: 'Fix Broken Links',
-            description: rec,
-            impact: 'High'
-          }))
+          recommendations: data.recommendations || []
         }
-        
         setAnalysisData(transformedData)
         showToast({
           title: 'Analysis Complete',
-          description: `Found ${data.brokenLinks.length} broken links out of ${data.totalLinks} total links`,
+          description: 'Broken link analysis completed successfully',
           variant: 'success'
         })
       } else {
         showToast({
           title: 'Analysis Failed',
-          description: data.error || 'Failed to analyze the website',
+          description: data.error || 'Failed to analyze broken links',
           variant: 'destructive'
         })
       }
@@ -158,17 +150,11 @@ export default function BrokenLinkScannerPage() {
   const handleExport = () => {
     if (!analysisData) return
     
-    const exportData = analysisData.brokenLinks.links.map(link => ({
-      URL: link.url,
-      Status: link.status,
-      Type: link.type,
-      'Found On': link.foundOn,
-      Impact: link.impact
-    }))
-    
     const csvContent = [
-      Object.keys(exportData[0]).join(','),
-      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+      'URL,Status,Type,Found On,Impact',
+      ...analysisData.brokenLinks.links.map(link => 
+        `"${link.url}",${link.status},"${link.type}","${link.foundOn}","${link.impact}"`
+      )
     ].join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -197,345 +183,208 @@ export default function BrokenLinkScannerPage() {
 
   return (
     <DashboardLayout>
-      <SEOToolLayout
-        toolId="broken-link-scanner"
-        toolName="Broken Link Scanner"
-        toolDescription="Find and identify broken links on your website that hurt SEO and user experience."
-        mockData={null}
-      >
-        <div className="space-y-6">
-          {/* Project Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Search className="h-5 w-5 text-primary" />
-                <span>Broken Link Analysis</span>
-              </CardTitle>
-              <CardDescription>
-                Select a project to scan for broken links and analyze link health
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Project</label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project to analyze" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project._id} value={project._id}>
-                          {project.projectName} - {project.websiteURL}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing || !selectedProject}
-                  className="w-full"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Analyze Broken Links
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-        {/* Results */}
-        {analysisData && (
-          <>
-            {/* Overall Score */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Link className="h-5 w-5 text-primary" />
-                    <span>Broken Link Analysis</span>
-                  </div>
-                  <Button size="sm" onClick={handleExport}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
-                  </Button>
-                </CardTitle>
-                <CardDescription>
-                  Comprehensive scan of all internal and external links on your website
-                </CardDescription>
-              </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">{analysisData.brokenLinks.broken}</div>
-                  <div className="text-sm text-red-600">Broken Links</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{analysisData.brokenLinks.working}</div>
-                  <div className="text-sm text-green-600">Working Links</div>
-                </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{analysisData.brokenLinks.redirects}</div>
-                  <div className="text-sm text-yellow-600">Redirects</div>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{analysisData.brokenLinks.healthScore}%</div>
-                  <div className="text-sm text-blue-600">Link Health</div>
-                </div>
-              </div>
-            </CardContent>
-        </Card>
-
-        {/* Critical Issues */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-red-600">
-              <XCircle className="h-5 w-5" />
-              <span>Critical Broken Links</span>
-            </CardTitle>
-            <CardDescription>
-              Links returning 404 errors that need immediate attention
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {analysisData.brokenLinks.links.filter(link => link.status === 404).map((link, index) => (
-                <div key={index} className="p-4 border border-red-200 rounded-lg bg-red-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <ExternalLink className="h-4 w-4 text-red-600" />
-                        <span className="font-mono text-sm break-all">{link.url}</span>
-                        <Badge variant="destructive">{link.status}</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Found on: <span className="font-medium">{link.foundOn}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={link.impact === 'high' ? 'destructive' : link.impact === 'medium' ? 'secondary' : 'outline'}>
-                        {link.impact} Impact
-                      </Badge>
-                      <Badge variant="outline">{link.type}</Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                    <span>Status: {link.status}</span>
-                    <span>Type: {link.type}</span>
-                  </div>
-                </div>
-              ))}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Broken Link Scanner</h1>
+              <p className="text-muted-foreground">Find and fix broken links on your website for better SEO performance</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Redirects */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-yellow-600">
-              <Clock className="h-5 w-5" />
-              <span>Redirects Found</span>
-            </CardTitle>
-            <CardDescription>
-              Links that redirect to other pages (should be reviewed for optimization)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                {
-                  from: "/old-page",
-                  to: "/new-page",
-                  status: 301,
-                  type: "Permanent",
-                  foundOn: "/navigation/"
-                },
-                {
-                  from: "/temporary-redirect",
-                  to: "/maintenance",
-                  status: 302,
-                  type: "Temporary",
-                  foundOn: "/home/"
-                },
-                {
-                  from: "/legacy-url",
-                  to: "/updated-url",
-                  status: 301,
-                  type: "Permanent",
-                  foundOn: "/sitemap/"
-                }
-              ].map((redirect, index) => (
-                <div key={index} className="p-3 border border-yellow-200 rounded-lg bg-yellow-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{redirect.from}</div>
-                      <div className="text-xs text-muted-foreground">
-                        → {redirect.to}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline">{redirect.status}</Badge>
-                      <Badge variant="secondary">{redirect.type}</Badge>
-                    </div>
-                  </div>
-                </div>
-              ))}
+          </div>
+          {analysisData && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
 
-        {/* Link Health Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Link Health Summary</CardTitle>
-            <CardDescription>
-              Overall assessment of your website's link structure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold mb-3">Internal Links</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Working Links:</span>
-                    <span className="text-green-600 font-medium">1,156</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Broken Links:</span>
-                    <span className="text-red-600 font-medium">8</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Redirects:</span>
-                    <span className="text-yellow-600 font-medium">5</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Health Score:</span>
-                    <span className="text-green-600 font-medium">99.3%</span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-3">External Links</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Working Links:</span>
-                    <span className="text-green-600 font-medium">91</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Broken Links:</span>
-                    <span className="text-red-600 font-medium">4</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Redirects:</span>
-                    <span className="text-yellow-600 font-medium">3</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Health Score:</span>
-                    <span className="text-green-600 font-medium">95.9%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recommendations */}
+        {/* Project Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-primary" />
-              <span>Fix Recommendations</span>
+              <Link className="h-5 w-5 text-primary" />
+              <span>Broken Link Analysis</span>
             </CardTitle>
+            <CardDescription>
+              Select a project to scan for broken links and optimize your website
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analysisData.recommendations.map((rec, index) => (
-                <Alert key={index}>
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>{rec.title}:</strong> {rec.description}
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      Impact: {rec.impact} • Priority: {rec.priority}
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              ))}
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Scanning for Broken Links...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Scan for Broken Links
+                  </>
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Action Items */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Action Items</CardTitle>
-            <CardDescription>
-              Prioritized list of tasks to improve your link health
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                {
-                  task: "Fix broken internal link: /products/old-product-page",
-                  priority: "High",
-                  effort: "Low",
-                  impact: "High"
-                },
-                {
-                  task: "Update navigation menu to remove dead links",
-                  priority: "High",
-                  effort: "Medium",
-                  impact: "High"
-                },
-                {
-                  task: "Replace broken external link in resources section",
-                  priority: "Medium",
-                  effort: "Low",
-                  impact: "Medium"
-                },
-                {
-                  task: "Implement 301 redirect for /services/discontinued-service",
-                  priority: "High",
-                  effort: "Low",
-                  impact: "High"
-                },
-                {
-                  task: "Review and update sitemap to remove broken links",
-                  priority: "Medium",
-                  effort: "Medium",
-                  impact: "Medium"
-                }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex-1">
-                    <div className="font-medium">{item.task}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Effort: {item.effort} • Impact: {item.impact}
-                    </div>
+        {/* Analysis Results */}
+        {analysisData && (
+          <div className="space-y-6">
+            {/* Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Broken Link Analysis Results</span>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={analysisData.overallScore >= 80 ? 'default' : analysisData.overallScore >= 60 ? 'secondary' : 'destructive'}>
+                      Score: {analysisData.overallScore}/100
+                    </Badge>
                   </div>
-                  <Badge variant={item.priority === 'High' ? 'destructive' : item.priority === 'Medium' ? 'secondary' : 'outline'}>
-                    {item.priority}
-                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {analysisData.brokenLinks.total}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Links</div>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {analysisData.brokenLinks.broken}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Broken Links</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {analysisData.brokenLinks.working}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Working Links</div>
+                  </div>
+                  <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {analysisData.brokenLinks.redirects}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Redirects</div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-          </>
+              </CardContent>
+            </Card>
+
+            {/* Broken Links List */}
+            {analysisData.brokenLinks.links.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    <span>Broken Links Found</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.brokenLinks.links.map((link, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono text-sm break-all">{link.url}</span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge variant={link.impact === 'high' ? 'destructive' : link.impact === 'medium' ? 'secondary' : 'outline'}>
+                              {link.impact} impact
+                            </Badge>
+                            <Badge variant="outline">
+                              {link.type}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              Found on: {link.foundOn}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="destructive">
+                            {link.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recommendations */}
+            {analysisData.recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span>Recommendations</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.recommendations.map((rec, index) => (
+                      <Alert key={index}>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <strong>{rec.title}</strong>
+                              <p className="text-sm text-muted-foreground mt-1">{rec.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1">Impact: {rec.impact}</p>
+                            </div>
+                            <Badge variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'secondary' : 'outline'}>
+                              {rec.priority} priority
+                            </Badge>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
-        </div>
-      </SEOToolLayout>
+      </div>
     </DashboardLayout>
   )
 }

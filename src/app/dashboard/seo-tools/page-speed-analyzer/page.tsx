@@ -8,7 +8,7 @@ import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Search, Loader2, Download } from 'lucide-react'
+import { Search, Loader2, Download, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 export default function PageSpeedAnalyzerPage() {
@@ -123,89 +123,110 @@ export default function PageSpeedAnalyzerPage() {
 
   return (
     <DashboardLayout>
-      <SEOToolLayout
-        toolId="page-speed-analyzer"
-        toolName="Page Speed Analyzer"
-        toolDescription="Analyze and optimize your website's page speed-analyzer for better SEO performance."
-        mockData={null}
-      >
-        <div className="space-y-6">
-          {/* Project Selection */}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Page Speed Analyzer</h1>
+              <p className="text-muted-foreground">Analyze and optimize your website's page speed for better SEO performance</p>
+            </div>
+          </div>
+          {analysisData && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Project Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Search className="h-5 w-5 text-primary" />
+              <span>Page Speed Analysis</span>
+            </CardTitle>
+            <CardDescription>
+              Select a project to analyze page speed for SEO optimization
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing Page Speed...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Analyze Page Speed
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analysis Results */}
+        {analysisData && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Search className="h-5 w-5 text-primary" />
-                <span>Page Speed Analyzer Analysis</span>
+              <CardTitle className="flex items-center justify-between">
+                <span>Page Speed Analysis Results</span>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={analysisData.overallScore >= 80 ? 'default' : analysisData.overallScore >= 60 ? 'secondary' : 'destructive'}>
+                    Score: {analysisData.overallScore}/100
+                  </Badge>
+                </div>
               </CardTitle>
-              <CardDescription>
-                Select a project to analyze page speed-analyzer for SEO optimization
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Project</label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project to analyze" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project._id} value={project._id}>
-                          {project.projectName} - {project.websiteURL}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing || !selectedProject}
-                  className="w-full"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Analyze Page Speed Analyzer
-                    </>
-                  )}
-                </Button>
+              <div className="text-center p-8">
+                <p className="text-muted-foreground">Analysis completed successfully!</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Detailed results and recommendations are available.
+                </p>
               </div>
             </CardContent>
           </Card>
-
-          {/* Analysis Results */}
-          {analysisData && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Analysis Results</span>
-                    <Button size="sm" onClick={handleExport}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export CSV
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center p-8">
-                    <p className="text-muted-foreground">Analysis completed successfully!</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Detailed results and recommendations are available.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
-      </SEOToolLayout>
+        )}
+      </div>
     </DashboardLayout>
   )
 }
