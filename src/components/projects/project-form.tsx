@@ -200,6 +200,24 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         return newErrors
       })
     }
+    
+    // Real-time validation - validate field after a short delay
+    setTimeout(() => {
+      const error = validateField(field, value)
+      if (error) {
+        setValidationErrors(prev => ({
+          ...prev,
+          [field]: error
+        }))
+      } else {
+        // Clear error if validation passes
+        setValidationErrors(prev => {
+          const newErrors = { ...prev }
+          delete newErrors[field]
+          return newErrors
+        })
+      }
+    }, 500) // 500ms delay to avoid validation while typing
   }
 
   const handleArrayFieldChange = (field: string, value: string) => {
@@ -523,6 +541,83 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       logoImageURL: 'Use a high-quality logo image URL (jpg, jpeg, png, gif, webp, svg)'
     }
     return suggestions[fieldName] || ''
+  }
+
+  // Real-time validation for individual fields
+  const validateField = (field: string, value: any): string | null => {
+    // Required field validations
+    if (field === 'projectName') {
+      if (!value?.trim()) return 'Project name is required'
+      if (value.length < 3) return 'Project name must be at least 3 characters long'
+      if (value.length > 100) return 'Project name cannot exceed 100 characters'
+    }
+    
+    if (field === 'title') {
+      if (!value?.trim()) return 'Title is required'
+      if (value.length < 10) return 'Title should be at least 10 characters for better SEO'
+      if (value.length > 200) return 'Title cannot exceed 200 characters'
+    }
+    
+    if (field === 'websiteURL') {
+      if (!value?.trim()) return 'Website URL is required'
+      if (!/^https?:\/\/.+/.test(value)) return 'Please enter a valid URL starting with http:// or https://'
+      if (!/^https?:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(value)) return 'Please enter a complete URL with domain (e.g., https://example.com)'
+    }
+    
+    if (field === 'email') {
+      if (!value?.trim()) return 'Email address is required'
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address (e.g., user@example.com)'
+    }
+    
+    if (field === 'category') {
+      if (!value?.trim()) return 'Please select a category for your project'
+    }
+    
+    if (field === 'companyName') {
+      if (!value?.trim()) return 'Company name is required'
+      if (value.length < 2) return 'Company name must be at least 2 characters'
+      if (value.length > 100) return 'Company name cannot exceed 100 characters'
+    }
+    
+    if (field === 'phone') {
+      if (!value?.trim()) return 'Phone number is required'
+      if (!/^[\+]?[1-9][\d]{0,15}$/.test(value.replace(/[\s\-\(\)]/g, ''))) return 'Please enter a valid phone number (e.g., +1234567890 or 123-456-7890)'
+    }
+    
+    if (field === 'businessDescription') {
+      if (!value?.trim()) return 'Business description is required'
+      if (value.length < 50) return 'Business description should be at least 50 characters for better SEO'
+      if (value.length > 2000) return 'Business description cannot exceed 2000 characters'
+    }
+    
+    // Address validations
+    if (field === 'address.addressLine1') {
+      if (!value?.trim()) return 'Street address is required'
+      if (value.length < 5) return 'Please provide a complete street address'
+    }
+    
+    if (field === 'address.district') {
+      if (!value?.trim()) return 'District is required'
+    }
+    
+    if (field === 'address.city') {
+      if (!value?.trim()) return 'City is required'
+    }
+    
+    if (field === 'address.state') {
+      if (!value?.trim()) return 'State/Province is required'
+    }
+    
+    if (field === 'address.country') {
+      if (!value?.trim()) return 'Country is required'
+    }
+    
+    if (field === 'address.pincode') {
+      if (!value?.trim()) return 'Postal/ZIP code is required'
+      if (!/^[0-9]{5,6}$/.test(value)) return 'Please enter a valid postal code (5-6 digits)'
+    }
+    
+    return null
   }
 
   const removeCustomField = (index: number) => {
