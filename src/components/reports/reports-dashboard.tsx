@@ -646,24 +646,36 @@ export function ReportsDashboard() {
                           <div className="border-t bg-muted/30">
                             <div className="p-4 space-y-4">
                               {/* Results Summary */}
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                                 <div className="text-center p-3 bg-background rounded-lg border">
                                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                    {tool.results.reduce((sum, result) => sum + (result.score || 0), 0) / tool.results.length || 0}
+                                    {Math.round(tool.results.reduce((sum, result) => sum + (result.score || 0), 0) / tool.results.length) || 0}
                                   </div>
                                   <div className="text-sm text-muted-foreground">Avg Score</div>
                                 </div>
                                 <div className="text-center p-3 bg-background rounded-lg border">
                                   <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                    {tool.results.reduce((sum, result) => sum + (result.issues || 0), 0)}
+                                    {tool.results.reduce((sum, result) => {
+                                      const issuesCount = result.analysisResults?.issues?.length || result.issues || 0;
+                                      return sum + issuesCount;
+                                    }, 0)}
                                   </div>
                                   <div className="text-sm text-muted-foreground">Total Issues</div>
                                 </div>
                                 <div className="text-center p-3 bg-background rounded-lg border">
                                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    {tool.results.reduce((sum, result) => sum + (result.recommendations || 0), 0)}
+                                    {tool.results.reduce((sum, result) => {
+                                      const recommendationsCount = result.analysisResults?.recommendations?.length || result.recommendations || 0;
+                                      return sum + recommendationsCount;
+                                    }, 0)}
                                   </div>
                                   <div className="text-sm text-muted-foreground">Recommendations</div>
+                                </div>
+                                <div className="text-center p-3 bg-background rounded-lg border">
+                                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                    {tool.results.length}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">Analyses</div>
                                 </div>
                               </div>
 
@@ -698,11 +710,23 @@ export function ReportsDashboard() {
                                               <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                                               <span className="font-medium text-sm">Issues Found ({result.analysisResults.issues?.length || 0})</span>
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-3">
                                               {result.analysisResults.issues.map((issue: string, issueIndex: number) => (
-                                                <div key={`${tool.toolId}-issue-${issueIndex}-${issue.substring(0, 20)}`} className="flex items-start space-x-2 p-2 bg-orange-50 dark:bg-orange-950/50 rounded-lg border border-orange-200 dark:border-orange-800">
-                                                  <AlertTriangle className="h-3 w-3 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                                                  <span className="text-sm text-orange-800 dark:text-orange-200">{issue}</span>
+                                                <div key={`${tool.toolId}-issue-${issueIndex}-${issue.substring(0, 20)}`} className="p-3 bg-orange-50 dark:bg-orange-950/50 rounded-lg border border-orange-200 dark:border-orange-800">
+                                                  <div className="flex items-start space-x-2">
+                                                    <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                      <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-1">
+                                                        Issue #{issueIndex + 1}
+                                                      </div>
+                                                      <div className="text-sm text-orange-700 dark:text-orange-300 mb-2">
+                                                        {issue}
+                                                      </div>
+                                                      <div className="text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 p-2 rounded">
+                                                        <strong>Impact:</strong> This issue affects your website's SEO performance and user experience.
+                                                      </div>
+                                                    </div>
+                                                  </div>
                                                 </div>
                                               ))}
                                             </div>
@@ -716,11 +740,23 @@ export function ReportsDashboard() {
                                               <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                               <span className="font-medium text-sm">Recommendations ({result.analysisResults.recommendations?.length || 0})</span>
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-3">
                                               {result.analysisResults.recommendations.map((recommendation: string, recIndex: number) => (
-                                                <div key={`${tool.toolId}-rec-${recIndex}-${recommendation.substring(0, 20)}`} className="flex items-start space-x-2 p-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
-                                                  <Info className="h-3 w-3 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                                  <span className="text-sm text-blue-800 dark:text-blue-200">{recommendation}</span>
+                                                <div key={`${tool.toolId}-rec-${recIndex}-${recommendation.substring(0, 20)}`} className="p-3 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+                                                  <div className="flex items-start space-x-2">
+                                                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                      <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                                        Fix #{recIndex + 1}
+                                                      </div>
+                                                      <div className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                                                        {recommendation}
+                                                      </div>
+                                                      <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
+                                                        <strong>Action Required:</strong> Implement this fix to improve your website's SEO performance.
+                                                      </div>
+                                                    </div>
+                                                  </div>
                                                 </div>
                                               ))}
                                             </div>
@@ -732,65 +768,230 @@ export function ReportsDashboard() {
                                           <div className="space-y-3">
                                             {/* Meta Tag Analysis Results */}
                                             {result.analysisResults.metaTags && (
-                                              <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
-                                                <h6 className="font-medium text-sm mb-2">Meta Tags Analysis</h6>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                              <div>Title: {result.analysisResults.metaTags?.title ? '✓' : '✗'}</div>
-                                              <div>Description: {result.analysisResults.metaTags?.description ? '✓' : '✗'}</div>
-                                              <div>Keywords: {result.analysisResults.metaTags?.keywords ? '✓' : '✗'}</div>
-                                              <div>Viewport: {result.analysisResults.metaTags?.viewport ? '✓' : '✗'}</div>
-                                            </div>
+                                              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                                                <h6 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                                                  <Search className="h-4 w-4" />
+                                                  <span>Meta Tags Analysis</span>
+                                                </h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                  <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                                    <span className="text-sm font-medium">Title Tag</span>
+                                                    <div className="flex items-center space-x-2">
+                                                      {result.analysisResults.metaTags?.title ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                      ) : (
+                                                        <XCircle className="h-4 w-4 text-red-600" />
+                                                      )}
+                                                      <span className="text-xs">{result.analysisResults.metaTags?.title ? 'Present' : 'Missing'}</span>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                                    <span className="text-sm font-medium">Meta Description</span>
+                                                    <div className="flex items-center space-x-2">
+                                                      {result.analysisResults.metaTags?.description ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                      ) : (
+                                                        <XCircle className="h-4 w-4 text-red-600" />
+                                                      )}
+                                                      <span className="text-xs">{result.analysisResults.metaTags?.description ? 'Present' : 'Missing'}</span>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                                    <span className="text-sm font-medium">Keywords</span>
+                                                    <div className="flex items-center space-x-2">
+                                                      {result.analysisResults.metaTags?.keywords ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                      ) : (
+                                                        <XCircle className="h-4 w-4 text-red-600" />
+                                                      )}
+                                                      <span className="text-xs">{result.analysisResults.metaTags?.keywords ? 'Present' : 'Missing'}</span>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                                                    <span className="text-sm font-medium">Viewport</span>
+                                                    <div className="flex items-center space-x-2">
+                                                      {result.analysisResults.metaTags?.viewport ? (
+                                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                                      ) : (
+                                                        <XCircle className="h-4 w-4 text-red-600" />
+                                                      )}
+                                                      <span className="text-xs">{result.analysisResults.metaTags?.viewport ? 'Present' : 'Missing'}</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
                                               </div>
                                             )}
 
                                             {/* Page Speed Analysis Results */}
                                             {result.analysisResults.performance && (
-                                              <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
-                                                <h6 className="font-medium text-sm mb-2">Performance Analysis</h6>
-                                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                                  <div>Images: {result.analysisResults.performance?.images || 0}</div>
-                                                  <div>Headings: {result.analysisResults.performance?.headings || 0}</div>
-                                                  <div>Links: {result.analysisResults.performance?.links || 0}</div>
-                                                  <div>Score: {result.analysisResults.performance?.score || 0}/100</div>
+                                              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                                                <h6 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                                                  <Zap className="h-4 w-4" />
+                                                  <span>Performance Analysis</span>
+                                                </h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Images</span>
+                                                      <span className="text-lg font-bold text-blue-600">{result.analysisResults.performance?.images || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Total images found</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Headings</span>
+                                                      <span className="text-lg font-bold text-green-600">{result.analysisResults.performance?.headings || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Heading tags found</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Links</span>
+                                                      <span className="text-lg font-bold text-purple-600">{result.analysisResults.performance?.links || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Total links found</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Score</span>
+                                                      <span className="text-lg font-bold text-orange-600">{result.analysisResults.performance?.score || 0}/100</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Performance score</div>
+                                                  </div>
                                                 </div>
                                               </div>
                                             )}
 
                                             {/* Mobile Analysis Results */}
                                             {result.analysisResults.isMobileFriendly !== undefined && (
-                                              <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
-                                                <h6 className="font-medium text-sm mb-2">Mobile Analysis</h6>
-                                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                                  <div>Mobile Friendly: {result.analysisResults.isMobileFriendly ? '✓' : '✗'}</div>
-                                                  <div>Viewport: {result.analysisResults.viewport?.configured ? '✓' : '✗'}</div>
-                                                  <div>Touch Targets: {result.analysisResults.touchTargets?.total || 0}</div>
-                                                  <div>Score: {result.analysisResults.score || 0}/100</div>
+                                              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                                                <h6 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                                                  <Smartphone className="h-4 w-4" />
+                                                  <span>Mobile Analysis</span>
+                                                </h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Mobile Friendly</span>
+                                                      <div className="flex items-center space-x-2">
+                                                        {result.analysisResults.isMobileFriendly ? (
+                                                          <CheckCircle className="h-4 w-4 text-green-600" />
+                                                        ) : (
+                                                          <XCircle className="h-4 w-4 text-red-600" />
+                                                        )}
+                                                        <span className="text-sm font-bold">{result.analysisResults.isMobileFriendly ? 'Yes' : 'No'}</span>
+                                                      </div>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Mobile optimization status</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Viewport</span>
+                                                      <div className="flex items-center space-x-2">
+                                                        {result.analysisResults.viewport?.configured ? (
+                                                          <CheckCircle className="h-4 w-4 text-green-600" />
+                                                        ) : (
+                                                          <XCircle className="h-4 w-4 text-red-600" />
+                                                        )}
+                                                        <span className="text-sm font-bold">{result.analysisResults.viewport?.configured ? 'Configured' : 'Missing'}</span>
+                                                      </div>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Viewport meta tag status</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Touch Targets</span>
+                                                      <span className="text-lg font-bold text-blue-600">{result.analysisResults.touchTargets?.total || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Touch-friendly elements</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Score</span>
+                                                      <span className="text-lg font-bold text-orange-600">{result.analysisResults.score || 0}/100</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Mobile optimization score</div>
+                                                  </div>
                                                 </div>
                                               </div>
                                             )}
 
                                             {/* Broken Links Analysis */}
                                             {result.analysisResults.brokenLinks !== undefined && (
-                                              <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
-                                                <h6 className="font-medium text-sm mb-2">Link Analysis</h6>
-                                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                                  <div>Total Links: {result.analysisResults.totalLinks || 0}</div>
-                                                  <div>Broken Links: {result.analysisResults.brokenLinks || 0}</div>
-                                                  <div>Working Links: {result.analysisResults.workingLinks || 0}</div>
-                                                  <div>Score: {result.analysisResults.score || 0}/100</div>
+                                              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                                                <h6 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                                                  <Link className="h-4 w-4" />
+                                                  <span>Link Analysis</span>
+                                                </h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Total Links</span>
+                                                      <span className="text-lg font-bold text-blue-600">{result.analysisResults.totalLinks || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">All links found on page</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Broken Links</span>
+                                                      <span className="text-lg font-bold text-red-600">{result.analysisResults.brokenLinks || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Links returning 404 errors</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Working Links</span>
+                                                      <span className="text-lg font-bold text-green-600">{result.analysisResults.workingLinks || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Links working properly</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Health Score</span>
+                                                      <span className="text-lg font-bold text-orange-600">{result.analysisResults.score || 0}/100</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Link health score</div>
+                                                  </div>
                                                 </div>
                                               </div>
                                             )}
 
                                             {/* Keyword Density Analysis */}
                                             {result.analysisResults.keywordDensity && (
-                                              <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
-                                                <h6 className="font-medium text-sm mb-2">Keyword Analysis</h6>
-                                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                                  <div>Total Words: {result.analysisResults.totalWords || 0}</div>
-                                                  <div>Unique Words: {result.analysisResults.uniqueWords || 0}</div>
-                                                  <div>Top Keywords: {result.analysisResults.topKeywords?.length || 0}</div>
-                                                  <div>Score: {result.analysisResults.score || 0}/100</div>
+                                              <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border">
+                                                <h6 className="font-medium text-sm mb-3 flex items-center space-x-2">
+                                                  <Search className="h-4 w-4" />
+                                                  <span>Keyword Analysis</span>
+                                                </h6>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Total Words</span>
+                                                      <span className="text-lg font-bold text-blue-600">{result.analysisResults.totalWords || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Words found in content</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Unique Words</span>
+                                                      <span className="text-lg font-bold text-green-600">{result.analysisResults.uniqueWords || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Distinct words used</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Top Keywords</span>
+                                                      <span className="text-lg font-bold text-purple-600">{result.analysisResults.topKeywords?.length || 0}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Most frequent keywords</div>
+                                                  </div>
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="text-sm font-medium">Density Score</span>
+                                                      <span className="text-lg font-bold text-orange-600">{result.analysisResults.score || 0}/100</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">Keyword optimization score</div>
+                                                  </div>
                                                 </div>
                                               </div>
                                             )}

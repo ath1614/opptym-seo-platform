@@ -154,3 +154,4 @@ BacklinkSchema.index({ linkQuality: 1, status: 1 })
 BacklinkSchema.index({ discoveredAt: -1 })
 
 export default mongoose.models.Backlink || mongoose.model<IBacklink>('Backlink', BacklinkSchema)
+
