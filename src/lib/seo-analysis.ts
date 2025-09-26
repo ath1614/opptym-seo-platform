@@ -744,18 +744,18 @@ export async function analyzePageSpeed(url: string): Promise<PageSpeedAnalysis> 
   const links = $('a[href]')
   const internalLinks = links.filter((_, link) => {
     const href = $(link).attr('href')
-    return href && (href.startsWith('/') || href.includes(new URL(url).hostname))
+    return Boolean(href && (href.startsWith('/') || href.includes(new URL(url).hostname)))
   })
 
   // Analyze external links
   const externalLinks = links.filter((_, link) => {
     const href = $(link).attr('href')
-    return href && href.startsWith('http') && !href.includes(new URL(url).hostname)
+    return Boolean(href && href.startsWith('http') && !href.includes(new URL(url).hostname))
   })
 
   // Check for external links without rel="noopener"
   const unsafeExternalLinks = externalLinks.filter((_, link) => 
-    !$(link).attr('rel')?.includes('noopener')
+    Boolean(!$(link).attr('rel')?.includes('noopener'))
   )
 
   if (unsafeExternalLinks.length > 0) {
@@ -999,8 +999,8 @@ export async function analyzeMobileFriendly(url: string): Promise<MobileAnalysis
   let score = 100
 
   // Check viewport
-  const viewportElement = doc.querySelector('meta[name="viewport"]')
-  const viewportContent = viewportElement?.getAttribute('content') || ''
+  const viewportElement = $('meta[name="viewport"]')
+  const viewportContent = viewportElement.attr('content') || ''
   
   let viewportStatus: 'good' | 'warning' | 'error' = 'good'
   if (!viewportContent) {
@@ -1014,8 +1014,8 @@ export async function analyzeMobileFriendly(url: string): Promise<MobileAnalysis
   }
 
   // Check touch targets (simplified)
-  const links = doc.querySelectorAll('a, button, input, select, textarea')
-  const touchTargets = Array.from(links).length
+  const links = $('a, button, input, select, textarea')
+  const touchTargets = links.length
   const tooSmallTargets = 0 // This would require more complex analysis
   
   let touchTargetStatus: 'good' | 'warning' | 'error' = 'good'
@@ -1026,7 +1026,7 @@ export async function analyzeMobileFriendly(url: string): Promise<MobileAnalysis
   }
 
   // Check text size (simplified)
-  const textElements = doc.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6')
+  const textElements = $('p, span, div, h1, h2, h3, h4, h5, h6')
   const textSizeStatus: 'good' | 'warning' | 'error' = 'good'
   // This would require CSS analysis to be accurate
 
@@ -1068,24 +1068,24 @@ export async function analyzeMobileFriendly(url: string): Promise<MobileAnalysis
 
 // Keyword Researcher
 export async function analyzeKeywordResearch(url: string): Promise<KeywordResearchAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
   // Extract keywords from content
-  const body = doc.querySelector('body')
-  if (!body) {
+  const body = $('body')
+  if (body.length === 0) {
     throw new Error('No body content found')
   }
 
-  const textContent = body.textContent || ''
+  const textContent = body.text() || ''
   const words = textContent.toLowerCase().match(/\b\w+\b/g) || []
   
   // Simple keyword extraction (in real implementation, this would use more sophisticated algorithms)
   const wordCounts: { [key: string]: number } = {}
-  words.forEach(word => {
+  words.forEach((word: string) => {
     if (word.length > 3) { // Filter out short words
       wordCounts[word] = (wordCounts[word] || 0) + 1
     }
@@ -1257,7 +1257,7 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
   console.log(`🔍 Analyzing backlinks for ${url}`)
 
   // Find external links (potential backlink sources)
-  const links = doc.querySelectorAll('a[href]')
+  const links = $('a[href]')
   const externalLinks = Array.from(links).filter(link => {
     const href = link.getAttribute('href')
     return href && href.startsWith('http') && !href.includes(new URL(url).hostname)
@@ -1399,10 +1399,10 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
   console.log(`🔍 Analyzing keywords for ${url}`)
 
   // Extract keywords from page content
-  const title = doc.querySelector('title')?.textContent || ''
-  const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || ''
-  const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, h6')).map(h => h.textContent?.trim()).filter(Boolean)
-  const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.textContent?.trim()).filter(Boolean)
+  const title = $('title')?.textContent || ''
+  const metaDescription = $('meta[name="description"]')?.getAttribute('content') || ''
+  const headings = Array.from($('h1, h2, h3, h4, h5, h6')).map(h => h.textContent?.trim()).filter(Boolean)
+  const paragraphs = Array.from($('p')).map(p => p.textContent?.trim()).filter(Boolean)
   
   // Extract potential keywords from content
   const allText = [title, metaDescription, ...headings, ...paragraphs].join(' ').toLowerCase()
@@ -1508,7 +1508,7 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   console.log(`🔍 Analyzing competitors for ${url}`)
 
   // Extract external links to identify potential competitors
-  const links = doc.querySelectorAll('a[href]')
+  const links = $('a[href]')
   const externalLinks = Array.from(links).filter(link => {
     const href = link.getAttribute('href')
     return href && href.startsWith('http') && !href.includes(new URL(url).hostname)
@@ -1594,8 +1594,8 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   }
 
   // Generate competitive gaps based on content analysis
-  const title = doc.querySelector('title')?.textContent || ''
-  const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || ''
+  const title = $('title')?.textContent || ''
+  const metaDescription = $('meta[name="description"]')?.getAttribute('content') || ''
   const content = [title, metaDescription].join(' ').toLowerCase()
 
   const competitiveGaps = []
@@ -1660,13 +1660,13 @@ export async function analyzeTechnicalSEO(url: string): Promise<TechnicalSEOAnal
   const securityIssues: string[] = []
 
   // Check crawlability
-  const robotsMeta = doc.querySelector('meta[name="robots"]')
+  const robotsMeta = $('meta[name="robots"]')
   if (robotsMeta?.getAttribute('content')?.includes('noindex')) {
     indexabilityIssues.push('Page has noindex meta tag')
   }
 
   // Check site structure
-  const h1s = doc.querySelectorAll('h1')
+  const h1s = $('h1')
   if (h1s.length === 0) {
     siteStructureIssues.push('Missing H1 tag')
   } else if (h1s.length > 1) {
@@ -1679,7 +1679,7 @@ export async function analyzeTechnicalSEO(url: string): Promise<TechnicalSEOAnal
   }
 
   // Check for images without alt text
-  const images = doc.querySelectorAll('img')
+  const images = $('img')
   const imagesWithoutAlt = Array.from(images).filter(img => !img.getAttribute('alt'))
   if (imagesWithoutAlt.length > 0) {
     performanceIssues.push(`${imagesWithoutAlt.length} images without alt text`)
@@ -1732,7 +1732,7 @@ export async function analyzeSchemaValidation(url: string): Promise<SchemaValida
     throw new Error('Unable to fetch the webpage')
   }
 
-  const schemaScripts = doc.querySelectorAll('script[type="application/ld+json"]')
+  const schemaScripts = $('script[type="application/ld+json"]')
   const schemaTypes: string[] = []
   const errors: string[] = []
   const warnings: string[] = []
@@ -1790,7 +1790,7 @@ export async function analyzeAltText(url: string): Promise<AltTextAnalysis> {
     throw new Error('Unable to fetch the webpage')
   }
 
-  const images = doc.querySelectorAll('img')
+  const images = $('img')
   const totalImages = images.length
   let imagesWithAlt = 0
   let imagesWithoutAlt = 0
@@ -1855,7 +1855,7 @@ export async function analyzeCanonical(url: string): Promise<CanonicalAnalysis> 
     throw new Error('Unable to fetch the webpage')
   }
 
-  const canonicalLink = doc.querySelector('link[rel="canonical"]')
+  const canonicalLink = $('link[rel="canonical"]')
   const canonicalUrl = canonicalLink?.getAttribute('href') || ''
   const issues: string[] = []
   const duplicateContent: Array<{ url: string; similarity: number; issue: string }> = []
@@ -1867,8 +1867,8 @@ export async function analyzeCanonical(url: string): Promise<CanonicalAnalysis> 
   }
 
   // Check for potential duplicate content indicators
-  const title = doc.querySelector('title')?.textContent || ''
-  const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || ''
+  const title = $('title')?.textContent || ''
+  const description = $('meta[name="description"]')?.getAttribute('content') || ''
   
   if (title.length < 30) {
     duplicateContent.push({
@@ -1922,8 +1922,8 @@ export async function analyzeMobileOptimization(url: string): Promise<MobileAnal
   let score = 100
 
   // Check viewport
-  const viewportElement = doc.querySelector('meta[name="viewport"]')
-  const viewportContent = viewportElement?.getAttribute('content') || ''
+  const viewportElement = $('meta[name="viewport"]')
+  const viewportContent = viewportElement.attr('content') || ''
   
   let viewportStatus: 'good' | 'warning' | 'error' = 'good'
   if (!viewportContent) {
@@ -1937,8 +1937,8 @@ export async function analyzeMobileOptimization(url: string): Promise<MobileAnal
   }
 
   // Check touch targets (simplified)
-  const links = doc.querySelectorAll('a, button, input, select, textarea')
-  const touchTargets = Array.from(links).length
+  const links = $('a, button, input, select, textarea')
+  const touchTargets = links.length
   const tooSmallTargets = 0 // This would require more complex analysis
   
   let touchTargetStatus: 'good' | 'warning' | 'error' = 'good'
@@ -1949,7 +1949,7 @@ export async function analyzeMobileOptimization(url: string): Promise<MobileAnal
   }
 
   // Check text size (simplified)
-  const textElements = doc.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6')
+  const textElements = $('p, span, div, h1, h2, h3, h4, h5, h6')
   const textSizeStatus: 'good' | 'warning' | 'error' = 'good'
   // This would require CSS analysis to be accurate
 
@@ -1997,7 +1997,7 @@ export async function analyzeSchemaMarkup(url: string): Promise<SchemaValidation
     throw new Error('Unable to fetch the webpage')
   }
 
-  const schemaScripts = doc.querySelectorAll('script[type="application/ld+json"]')
+  const schemaScripts = $('script[type="application/ld+json"]')
   const schemaTypes: string[] = []
   const errors: string[] = []
   const warnings: string[] = []
