@@ -37,42 +37,50 @@ export async function GET() {
         {
           name: 'Free',
           price: 0,
-          features: ['5 SEO tools', '1 project', '1 submission', '1 report'],
+          features: ['5 SEO tools', '1 project', '3 submissions', '1 report'],
           active: true,
           description: 'Perfect for getting started',
           maxProjects: 1,
-          maxSubmissions: 1,
-          maxSeoTools: 5
+          maxSubmissions: 3,
+          maxSeoTools: 5,
+          maxBacklinks: 0,
+          maxReports: 1
         },
         {
           name: 'Pro',
-          price: 1999,
-          features: ['1000 SEO tools', '15 projects', '750 submissions', '50 reports'],
+          price: 999,
+          features: ['140 SEO tools', '1 project', '150 submissions', 'Unlimited reports', 'Keyword researcher', 'Backlink scanner', 'Keyword tracker', 'Competitor analyzer', 'Technical SEO auditor', 'Advanced analytics', 'Priority support', 'Custom reports', 'API access'],
           active: true,
           description: 'For growing businesses',
-          maxProjects: 15,
-          maxSubmissions: 750,
-          maxSeoTools: 1000
+          maxProjects: 1,
+          maxSubmissions: 150,
+          maxSeoTools: 140,
+          maxBacklinks: 0,
+          maxReports: -1
         },
         {
           name: 'Business',
           price: 3999,
-          features: ['5000 SEO tools', '50 projects', '1500 submissions', '200 reports'],
+          features: ['Unlimited SEO tools', '5 projects', '1500 submissions', 'Unlimited reports', 'White-label reports', 'Team collaboration', 'Advanced competitor analysis', 'Custom integrations', 'Dedicated account manager', 'Priority processing', 'Custom branding', 'Advanced API limits'],
           active: true,
           description: 'For established businesses',
-          maxProjects: 50,
+          maxProjects: 5,
           maxSubmissions: 1500,
-          maxSeoTools: 5000
+          maxSeoTools: -1,
+          maxBacklinks: 0,
+          maxReports: -1
         },
         {
           name: 'Enterprise',
-          price: 9999,
-          features: ['Unlimited SEO tools', 'Unlimited projects', 'Unlimited submissions', 'Unlimited reports'],
+          price: 8999,
+          features: ['Unlimited SEO tools', '10 projects', '6000 submissions', 'Unlimited reports', 'Custom development', 'On-premise deployment', 'Advanced security', 'Custom integrations', 'Dedicated infrastructure', '24/7 phone support', 'Custom training', 'SLA guarantees'],
           active: true,
           description: 'For large organizations',
-          maxProjects: -1,
-          maxSubmissions: -1,
-          maxSeoTools: -1
+          maxProjects: 10,
+          maxSubmissions: 6000,
+          maxSeoTools: -1,
+          maxBacklinks: 0,
+          maxReports: -1
         }
       ]
 

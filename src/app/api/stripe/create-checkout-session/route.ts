@@ -16,16 +16,16 @@ function getStripe() {
 // Plan pricing configuration (in INR - Indian Rupees)
 const planPricing = {
   pro: {
-    monthly: 199900, // ₹1999 in paise (Stripe uses smallest currency unit)
-    yearly: 2158920, // ₹21589.20 in paise (10% discount)
+    monthly: 99900, // ₹999 in paise (Stripe uses smallest currency unit)
+    yearly: 1078920, // ₹10789.20 in paise (10% discount)
   },
   business: {
     monthly: 399900, // ₹3999 in paise
     yearly: 4318920, // ₹43189.20 in paise (10% discount)
   },
   enterprise: {
-    monthly: 999900, // ₹9999 in paise
-    yearly: 10798920, // ₹107989.20 in paise (10% discount)
+    monthly: 899900, // ₹8999 in paise
+    yearly: 9718920, // ₹97189.20 in paise (10% discount)
   },
 }
 
