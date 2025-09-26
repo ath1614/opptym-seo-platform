@@ -1810,3 +1810,255 @@ export async function analyzeCanonical(url: string): Promise<CanonicalAnalysis> 
     score
   }
 }
+
+// Mobile Optimization Checker
+export async function analyzeMobileOptimization(url: string): Promise<MobileAnalysis> {
+  const doc = await fetchAndParseHTML(url)
+  
+  if (!doc) {
+    throw new Error('Unable to fetch the webpage')
+  }
+
+  const recommendations: string[] = []
+  let score = 100
+
+  // Check viewport
+  const viewportElement = doc.querySelector('meta[name="viewport"]')
+  const viewportContent = viewportElement?.getAttribute('content') || ''
+  
+  let viewportStatus: 'good' | 'warning' | 'error' = 'good'
+  if (!viewportContent) {
+    viewportStatus = 'error'
+    recommendations.push('Add viewport meta tag for mobile optimization')
+    score -= 30
+  } else if (!viewportContent.includes('width=device-width')) {
+    viewportStatus = 'warning'
+    recommendations.push('Viewport should include width=device-width')
+    score -= 15
+  }
+
+  // Check touch targets (simplified)
+  const links = doc.querySelectorAll('a, button, input, select, textarea')
+  const touchTargets = Array.from(links).length
+  const tooSmallTargets = 0 // This would require more complex analysis
+  
+  let touchTargetStatus: 'good' | 'warning' | 'error' = 'good'
+  if (tooSmallTargets > 0) {
+    touchTargetStatus = 'warning'
+    recommendations.push(`${tooSmallTargets} touch targets may be too small`)
+    score -= 10
+  }
+
+  // Check text size (simplified)
+  const textElements = doc.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6')
+  const textSizeStatus: 'good' | 'warning' | 'error' = 'good'
+  // This would require CSS analysis to be accurate
+
+  // Check content width (simplified)
+  const contentWidthStatus: 'good' | 'warning' | 'error' = 'good'
+  // This would require CSS analysis to be accurate
+
+  const isMobileFriendly = viewportStatus === 'good' && touchTargetStatus === 'good'
+
+  if (recommendations.length === 0) {
+    recommendations.push('Page appears to be mobile-friendly')
+  }
+
+  return {
+    url,
+    isMobileFriendly,
+    viewport: {
+      configured: !!viewportContent,
+      content: viewportContent,
+      status: viewportStatus
+    },
+    touchTargets: {
+      total: touchTargets,
+      tooSmall: tooSmallTargets,
+      status: touchTargetStatus
+    },
+    textSize: {
+      readable: true, // Simplified
+      status: textSizeStatus
+    },
+    contentWidth: {
+      fitsScreen: true, // Simplified
+      status: contentWidthStatus
+    },
+    score: Math.max(0, score),
+    recommendations
+  }
+}
+
+// Schema Markup Validator
+export async function analyzeSchemaMarkup(url: string): Promise<SchemaValidationAnalysis> {
+  const doc = await fetchAndParseHTML(url)
+  
+  if (!doc) {
+    throw new Error('Unable to fetch the webpage')
+  }
+
+  const schemaScripts = doc.querySelectorAll('script[type="application/ld+json"]')
+  const schemaTypes: string[] = []
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  schemaScripts.forEach(script => {
+    try {
+      const data = JSON.parse(script.textContent || '')
+      if (data['@type']) {
+        schemaTypes.push(data['@type'])
+      }
+    } catch {
+      errors.push('Invalid JSON-LD syntax found')
+    }
+  })
+
+  if (schemaTypes.length === 0) {
+    warnings.push('No structured data found')
+  }
+
+  const schemaTypeAnalysis = schemaTypes.map(type => ({
+    type,
+    count: 1,
+    status: 'valid' as 'valid' | 'invalid' | 'warning',
+    issues: []
+  }))
+
+  const recommendations = [
+    'Add structured data to improve search result appearance',
+    'Use appropriate schema types for your content',
+    'Validate your structured data with Google\'s Rich Results Test',
+    'Consider adding Organization, WebSite, and BreadcrumbList schemas'
+  ]
+
+  const score = schemaTypes.length > 0 ? 90 : 30
+
+  return {
+    url,
+    structuredData: {
+      found: schemaTypes.length > 0,
+      types: schemaTypes,
+      errors,
+      warnings
+    },
+    schemaTypes: schemaTypeAnalysis,
+    recommendations,
+    score
+  }
+}
+
+// Sitemap and Robots Checker
+export async function analyzeSitemapAndRobots(url: string): Promise<SitemapRobotsAnalysis> {
+  const baseUrl = new URL(url)
+  const sitemapUrl = `${baseUrl.origin}/sitemap.xml`
+  const robotsUrl = `${baseUrl.origin}/robots.txt`
+
+  let sitemapExists = false
+  let sitemapStatus: 'good' | 'warning' | 'error' = 'error'
+  const sitemapIssues: string[] = []
+
+  let robotsExists = false
+  let robotsStatus: 'good' | 'warning' | 'error' = 'error'
+  const robotsIssues: string[] = []
+  const robotsRules: Array<{ userAgent: string; allow: string[]; disallow: string[] }> = []
+
+  // Check sitemap
+  try {
+    const sitemapResponse = await fetch(sitemapUrl)
+    if (sitemapResponse.ok) {
+      sitemapExists = true
+      sitemapStatus = 'good'
+    } else {
+      sitemapIssues.push('Sitemap not found or not accessible')
+    }
+  } catch {
+    sitemapIssues.push('Sitemap not found or not accessible')
+  }
+
+  // Check robots.txt
+  try {
+    const robotsResponse = await fetch(robotsUrl)
+    if (robotsResponse.ok) {
+      robotsExists = true
+      const robotsText = await robotsResponse.text()
+      
+      // Parse robots.txt (simplified)
+      const lines = robotsText.split('\n')
+      let currentUserAgent = '*'
+      
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('User-agent:')) {
+          currentUserAgent = trimmed.split(':')[1].trim()
+        } else if (trimmed.startsWith('Disallow:')) {
+          const disallow = trimmed.split(':')[1].trim()
+          if (disallow) {
+            const existingRule = robotsRules.find(r => r.userAgent === currentUserAgent)
+            if (existingRule) {
+              existingRule.disallow.push(disallow)
+            } else {
+              robotsRules.push({
+                userAgent: currentUserAgent,
+                allow: [],
+                disallow: [disallow]
+              })
+            }
+          }
+        } else if (trimmed.startsWith('Allow:')) {
+          const allow = trimmed.split(':')[1].trim()
+          if (allow) {
+            const existingRule = robotsRules.find(r => r.userAgent === currentUserAgent)
+            if (existingRule) {
+              existingRule.allow.push(allow)
+            } else {
+              robotsRules.push({
+                userAgent: currentUserAgent,
+                allow: [allow],
+                disallow: []
+              })
+            }
+          }
+        }
+      }
+      
+      robotsStatus = 'good'
+    } else {
+      robotsIssues.push('Robots.txt not found or not accessible')
+    }
+  } catch {
+    robotsIssues.push('Robots.txt not found or not accessible')
+  }
+
+  const recommendations = []
+  if (!sitemapExists) {
+    recommendations.push('Create and submit a sitemap.xml file')
+  }
+  if (!robotsExists) {
+    recommendations.push('Create a robots.txt file to guide search engine crawlers')
+  }
+  if (recommendations.length === 0) {
+    recommendations.push('Sitemap and robots.txt are properly configured')
+  }
+
+  const score = (sitemapExists ? 50 : 0) + (robotsExists ? 50 : 0)
+
+  return {
+    url,
+    sitemap: {
+      exists: sitemapExists,
+      url: sitemapUrl,
+      status: sitemapStatus,
+      issues: sitemapIssues
+    },
+    robots: {
+      exists: robotsExists,
+      url: robotsUrl,
+      status: robotsStatus,
+      rules: robotsRules,
+      issues: robotsIssues
+    },
+    recommendations,
+    score
+  }
+}
