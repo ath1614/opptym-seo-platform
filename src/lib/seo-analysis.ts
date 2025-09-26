@@ -1,5 +1,5 @@
 import { JSDOM } from 'jsdom'
-import fetch from 'node-fetch'
+const fetch = require('node-fetch')
 
 export interface MetaTagAnalysis {
   url: string
