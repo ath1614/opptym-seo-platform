@@ -139,6 +139,7 @@ export default function MetaTagAnalyzerPage() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Meta Tag Analysis Response:', data)
         setAnalysisResult(data.data)
         showToast({
           title: 'Analysis Complete',

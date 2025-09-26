@@ -102,6 +102,7 @@ export default function BrokenLinkScannerPage() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Broken Link Analysis Response:', data)
         // Transform the API response to match the expected structure
         const transformedData = {
           url: data.url,
