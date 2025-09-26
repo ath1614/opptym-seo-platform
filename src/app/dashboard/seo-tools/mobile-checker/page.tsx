@@ -1,381 +1,274 @@
 "use client"
 
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Smartphone, CheckCircle, AlertTriangle, XCircle, Eye, Hand, Wifi, Battery } from 'lucide-react'
+import { Search, CheckCircle, AlertTriangle, Loader2, Download, ArrowLeft } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
+
+interface Project {
+  _id: string
+  projectName: string
+  websiteURL: string
+}
+
+interface AnalysisData {
+  url: string
+  score: number
+  recommendations: string[]
+  // Add more fields as needed
+}
 
 export default function MobileCheckerPage() {
-  return (
-    <SEOToolLayout
-      toolId="mobile-checker"
-      toolName="Mobile Checker"
-      toolDescription="Check mobile-friendliness and responsive design to ensure optimal mobile user experience."
-    >
-      {/* Results will be displayed here */}
-      <div className="space-y-6">
-        {/* Overall Score */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Smartphone className="h-5 w-5 text-primary" />
-              <span>Mobile-Friendliness Analysis</span>
-            </CardTitle>
-            <CardDescription>
-              Comprehensive analysis of your website's mobile optimization and user experience
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">✓</div>
-                <div className="text-sm text-green-600">Mobile-Friendly</div>
-              </div>
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">92</div>
-                <div className="text-sm text-blue-600">Mobile Score</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">1.2s</div>
-                <div className="text-sm text-purple-600">Load Time</div>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <div className="text-2xl font-bold text-orange-600">3</div>
-                <div className="text-sm text-orange-600">Issues Found</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const { showToast } = useToast()
+  
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
 
-        {/* Mobile Usability Issues */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
-              <span>Mobile Usability Issues</span>
-            </CardTitle>
-            <CardDescription>
-              Issues that may affect mobile user experience and search rankings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  issue: "Text too small to read",
-                  severity: "Medium",
-                  affected: "2 pages",
-                  description: "Some text elements are smaller than 12px, making them difficult to read on mobile devices.",
-                  recommendation: "Increase font size to at least 12px for better readability."
-                },
-                {
-                  issue: "Clickable elements too close together",
-                  severity: "Low",
-                  affected: "1 page",
-                  description: "Some buttons and links are positioned too close together, making them hard to tap accurately.",
-                  recommendation: "Add more spacing between clickable elements (minimum 8px)."
-                },
-                {
-                  issue: "Content wider than screen",
-                  severity: "Low",
-                  affected: "1 page",
-                  description: "Some content extends beyond the viewport width, requiring horizontal scrolling.",
-                  recommendation: "Ensure all content fits within the viewport width."
-                }
-              ].map((issue, index) => (
-                <div key={index} className="p-4 border rounded-lg">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{issue.issue}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{issue.description}</p>
-                      <p className="text-sm text-blue-600 mt-2">
-                        <strong>Recommendation:</strong> {issue.recommendation}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={issue.severity === 'High' ? 'destructive' : issue.severity === 'Medium' ? 'secondary' : 'outline'}>
-                        {issue.severity}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Affected: {issue.affected}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
 
-        {/* Responsive Design Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Eye className="h-5 w-5" />
-              <span>Responsive Design Analysis</span>
-            </CardTitle>
-            <CardDescription>
-              How your website adapts to different screen sizes and devices
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold mb-3">Viewport Configuration</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Viewport Meta Tag:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Present</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Width Setting:</span>
-                    <span className="font-mono">device-width</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Initial Scale:</span>
-                    <span className="font-mono">1.0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>User Scalable:</span>
-                    <span className="font-mono">Yes</span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-3">Breakpoint Analysis</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Mobile (320px-768px):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tablet (768px-1024px):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Desktop (1024px+):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Large Desktop (1440px+):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  useEffect(() => {
+    if (session?.user) {
+      fetchProjects()
+    }
+  }, [session])
 
-        {/* Touch Interface Analysis */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Hand className="h-5 w-5" />
-              <span>Touch Interface Analysis</span>
-            </CardTitle>
-            <CardDescription>
-              Analysis of touch-friendly elements and interactions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">98%</div>
-                  <div className="text-sm text-green-600">Touch-Friendly Elements</div>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">44px</div>
-                  <div className="text-sm text-blue-600">Avg. Touch Target Size</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">2</div>
-                  <div className="text-sm text-purple-600">Small Touch Targets</div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <h4 className="font-semibold">Touch Target Analysis</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Buttons (44px+):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Good</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Navigation Links (44px+):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Good</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-yellow-50 rounded">
-                    <span className="text-sm">Small Links (32px):</span>
-                    <Badge variant="secondary">Needs Improvement</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Form Elements (44px+):</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Good</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    }
+  }
 
-        {/* Performance on Mobile */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Battery className="h-5 w-5" />
-              <span>Mobile Performance</span>
-            </CardTitle>
-            <CardDescription>
-              How your website performs on mobile devices and slower connections
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold mb-3">Loading Performance</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>First Contentful Paint:</span>
-                    <span className="font-medium text-green-600">1.2s</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Largest Contentful Paint:</span>
-                    <span className="font-medium text-green-600">2.1s</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Time to Interactive:</span>
-                    <span className="font-medium text-green-600">2.8s</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cumulative Layout Shift:</span>
-                    <span className="font-medium text-green-600">0.05</span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-3">Resource Optimization</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Images Optimized:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Yes</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>CSS Minified:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Yes</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>JavaScript Minified:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Yes</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Gzip Compression:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Enabled</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const handleAnalyze = async () => {
+    if (!selectedProject) {
+      showToast({
+        title: 'Error',
+        description: 'Please select a project to analyze',
+        variant: 'destructive'
+      })
+      return
+    }
 
-        {/* Mobile SEO Factors */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Wifi className="h-5 w-5" />
-              <span>Mobile SEO Factors</span>
-            </CardTitle>
-            <CardDescription>
-              Mobile-specific SEO elements and their implementation status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Mobile-First Indexing:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Ready</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Responsive Design:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Implemented</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Touch-Friendly Navigation:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Fast Loading Speed:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Readable Text:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Good</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Proper Viewport:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Configured</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">No Flash Content:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">None</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-green-50 rounded">
-                    <span className="text-sm">Mobile-Friendly URLs:</span>
-                    <Badge variant="default" className="bg-green-100 text-green-800">Optimized</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    setIsAnalyzing(true)
+    try {
+      const response = await fetch(`/api/tools/${selectedProject}/run-mobile-audit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
 
-        {/* Recommendations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-primary" />
-              <span>Mobile Optimization Recommendations</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Alert>
-                <Smartphone className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Excellent Mobile Performance:</strong> Your website is mobile-friendly with a score of 92/100. Only minor improvements are needed.
-                </AlertDescription>
-              </Alert>
-              
-              <Alert>
-                <Hand className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Improve Touch Targets:</strong> Increase the size of 2 small touch targets to at least 44px for better usability.
-                </AlertDescription>
-              </Alert>
-              
-              <Alert>
-                <Eye className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Text Readability:</strong> Increase font size on 2 pages to at least 12px for better mobile readability.
-                </AlertDescription>
-              </Alert>
-              
-              <Alert>
-                <Battery className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Performance Optimization:</strong> Your mobile performance is excellent. Continue monitoring and optimizing for even better results.
-                </AlertDescription>
-              </Alert>
-            </div>
-          </CardContent>
-        </Card>
+      const data = await response.json()
+
+      if (response.ok) {
+        console.log('{ToolName} Analysis Response:', data)
+        setAnalysisData(data.data)
+        showToast({
+          title: 'Analysis Complete',
+          description: '{ToolName} analysis completed successfully',
+          variant: 'success'
+        })
+      } else {
+        showToast({
+          title: 'Analysis Failed',
+          description: data.error || 'Failed to analyze mobile-audit',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      showToast({
+        title: 'Error',
+        description: 'Network error occurred during analysis',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleExport = () => {
+    if (!analysisData) return
+    
+    const csvContent = [
+      'URL,Score,Recommendations',
+      `"${analysisData.url}","${analysisData.score}","${analysisData.recommendations.join('; ')}"`
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'mobile-audit-analysis.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </div>
-    </SEOToolLayout>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Mobile Checker</h1>
+              <p className="text-muted-foreground">Analyze mobile-friendliness and optimize for mobile search performance</p>
+            </div>
+          </div>
+          {analysisData && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Project Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Search className="h-5 w-5 text-primary" />
+              <span>Mobile Checker Analysis</span>
+            </CardTitle>
+            <CardDescription>
+              Select a project to analyze mobile-audit for SEO optimization
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing Mobile Checker...
+                  </>
+                ) : (
+                  <>
+                    <Search className="h-4 w-4 mr-2" />
+                    Analyze Mobile Checker
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analysis Results */}
+        {analysisData && (
+          <div className="space-y-6">
+            {/* Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Mobile Checker Analysis Results</span>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={analysisData.score >= 80 ? 'default' : analysisData.score >= 60 ? 'secondary' : 'destructive'}>
+                      Score: {analysisData.score}/100
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center p-8">
+                  <p className="text-muted-foreground">Analysis completed successfully!</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Detailed results and recommendations are available.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recommendations */}
+            {analysisData.recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span>Recommendations</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.recommendations.map((recommendation, index) => (
+                      <Alert key={index}>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>{recommendation}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
   )
 }
