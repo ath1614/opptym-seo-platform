@@ -2,20 +2,107 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
-import { PageSpeedResults } from '@/components/seo-tools/page-speed-analyzer'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Search, Loader2, Download } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
 
 export default function PageSpeedAnalyzerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { showToast } = useToast()
+  
+  const [projects, setProjects] = useState([])
+  const [selectedProject, setSelectedProject] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisData, setAnalysisData] = useState(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/login')
     }
   }, [status, router])
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchProjects()
+    }
+  }, [session])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    }
+  }
+
+  const handleAnalyze = async () => {
+    if (!selectedProject) return
+    
+    setIsAnalyzing(true)
+    try {
+      const response = await fetch(`/api/tools/${selectedProject}/run-page-speed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+      
+      if (response.ok) {
+        setAnalysisData(data.data)
+        showToast({
+          title: 'Analysis Complete',
+          description: 'Page speed analysis completed successfully!',
+          variant: 'success'
+        })
+      } else {
+        showToast({
+          title: 'Analysis Failed',
+          description: data.error || 'Failed to analyze page speed',
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error('Analysis error:', error)
+      showToast({
+        title: 'Analysis Failed',
+        description: 'An error occurred during analysis',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleExport = () => {
+    if (!analysisData) return
+    
+    const csvContent = [
+      'Metric,Value,Status,Recommendation',
+      `Overall Score,${analysisData.overallScore || 'N/A'},${analysisData.status || 'N/A'},${analysisData.recommendation || 'N/A'}`,
+      `Load Time,${analysisData.loadTime || 'N/A'},${analysisData.loadTimeStatus || 'N/A'},${analysisData.loadTimeRecommendation || 'N/A'}`,
+      `Performance,${analysisData.performance || 'N/A'},${analysisData.performanceStatus || 'N/A'},${analysisData.performanceRecommendation || 'N/A'}`
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'page-speed-analysis.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   if (status === 'loading') {
     return (
