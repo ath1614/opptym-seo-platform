@@ -42,6 +42,18 @@ export async function POST(
 
     // Run keyword tracking analysis
     console.log(`🔍 Starting analysis for project: ${projectId}, URL: ${project.websiteURL}`)
+    
+    // Validate URL
+    if (!project.websiteURL) {
+      throw new Error('Project website URL is not set')
+    }
+    
+    try {
+      new URL(project.websiteURL)
+    } catch (urlError) {
+      throw new Error(`Invalid project URL: ${project.websiteURL}`)
+    }
+    
     const analysisResult = await analyzeKeywordTracking(project.websiteURL)
     console.log(`✅ Analysis completed for project: ${projectId}`)
     
