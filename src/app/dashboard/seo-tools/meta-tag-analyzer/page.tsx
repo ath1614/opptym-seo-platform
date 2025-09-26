@@ -21,12 +21,64 @@ interface Project {
 
 interface AnalysisResult {
   url: string
-  title: string
-  description: string
-  keywords: string[]
-  titleLength: number
-  descriptionLength: number
-  issues: string[]
+  title: {
+    content: string
+    length: number
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  description: {
+    content: string
+    length: number
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  keywords: {
+    content: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  viewport: {
+    content: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  robots: {
+    content: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  openGraph: {
+    title: string
+    description: string
+    image: string
+    url: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  twitter: {
+    card: string
+    title: string
+    description: string
+    image: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  canonical: {
+    content: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  hreflang: {
+    content: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+  }
+  issues: Array<{
+    type: 'error' | 'warning' | 'info'
+    message: string
+    severity: 'high' | 'medium' | 'low'
+  }>
   recommendations: string[]
   score: number
 }
@@ -116,11 +168,13 @@ export default function MetaTagAnalyzerPage() {
     
     const exportData = [{
       URL: analysisResult.url,
-      'Meta Title': analysisResult.title,
-      'Meta Description': analysisResult.description,
-      'Title Length': analysisResult.titleLength,
-      'Description Length': analysisResult.descriptionLength,
-      'Issues': analysisResult.issues.join('; '),
+      'Meta Title': analysisResult.title.content,
+      'Meta Description': analysisResult.description.content,
+      'Title Length': analysisResult.title.length,
+      'Description Length': analysisResult.description.length,
+      'Title Status': analysisResult.title.status,
+      'Description Status': analysisResult.description.status,
+      'Issues': analysisResult.issues.map(issue => issue.message).join('; '),
       'Score': analysisResult.score
     }]
     
@@ -233,77 +287,92 @@ export default function MetaTagAnalyzerPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{analysisResult.titleLength}</div>
+                      <div className="text-2xl font-bold text-blue-600">{analysisResult.title.length}</div>
                       <div className="text-sm text-blue-600">Title Length</div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{analysisResult.descriptionLength}</div>
+                      <div className="text-2xl font-bold text-green-600">{analysisResult.description.length}</div>
                       <div className="text-sm text-green-600">Description Length</div>
                     </div>
                     <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{analysisResult.keywords.length}</div>
-                      <div className="text-sm text-purple-600">Keywords Found</div>
+                      <div className="text-2xl font-bold text-purple-600">{analysisResult.issues.length}</div>
+                      <div className="text-sm text-purple-600">Issues Found</div>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Meta Title</h4>
-                      <p className="text-sm bg-gray-50 p-3 rounded">{analysisResult.title || 'No title found'}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold mb-2">Meta Description</h4>
-                      <p className="text-sm bg-gray-50 p-3 rounded">{analysisResult.description || 'No description found'}</p>
-                    </div>
-                    
-                    {analysisResult.keywords.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Keywords</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {analysisResult.keywords.map((keyword, index) => (
-                            <Badge key={index} variant="outline">{keyword}</Badge>
-                          ))}
-                        </div>
+                  <div className="space-y-6">
+                    {/* Title Analysis */}
+                    <div className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">Meta Title</h4>
+                        <Badge variant={analysisResult.title.status === 'good' ? 'default' : analysisResult.title.status === 'warning' ? 'secondary' : 'destructive'}>
+                          {analysisResult.title.status}
+                        </Badge>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.title.content || 'No title found'}</p>
+                      <p className="text-xs text-muted-foreground">{analysisResult.title.recommendation}</p>
+                    </div>
+                    
+                    {/* Description Analysis */}
+                    <div className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">Meta Description</h4>
+                        <Badge variant={analysisResult.description.status === 'good' ? 'default' : analysisResult.description.status === 'warning' ? 'secondary' : 'destructive'}>
+                          {analysisResult.description.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.description.content || 'No description found'}</p>
+                      <p className="text-xs text-muted-foreground">{analysisResult.description.recommendation}</p>
+                    </div>
 
-              {/* Issues and Recommendations */}
-              {(analysisResult.issues.length > 0 || analysisResult.recommendations.length > 0) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {analysisResult.issues.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2 text-red-600">
-                          <XCircle className="h-5 w-5" />
-                          <span>Issues Found</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                    {/* Keywords Analysis */}
+                    <div className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">Meta Keywords</h4>
+                        <Badge variant={analysisResult.keywords.status === 'good' ? 'default' : analysisResult.keywords.status === 'warning' ? 'secondary' : 'destructive'}>
+                          {analysisResult.keywords.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.keywords.content || 'No keywords found'}</p>
+                      <p className="text-xs text-muted-foreground">{analysisResult.keywords.recommendation}</p>
+                    </div>
+
+                    {/* Viewport Analysis */}
+                    <div className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold">Viewport Meta Tag</h4>
+                        <Badge variant={analysisResult.viewport.status === 'good' ? 'default' : analysisResult.viewport.status === 'warning' ? 'secondary' : 'destructive'}>
+                          {analysisResult.viewport.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.viewport.content || 'No viewport found'}</p>
+                      <p className="text-xs text-muted-foreground">{analysisResult.viewport.recommendation}</p>
+                    </div>
+
+                    {/* Issues */}
+                    {analysisResult.issues.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-2">Issues Found</h4>
                         <div className="space-y-2">
                           {analysisResult.issues.map((issue, index) => (
                             <Alert key={index}>
                               <AlertTriangle className="h-4 w-4" />
-                              <AlertDescription>{issue}</AlertDescription>
+                              <AlertDescription>
+                                <strong>{issue.type}:</strong> {issue.message}
+                                <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'secondary' : 'outline'} className="ml-2">
+                                  {issue.severity}
+                                </Badge>
+                              </AlertDescription>
                             </Alert>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
+                      </div>
+                    )}
 
-                  {analysisResult.recommendations.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2 text-green-600">
-                          <CheckCircle className="h-5 w-5" />
-                          <span>Recommendations</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                    {/* Recommendations */}
+                    {analysisResult.recommendations.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold mb-2">Recommendations</h4>
                         <div className="space-y-2">
                           {analysisResult.recommendations.map((recommendation, index) => (
                             <Alert key={index}>
@@ -312,11 +381,12 @@ export default function MetaTagAnalyzerPage() {
                             </Alert>
                           ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
             </>
           )}
         </div>

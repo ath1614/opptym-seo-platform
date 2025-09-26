@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { connectDB } from '@/lib/mongodb'
-import { Project } from '@/models/Project'
-import { SeoToolUsage } from '@/models/SeoToolUsage'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+import connectDB from '@/lib/mongodb'
 import { analyzeMetaTags } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 
@@ -21,6 +19,7 @@ export async function POST(
     await connectDB()
 
     // Get project details
+    const { default: Project } = await import('@/models/Project')
     const project = await Project.findById(projectId)
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
@@ -45,6 +44,7 @@ export async function POST(
     const analysisResult = await analyzeMetaTags(project.websiteURL)
     
     // Save usage to database
+    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
     const seoToolUsage = new SeoToolUsage({
       userId: session.user.id,
       projectId: projectId,

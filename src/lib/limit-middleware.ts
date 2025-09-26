@@ -99,7 +99,7 @@ export async function trackUsage(
   userId: string,
   limitType: 'projects' | 'submissions' | 'seoTools' | 'backlinks' | 'reports',
   increment: number = 1
-): Promise<boolean> {
+): Promise<{ success: boolean; message?: string; currentUsage?: number; limit?: number }> {
   try {
     console.log(`Tracking usage: ${limitType} +${increment} for user ${userId}`)
     await connectDB()
@@ -107,7 +107,7 @@ export async function trackUsage(
     const user = await User.findById(userId)
     if (!user) {
       console.log('User not found for usage tracking')
-      return false
+      return { success: false, message: 'User not found' }
     }
 
     const plan = user.plan || 'free'
@@ -149,7 +149,12 @@ export async function trackUsage(
     
     if (isLimitExceededWithCustom(limits, limitType, newUsage)) {
       console.log(`❌ Usage would exceed limit: ${newUsage} > ${limits[limitType]}`)
-      return false
+      return { 
+        success: false, 
+        message: `${limitType} limit exceeded`, 
+        currentUsage: newUsage, 
+        limit: limits[limitType] 
+      }
     } else {
       console.log(`✅ Usage is within limit: ${newUsage} <= ${limits[limitType]}`)
     }
@@ -168,10 +173,10 @@ export async function trackUsage(
     await user.save()
     console.log(`Usage updated successfully: ${limitType} = ${newUsage}`)
     
-    return true
+    return { success: true }
   } catch (error) {
     console.error('Usage tracking error:', error)
-    return false
+    return { success: false, message: 'Internal server error' }
   }
 }
 

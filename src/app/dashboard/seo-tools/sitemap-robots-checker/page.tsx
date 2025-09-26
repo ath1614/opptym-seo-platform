@@ -1,5 +1,6 @@
 "use client"
 
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
