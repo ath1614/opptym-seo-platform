@@ -25,7 +25,7 @@ const SeoToolUsageSchema = new Schema<ISeoToolUsage>({
   },
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
+    required: false,
     ref: 'Project'
   },
   toolId: {

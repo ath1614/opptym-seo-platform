@@ -75,7 +75,9 @@ export async function POST(request: NextRequest) {
     const toolName = getToolName(toolId)
     
     // Generate real analysis results
+    console.log(`Starting analysis for tool: ${toolId}, URL: ${url}`)
     const analysisResults = await getRealAnalysisForTool(toolId, url)
+    console.log(`Analysis completed for tool: ${toolId}`)
     
     // Save usage to database
     const userId = new mongoose.Types.ObjectId(session.user.id)
@@ -128,8 +130,19 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('SEO tool analysis error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      toolId,
+      url
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        toolId,
+        url
+      },
       { status: 500 }
     )
   }
@@ -158,6 +171,8 @@ function getToolName(toolId: string): string {
 
 async function getRealAnalysisForTool(toolId: string, url: string) {
   try {
+    console.log(`Calling analysis function for tool: ${toolId}`)
+    
     switch (toolId) {
       case 'meta-tag-analyzer':
         return await analyzeMetaTags(url)
@@ -206,6 +221,12 @@ async function getRealAnalysisForTool(toolId: string, url: string) {
     }
   } catch (error) {
     console.error(`Error analyzing ${toolId} for ${url}:`, error)
+    console.error('Analysis error details:', {
+      toolId,
+      url,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     throw new Error(`Failed to analyze ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
