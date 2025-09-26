@@ -1248,9 +1248,9 @@ export async function analyzeSitemapRobots(url: string): Promise<SitemapRobotsAn
 
 // Backlink Scanner - Real Analysis
 export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -1258,9 +1258,9 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
 
   // Find external links (potential backlink sources)
   const links = $('a[href]')
-  const externalLinks = Array.from(links).filter(link => {
-    const href = link.getAttribute('href')
-    return href && href.startsWith('http') && !href.includes(new URL(url).hostname)
+  const externalLinks = links.filter((_, link) => {
+    const href = $(link).attr('href')
+    return Boolean(href && href.startsWith('http') && !href.includes(new URL(url).hostname))
   })
 
   console.log(`🔗 Found ${externalLinks.length} external links`)
@@ -1277,10 +1277,10 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
 
   const domainMap = new Map<string, number>()
 
-  for (const link of externalLinks) {
-    const href = link.getAttribute('href')
-    const anchorText = link.textContent?.trim() || ''
-    const rel = link.getAttribute('rel')
+  externalLinks.each((_, link) => {
+    const href = $(link).attr('href')
+    const anchorText = $(link).text().trim() || ''
+    const rel = $(link).attr('rel')
     
     if (!href) return
 
@@ -1327,7 +1327,7 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
     } catch (error) {
       console.log(`❌ Invalid external link: ${href}`)
     }
-  }
+  })
 
   // Create top referring domains
   const topReferringDomains = Array.from(domainMap.entries())
@@ -1390,19 +1390,19 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
 export async function analyzeKeywordTracking(url: string): Promise<KeywordTrackingAnalysis> {
   console.log(`🔍 Starting keyword tracking analysis for ${url}`)
   
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
   console.log(`🔍 Analyzing keywords for ${url}`)
 
   // Extract keywords from page content
-  const title = $('title')?.textContent || ''
-  const metaDescription = $('meta[name="description"]')?.getAttribute('content') || ''
-  const headings = Array.from($('h1, h2, h3, h4, h5, h6')).map(h => h.textContent?.trim()).filter(Boolean)
-  const paragraphs = Array.from($('p')).map(p => p.textContent?.trim()).filter(Boolean)
+  const title = $('title').text() || ''
+  const metaDescription = $('meta[name="description"]').attr('content') || ''
+  const headings = $('h1, h2, h3, h4, h5, h6').map((_, h) => $(h).text().trim()).get().filter(Boolean)
+  const paragraphs = $('p').map((_, p) => $(p).text().trim()).get().filter(Boolean)
   
   // Extract potential keywords from content
   const allText = [title, metaDescription, ...headings, ...paragraphs].join(' ').toLowerCase()
@@ -1499,9 +1499,9 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
 
 // Competitor Analyzer - Real Analysis
 export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -1509,9 +1509,9 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
 
   // Extract external links to identify potential competitors
   const links = $('a[href]')
-  const externalLinks = Array.from(links).filter(link => {
-    const href = link.getAttribute('href')
-    return href && href.startsWith('http') && !href.includes(new URL(url).hostname)
+  const externalLinks = links.filter((_, link) => {
+    const href = $(link).attr('href')
+    return Boolean(href && href.startsWith('http') && !href.includes(new URL(url).hostname))
   })
 
   // Analyze external domains as potential competitors
@@ -1525,8 +1525,8 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     topKeywords: string[]
   }> = []
 
-  for (const link of externalLinks) {
-    const href = link.getAttribute('href')
+  externalLinks.each((_, link) => {
+    const href = $(link).attr('href')
     if (!href) return
 
     try {
@@ -1538,7 +1538,7 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     } catch (error) {
       console.log(`❌ Invalid competitor link: ${href}`)
     }
-  }
+  })
 
   // Create competitor data based on found domains
   const topDomains = Array.from(domainMap.entries())
@@ -1594,8 +1594,8 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   }
 
   // Generate competitive gaps based on content analysis
-  const title = $('title')?.textContent || ''
-  const metaDescription = $('meta[name="description"]')?.getAttribute('content') || ''
+  const title = $('title').text() || ''
+  const metaDescription = $('meta[name="description"]').attr('content') || ''
   const content = [title, metaDescription].join(' ').toLowerCase()
 
   const competitiveGaps = []
@@ -1647,9 +1647,9 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
 
 // Technical SEO Auditor
 export async function analyzeTechnicalSEO(url: string): Promise<TechnicalSEOAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -1661,7 +1661,7 @@ export async function analyzeTechnicalSEO(url: string): Promise<TechnicalSEOAnal
 
   // Check crawlability
   const robotsMeta = $('meta[name="robots"]')
-  if (robotsMeta?.getAttribute('content')?.includes('noindex')) {
+  if (robotsMeta.attr('content')?.includes('noindex')) {
     indexabilityIssues.push('Page has noindex meta tag')
   }
 
@@ -1680,7 +1680,7 @@ export async function analyzeTechnicalSEO(url: string): Promise<TechnicalSEOAnal
 
   // Check for images without alt text
   const images = $('img')
-  const imagesWithoutAlt = Array.from(images).filter(img => !img.getAttribute('alt'))
+  const imagesWithoutAlt = images.filter((_, img) => !$(img).attr('alt'))
   if (imagesWithoutAlt.length > 0) {
     performanceIssues.push(`${imagesWithoutAlt.length} images without alt text`)
   }
@@ -1726,9 +1726,9 @@ export async function analyzeTechnicalSEO(url: string): Promise<TechnicalSEOAnal
 
 // Schema Validator
 export async function analyzeSchemaValidation(url: string): Promise<SchemaValidationAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -1737,9 +1737,9 @@ export async function analyzeSchemaValidation(url: string): Promise<SchemaValida
   const errors: string[] = []
   const warnings: string[] = []
 
-  schemaScripts.forEach(script => {
+  schemaScripts.each((_, script) => {
     try {
-      const data = JSON.parse(script.textContent || '')
+      const data = JSON.parse($(script).text() || '')
       if (data['@type']) {
         schemaTypes.push(data['@type'])
       }
@@ -1784,9 +1784,9 @@ export async function analyzeSchemaValidation(url: string): Promise<SchemaValida
 
 // Alt Text Checker
 export async function analyzeAltText(url: string): Promise<AltTextAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -1797,9 +1797,9 @@ export async function analyzeAltText(url: string): Promise<AltTextAnalysis> {
   let imagesWithPoorAlt = 0
   const imageIssues: Array<{ src: string; alt: string; issue: string; severity: 'high' | 'medium' | 'low' }> = []
 
-  images.forEach(img => {
-    const src = img.getAttribute('src') || ''
-    const alt = img.getAttribute('alt') || ''
+  images.each((_, img) => {
+    const src = $(img).attr('src') || ''
+    const alt = $(img).attr('alt') || ''
     
     if (!alt) {
       imagesWithoutAlt++
@@ -1849,14 +1849,14 @@ export async function analyzeAltText(url: string): Promise<AltTextAnalysis> {
 
 // Canonical Checker
 export async function analyzeCanonical(url: string): Promise<CanonicalAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
   const canonicalLink = $('link[rel="canonical"]')
-  const canonicalUrl = canonicalLink?.getAttribute('href') || ''
+  const canonicalUrl = canonicalLink.attr('href') || ''
   const issues: string[] = []
   const duplicateContent: Array<{ url: string; similarity: number; issue: string }> = []
 
@@ -1867,8 +1867,8 @@ export async function analyzeCanonical(url: string): Promise<CanonicalAnalysis> 
   }
 
   // Check for potential duplicate content indicators
-  const title = $('title')?.textContent || ''
-  const description = $('meta[name="description"]')?.getAttribute('content') || ''
+  const title = $('title').text() || ''
+  const description = $('meta[name="description"]').attr('content') || ''
   
   if (title.length < 30) {
     duplicateContent.push({
@@ -1912,9 +1912,9 @@ export async function analyzeCanonical(url: string): Promise<CanonicalAnalysis> 
 
 // Mobile Optimization Checker
 export async function analyzeMobileOptimization(url: string): Promise<MobileAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -1991,9 +1991,9 @@ export async function analyzeMobileOptimization(url: string): Promise<MobileAnal
 
 // Schema Markup Validator
 export async function analyzeSchemaMarkup(url: string): Promise<SchemaValidationAnalysis> {
-  const doc = await fetchAndParseHTML(url)
+  const $ = await fetchAndParseHTML(url)
   
-  if (!doc) {
+  if (!$) {
     throw new Error('Unable to fetch the webpage')
   }
 
@@ -2002,9 +2002,9 @@ export async function analyzeSchemaMarkup(url: string): Promise<SchemaValidation
   const errors: string[] = []
   const warnings: string[] = []
 
-  schemaScripts.forEach(script => {
+  schemaScripts.each((_, script) => {
     try {
-      const data = JSON.parse(script.textContent || '')
+      const data = JSON.parse($(script).text() || '')
       if (data['@type']) {
         schemaTypes.push(data['@type'])
       }
