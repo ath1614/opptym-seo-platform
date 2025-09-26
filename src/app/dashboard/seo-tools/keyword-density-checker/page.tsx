@@ -4,13 +4,12 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Search, CheckCircle, XCircle, AlertTriangle, Loader2, Download, BarChart3 } from 'lucide-react'
+import { Search, CheckCircle, XCircle, AlertTriangle, Loader2, Download, BarChart3, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 interface Project {
@@ -30,7 +29,6 @@ interface AnalysisResult {
   url: string
   totalWords: number
   keywordDensities: KeywordDensity[]
-  issues: string[]
   recommendations: string[]
   score: number
 }
@@ -41,7 +39,7 @@ export default function KeywordDensityCheckerPage() {
   const { showToast } = useToast()
   
   const [projects, setProjects] = useState<Project[]>([])
-  const [selectedProject, setSelectedProject] = useState<string>('')
+  const [selectedProject, setSelectedProject] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
 
@@ -91,6 +89,7 @@ export default function KeywordDensityCheckerPage() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Keyword Density Analysis Response:', data)
         setAnalysisResult(data.data)
         showToast({
           title: 'Analysis Complete',
@@ -118,16 +117,11 @@ export default function KeywordDensityCheckerPage() {
   const handleExport = () => {
     if (!analysisResult) return
     
-    const exportData = analysisResult.keywordDensities.map(kw => ({
-      Keyword: kw.keyword,
-      Count: kw.count,
-      Density: `${kw.density.toFixed(2)}%`,
-      Positions: kw.position.join(', ')
-    }))
-    
     const csvContent = [
-      Object.keys(exportData[0]).join(','),
-      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+      'Keyword,Count,Density,Positions',
+      ...analysisResult.keywordDensities.map(kw => 
+        `"${kw.keyword}","${kw.count}","${kw.density.toFixed(2)}%","${kw.position.join('; ')}"`
+      )
     ].join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -156,192 +150,185 @@ export default function KeywordDensityCheckerPage() {
 
   return (
     <DashboardLayout>
-      <SEOToolLayout
-        toolId="keyword-density-checker"
-        toolName="Keyword Density Checker"
-        toolDescription="Check keyword density and distribution across your content"
-        mockData={null}
-      >
-        <div className="space-y-6">
-          {/* Project Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Search className="h-5 w-5 text-primary" />
-                <span>Keyword Density Analysis</span>
-              </CardTitle>
-              <CardDescription>
-                Select a project to analyze keyword density and distribution
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Project</label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project to analyze" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project._id} value={project._id}>
-                          {project.projectName} - {project.websiteURL}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing || !selectedProject}
-                  className="w-full"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Analyze Keyword Density
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Analysis Results */}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Keyword Density Checker</h1>
+              <p className="text-muted-foreground">Analyze keyword density to optimize content for better SEO performance</p>
+            </div>
+          </div>
           {analysisResult && (
-            <>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Project Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              <span>Keyword Density Analysis</span>
+            </CardTitle>
+            <CardDescription>
+              Select a project to analyze keyword density and optimize content
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing Keyword Density...
+                  </>
+                ) : (
+                  <>
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Check Keyword Density
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analysis Results */}
+        {analysisResult && (
+          <div className="space-y-6">
+            {/* Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Keyword Density Analysis Results</span>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={analysisResult.score >= 80 ? 'default' : analysisResult.score >= 60 ? 'secondary' : 'destructive'}>
+                      Score: {analysisResult.score}/100
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {analysisResult.totalWords}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Words</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {analysisResult.keywordDensities.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Keywords Found</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Keyword Densities */}
+            {analysisResult.keywordDensities.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Analysis Results</span>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={analysisResult.score >= 80 ? 'default' : analysisResult.score >= 60 ? 'secondary' : 'destructive'}>
-                        Score: {analysisResult.score}/100
-                      </Badge>
-                      <Button size="sm" onClick={handleExport}>
-                        <Download className="h-4 w-4 mr-2" />
-                        Export CSV
-                      </Button>
-                    </div>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Search className="h-5 w-5 text-primary" />
+                    <span>Keyword Density Analysis</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{analysisResult.totalWords}</div>
-                      <div className="text-sm text-blue-600">Total Words</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{analysisResult.keywordDensities.length}</div>
-                      <div className="text-sm text-green-600">Keywords Found</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {analysisResult.keywordDensities.length > 0 
-                          ? (analysisResult.keywordDensities.reduce((sum, kw) => sum + kw.density, 0) / analysisResult.keywordDensities.length).toFixed(2)
-                          : 0}%
+                  <div className="space-y-3">
+                    {analysisResult.keywordDensities.map((keyword, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <Search className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-semibold">{keyword.keyword}</span>
+                          </div>
+                          <div className="mt-1">
+                            <p className="text-sm text-muted-foreground">
+                              Count: {keyword.count} | Density: {keyword.density.toFixed(2)}%
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Positions: {keyword.position.join(', ')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={
+                            keyword.density >= 1 && keyword.density <= 3 ? 'default' : 
+                            keyword.density > 3 ? 'destructive' : 'secondary'
+                          }>
+                            {keyword.density.toFixed(2)}%
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="text-sm text-purple-600">Avg Density</div>
-                    </div>
+                    ))}
                   </div>
-
-                  {/* Keyword Density Table */}
-                  {analysisResult.keywordDensities.length > 0 && (
-                    <div className="space-y-4">
-                      <h4 className="font-semibold">Keyword Density Results</h4>
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-200">
-                          <thead>
-                            <tr className="bg-gray-50">
-                              <th className="border border-gray-200 px-4 py-2 text-left">Keyword</th>
-                              <th className="border border-gray-200 px-4 py-2 text-left">Count</th>
-                              <th className="border border-gray-200 px-4 py-2 text-left">Density</th>
-                              <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {analysisResult.keywordDensities.map((keyword, index) => (
-                              <tr key={index}>
-                                <td className="border border-gray-200 px-4 py-2 font-medium">{keyword.keyword}</td>
-                                <td className="border border-gray-200 px-4 py-2">{keyword.count}</td>
-                                <td className="border border-gray-200 px-4 py-2">{keyword.density.toFixed(2)}%</td>
-                                <td className="border border-gray-200 px-4 py-2">
-                                  <Badge 
-                                    variant={
-                                      keyword.density >= 0.5 && keyword.density <= 2.5 ? 'default' : 
-                                      keyword.density < 0.5 ? 'secondary' : 'destructive'
-                                    }
-                                  >
-                                    {keyword.density >= 0.5 && keyword.density <= 2.5 ? 'Good' : 
-                                     keyword.density < 0.5 ? 'Low' : 'High'}
-                                  </Badge>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
+            )}
 
-              {/* Issues and Recommendations */}
-              {(analysisResult.issues.length > 0 || analysisResult.recommendations.length > 0) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {analysisResult.issues.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2 text-red-600">
-                          <XCircle className="h-5 w-5" />
-                          <span>Issues Found</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {analysisResult.issues.map((issue, index) => (
-                            <Alert key={index}>
-                              <AlertTriangle className="h-4 w-4" />
-                              <AlertDescription>{issue}</AlertDescription>
-                            </Alert>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {analysisResult.recommendations.length > 0 && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2 text-green-600">
-                          <CheckCircle className="h-5 w-5" />
-                          <span>Recommendations</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {analysisResult.recommendations.map((recommendation, index) => (
-                            <Alert key={index}>
-                              <CheckCircle className="h-4 w-4" />
-                              <AlertDescription>{recommendation}</AlertDescription>
-                            </Alert>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </SEOToolLayout>
+            {/* Recommendations */}
+            {analysisResult.recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span>Optimization Recommendations</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisResult.recommendations.map((recommendation, index) => (
+                      <Alert key={index}>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>{recommendation}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   )
 }

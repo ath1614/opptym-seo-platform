@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Image, CheckCircle, AlertTriangle, XCircle, Eye, FileText, Search, Zap, Loader2, Download } from 'lucide-react'
+import { Image, CheckCircle, AlertTriangle, XCircle, Eye, FileText, Search, Zap, Loader2, Download, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 interface AnalysisData {
@@ -91,6 +90,7 @@ export default function AltTextCheckerPage() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Alt Text Analysis Response:', data)
         setAnalysisData(data.data)
         showToast({
           title: 'Analysis Complete',
@@ -118,16 +118,11 @@ export default function AltTextCheckerPage() {
   const handleExport = () => {
     if (!analysisData) return
     
-    const exportData = analysisData.images.map(img => ({
-      'Image URL': img.src,
-      'Alt Text': img.alt,
-      Status: img.status,
-      Recommendation: img.recommendation
-    }))
-    
     const csvContent = [
-      Object.keys(exportData[0]).join(','),
-      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+      'Image URL,Alt Text,Status,Recommendation',
+      ...analysisData.images.map(img => 
+        `"${img.src}","${img.alt}","${img.status}","${img.recommendation}"`
+      )
     ].join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -156,191 +151,194 @@ export default function AltTextCheckerPage() {
 
   return (
     <DashboardLayout>
-      <SEOToolLayout
-        toolId="alt-text-checker"
-        toolName="Alt Text Checker"
-        toolDescription="Check for missing or inadequate alt text on images to improve accessibility and SEO performance."
-        mockData={null}
-      >
-        <div className="space-y-6">
-          {/* Project Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Image className="h-5 w-5 text-primary" />
-                <span>Alt Text Analysis</span>
-              </CardTitle>
-              <CardDescription>
-                Select a project to analyze alt text implementation on images
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Project</label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project to analyze" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project._id} value={project._id}>
-                          {project.projectName} - {project.websiteURL}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing || !selectedProject}
-                  className="w-full"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Analyze Alt Text
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Alt Text Checker</h1>
+              <p className="text-muted-foreground">Analyze and optimize alt text for images to improve accessibility and SEO</p>
+            </div>
+          </div>
+          {analysisData && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
 
-      {/* Results */}
-      {analysisData && (
-        <div className="space-y-6">
-          {/* Overall Score */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Image className="h-5 w-5 text-primary" />
-                  <span>Alt Text Analysis Results</span>
-                </div>
-                <Button size="sm" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export CSV
-                </Button>
-              </CardTitle>
-              <CardDescription>
-                Analysis for: {analysisData.url}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{analysisData.totalImages}</div>
-                  <div className="text-sm text-blue-600">Total Images</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{analysisData.imagesWithAlt}</div>
-                  <div className="text-sm text-green-600">With Alt Text</div>
-                </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <div className="text-2xl font-bold text-red-600">{analysisData.imagesWithoutAlt}</div>
-                  <div className="text-sm text-red-600">Missing Alt Text</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{analysisData.altTextCoverage}%</div>
-                  <div className="text-sm text-purple-600">Alt Text Coverage</div>
-                </div>
+        {/* Project Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Image className="h-5 w-5 text-primary" />
+              <span>Alt Text Analysis</span>
+            </CardTitle>
+            <CardDescription>
+              Select a project to analyze alt text for images and improve accessibility
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing Alt Text...
+                  </>
+                ) : (
+                  <>
+                    <Image className="h-4 w-4 mr-2" />
+                    Check Alt Text
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Images Analysis */}
-          {analysisData.images.length > 0 && (
+        {/* Analysis Results */}
+        {analysisData && (
+          <div className="space-y-6">
+            {/* Summary Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Image className="h-5 w-5" />
-                  <span>Image Analysis</span>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Alt Text Analysis Results</span>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={analysisData.score >= 80 ? 'default' : analysisData.score >= 60 ? 'secondary' : 'destructive'}>
+                      Score: {analysisData.score}/100
+                    </Badge>
+                  </div>
                 </CardTitle>
-                <CardDescription>
-                  Detailed analysis of all images found on the page
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {analysisData.images.slice(0, 10).map((image, index) => (
-                    <div key={index} className={`p-4 border rounded-lg ${
-                      image.status === 'good' 
-                        ? 'border-green-200 bg-green-50' 
-                        : 'border-red-200 bg-red-50'
-                    }`}>
-                      <div className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
-                            <Image className="h-6 w-6 text-gray-400" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <div className={`font-semibold mb-1 ${
-                            image.status === 'good' ? 'text-green-800' : 'text-red-800'
-                          }`}>
-                            {image.src.length > 50 ? image.src.substring(0, 50) + '...' : image.src}
-                          </div>
-                          <div className={`text-sm mb-2 ${
-                            image.status === 'good' ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            Alt Text: "{image.alt || 'None'}"
-                          </div>
-                          <div className={`text-xs ${
-                            image.status === 'good' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {image.recommendation}
-                          </div>
-                        </div>
-                        <Badge variant={image.status === 'good' ? 'default' : 'destructive'} className="text-xs">
-                          {image.status === 'good' ? 'Good' : 'Issue'}
-                        </Badge>
-                      </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {analysisData.totalImages}
                     </div>
-                  ))}
-                  {analysisData.images.length > 10 && (
-                    <div className="text-center text-sm text-muted-foreground">
-                      ... and {analysisData.images.length - 10} more images
+                    <div className="text-sm text-muted-foreground">Total Images</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {analysisData.imagesWithAlt}
                     </div>
-                  )}
+                    <div className="text-sm text-muted-foreground">With Alt Text</div>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {analysisData.imagesWithoutAlt}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Missing Alt Text</div>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {analysisData.altTextCoverage}%
+                    </div>
+                    <div className="text-sm text-muted-foreground">Coverage</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Recommendations */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-blue-600">
-                <Zap className="h-5 w-5" />
-                <span>Recommendations</span>
-              </CardTitle>
-              <CardDescription>
-                Actionable steps to improve your alt text implementation
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {analysisData.recommendations.map((recommendation, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground">{recommendation}</span>
+            {/* Images Analysis */}
+            {analysisData.images.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Eye className="h-5 w-5 text-primary" />
+                    <span>Image Analysis</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.images.map((image, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <Image className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono text-sm break-all">{image.src}</span>
+                          </div>
+                          <div className="mt-1">
+                            <p className="text-sm text-muted-foreground">
+                              Alt: {image.alt || 'No alt text'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {image.recommendation}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={image.status === 'good' ? 'default' : image.status === 'warning' ? 'secondary' : 'destructive'}>
+                            {image.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-        </div>
-      </SEOToolLayout>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recommendations */}
+            {analysisData.recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span>Recommendations</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.recommendations.map((recommendation, index) => (
+                      <Alert key={index}>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>{recommendation}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   )
 }
-

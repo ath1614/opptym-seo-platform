@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileText, CheckCircle, AlertTriangle, XCircle, Link, Globe, Search, Zap, Loader2, Download } from 'lucide-react'
+import { FileText, CheckCircle, AlertTriangle, XCircle, Link, Globe, Search, Zap, Loader2, Download, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 interface AnalysisData {
@@ -95,6 +94,7 @@ export default function CanonicalCheckerPage() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Canonical Analysis Response:', data)
         setAnalysisData(data.data)
         showToast({
           title: 'Analysis Complete',
@@ -104,7 +104,7 @@ export default function CanonicalCheckerPage() {
       } else {
         showToast({
           title: 'Analysis Failed',
-          description: data.error || 'Failed to analyze canonical URLs',
+          description: data.error || 'Failed to analyze canonical tags',
           variant: 'destructive'
         })
       }
@@ -122,17 +122,9 @@ export default function CanonicalCheckerPage() {
   const handleExport = () => {
     if (!analysisData) return
     
-    const exportData = [{
-      URL: analysisData.url,
-      'Canonical URL': analysisData.canonicalUrl,
-      'Has Canonical': analysisData.hasCanonical,
-      'Self Referencing': analysisData.isSelfReferencing,
-      'Issues Count': analysisData.canonicalIssues.length
-    }]
-    
     const csvContent = [
-      Object.keys(exportData[0]).join(','),
-      ...exportData.map(row => Object.values(row).map(val => `"${val}"`).join(','))
+      'URL,Canonical URL,Has Canonical,Self Referencing,Issues',
+      `"${analysisData.url}","${analysisData.canonicalUrl}","${analysisData.hasCanonical}","${analysisData.isSelfReferencing}","${analysisData.canonicalIssues.map(issue => issue.message).join('; ')}"`
     ].join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -161,137 +153,220 @@ export default function CanonicalCheckerPage() {
 
   return (
     <DashboardLayout>
-      <SEOToolLayout
-        toolId="canonical-checker"
-        toolName="Canonical Checker"
-        toolDescription="Analyze and optimize your website's canonical URLs for better SEO performance."
-        mockData={null}
-      >
-        <div className="space-y-6">
-          {/* Project Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Search className="h-5 w-5 text-primary" />
-                <span>Canonical Checker Analysis</span>
-              </CardTitle>
-              <CardDescription>
-                Select a project to analyze canonical URLs for SEO optimization
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Select Project</label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a project to analyze" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project._id} value={project._id}>
-                          {project.projectName} - {project.websiteURL}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing || !selectedProject}
-                  className="w-full"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      Analyze Canonical URLs
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Analysis Results */}
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Canonical Checker</h1>
+              <p className="text-muted-foreground">Analyze canonical tags to prevent duplicate content issues and improve SEO</p>
+            </div>
+          </div>
           {analysisData && (
-            <>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Project Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Link className="h-5 w-5 text-primary" />
+              <span>Canonical Analysis</span>
+            </CardTitle>
+            <CardDescription>
+              Select a project to analyze canonical tags and prevent duplicate content
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={isAnalyzing || !selectedProject}
+                className="w-full"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing Canonical Tags...
+                  </>
+                ) : (
+                  <>
+                    <Link className="h-4 w-4 mr-2" />
+                    Check Canonical Tags
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Analysis Results */}
+        {analysisData && (
+          <div className="space-y-6">
+            {/* Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Canonical Analysis Results</span>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant={analysisData.score >= 80 ? 'default' : analysisData.score >= 60 ? 'secondary' : 'destructive'}>
+                      Score: {analysisData.score}/100
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Globe className="h-5 w-5 text-blue-600" />
+                        <span className="font-semibold">Current URL</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{analysisData.url}</p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Link className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold">Canonical URL</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{analysisData.canonicalUrl || 'Not found'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <Badge variant={analysisData.hasCanonical ? 'default' : 'destructive'}>
+                      {analysisData.hasCanonical ? 'Has Canonical' : 'Missing Canonical'}
+                    </Badge>
+                    <Badge variant={analysisData.isSelfReferencing ? 'default' : 'secondary'}>
+                      {analysisData.isSelfReferencing ? 'Self Referencing' : 'Not Self Referencing'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Canonical Issues */}
+            {analysisData.canonicalIssues.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Analysis Results</span>
-                    <Button size="sm" onClick={handleExport}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export CSV
-                    </Button>
+                  <CardTitle className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                    <span>Canonical Issues</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{analysisData.score || 0}</div>
-                      <div className="text-sm text-blue-600">SEO Score</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{analysisData.hasCanonical ? 'Yes' : 'No'}</div>
-                      <div className="text-sm text-green-600">Has Canonical</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{analysisData.canonicalIssues.length}</div>
-                      <div className="text-sm text-purple-600">Issues Found</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">Canonical URL</h4>
-                      <p className="text-sm bg-gray-50 p-3 rounded">{analysisData.canonicalUrl || 'No canonical URL found'}</p>
-                    </div>
-                    
-                    {analysisData.canonicalIssues.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Issues Found</h4>
-                        <div className="space-y-2">
-                          {analysisData.canonicalIssues.map((issue, index) => (
-                            <Alert key={index}>
-                              <AlertTriangle className="h-4 w-4" />
-                              <AlertDescription>
-                                <strong>{issue.type}:</strong> {issue.message}
-                                <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'secondary' : 'outline'} className="ml-2">
-                                  {issue.severity}
-                                </Badge>
-                              </AlertDescription>
-                            </Alert>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {analysisData.recommendations.length > 0 && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Recommendations</h4>
-                        <div className="space-y-2">
-                          {analysisData.recommendations.map((recommendation, index) => (
-                            <Alert key={index}>
-                              <CheckCircle className="h-4 w-4" />
-                              <AlertDescription>{recommendation}</AlertDescription>
-                            </Alert>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="space-y-3">
+                    {analysisData.canonicalIssues.map((issue, index) => (
+                      <Alert key={index}>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <strong>{issue.type}</strong>
+                              <p className="text-sm text-muted-foreground mt-1">{issue.message}</p>
+                            </div>
+                            <Badge variant={issue.severity === 'high' ? 'destructive' : issue.severity === 'medium' ? 'secondary' : 'outline'}>
+                              {issue.severity}
+                            </Badge>
+                          </div>
+                        </AlertDescription>
+                      </Alert>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
-            </>
-          )}
-        </div>
-      </SEOToolLayout>
+            )}
+
+            {/* Duplicate Content */}
+            {analysisData.duplicateContent.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <XCircle className="h-5 w-5 text-orange-500" />
+                    <span>Duplicate Content</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.duplicateContent.map((duplicate, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono text-sm break-all">{duplicate.url}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{duplicate.title}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={duplicate.status === 'error' ? 'destructive' : 'secondary'}>
+                            {duplicate.similarity}% similar
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recommendations */}
+            {analysisData.recommendations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span>Recommendations</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {analysisData.recommendations.map((recommendation, index) => (
+                      <Alert key={index}>
+                        <CheckCircle className="h-4 w-4" />
+                        <AlertDescription>{recommendation}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
     </DashboardLayout>
   )
 }

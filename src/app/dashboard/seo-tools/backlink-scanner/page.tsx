@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
+import { useRouter } from 'next/navigation'
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
-import { ExternalLink, TrendingUp, Shield, AlertTriangle, CheckCircle, Globe, Users, Search, Loader2, Info } from 'lucide-react'
+import { ExternalLink, TrendingUp, Shield, AlertTriangle, CheckCircle, Globe, Users, Search, Loader2, Info, ArrowLeft, Download } from 'lucide-react'
 
 interface Backlink {
   _id: string
@@ -34,20 +35,52 @@ interface BacklinkStats {
   uniqueDomains: number
 }
 
+interface Project {
+  _id: string
+  projectName: string
+  websiteURL: string
+}
+
 export default function BacklinkScannerPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const { showToast } = useToast()
-  const [targetUrl, setTargetUrl] = useState('')
+  
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
   const [isScanning, setIsScanning] = useState(false)
   const [backlinks, setBacklinks] = useState<Backlink[]>([])
   const [stats, setStats] = useState<BacklinkStats | null>(null)
-  const [hasScanned, setHasScanned] = useState(false)
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
+
+  useEffect(() => {
+    if (session?.user) {
+      fetchProjects()
+    }
+  }, [session])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    }
+  }
 
   const handleScan = async () => {
-    if (!targetUrl.trim()) {
+    if (!selectedProject) {
       showToast({
         title: 'Error',
-        description: 'Please enter a target URL to scan',
+        description: 'Please select a project to scan',
         variant: 'destructive'
       })
       return
@@ -55,28 +88,27 @@ export default function BacklinkScannerPage() {
 
     setIsScanning(true)
     try {
-      const response = await fetch('/api/backlinks/scan', {
+      const response = await fetch(`/api/tools/${selectedProject}/run-backlinks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ targetUrl: targetUrl.trim() }),
+        }
       })
 
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Backlink Analysis Response:', data)
         setBacklinks(data.backlinks || [])
-        setStats(data.stats)
-        setHasScanned(true)
+        setStats(data.stats || null)
         showToast({
-          title: 'Success',
-          description: data.message || 'Backlink scan completed',
-          variant: 'default'
+          title: 'Scan Complete',
+          description: 'Backlink analysis completed successfully',
+          variant: 'success'
         })
       } else {
         showToast({
-          title: 'Error',
+          title: 'Scan Failed',
           description: data.error || 'Failed to scan backlinks',
           variant: 'destructive'
         })
@@ -84,7 +116,7 @@ export default function BacklinkScannerPage() {
     } catch (error) {
       showToast({
         title: 'Error',
-        description: 'Failed to scan backlinks',
+        description: 'Network error occurred during scan',
         variant: 'destructive'
       })
     } finally {
@@ -92,79 +124,115 @@ export default function BacklinkScannerPage() {
     }
   }
 
-  const loadExistingBacklinks = async () => {
-    try {
-      const response = await fetch('/api/backlinks?limit=100')
-      const data = await response.json()
-      
-      if (response.ok) {
-        setBacklinks(data.backlinks || [])
-        setStats(data.stats)
-        setHasScanned(true)
-      }
-    } catch (error) {
-      console.error('Failed to load existing backlinks:', error)
-    }
+  const handleExport = () => {
+    if (!backlinks.length) return
+    
+    const csvContent = [
+      'Source URL,Target URL,Domain,Anchor Text,Link Type,Quality,DA',
+      ...backlinks.map(link => 
+        `"${link.sourceUrl}","${link.targetUrl}","${link.sourceDomain}","${link.anchorText || ''}","${link.linkType}","${link.linkQuality}","${link.domainAuthority || 'N/A'}"`
+      )
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'backlinks-analysis.csv'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  useEffect(() => {
-    if (session?.user) {
-      loadExistingBacklinks()
-    }
-  }, [session?.user])
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return null
+  }
 
   return (
-    <SEOToolLayout
-      toolId="backlink-scanner"
-      toolName="Backlink Scanner"
-      toolDescription="Analyze backlinks pointing to your website to understand your link profile and identify opportunities."
-      mockData={null}
-    >
-      <div className="space-y-6">
-        {/* Important Disclaimer */}
-        <Alert className="border-amber-200 bg-amber-50">
-          <Info className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
-            <strong>Important Disclaimer:</strong> Our backlink scanner provides automated analysis based on available data sources. 
-            We do not guarantee the accuracy or completeness of backlink detection. Backlinks are generated automatically when possible 
-            through directory submissions and other SEO activities, but results may vary. This tool is for informational purposes only 
-            and should not be the sole basis for SEO decisions.
-          </AlertDescription>
-        </Alert>
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Backlink Scanner</h1>
+              <p className="text-muted-foreground">Discover and analyze backlinks to improve your website's authority and SEO</p>
+            </div>
+          </div>
+          {backlinks.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </div>
+          )}
+        </div>
 
-        {/* Scan Input */}
+        {/* Project Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Search className="h-5 w-5 text-primary" />
-              <span>Scan for Backlinks</span>
+              <ExternalLink className="h-5 w-5 text-primary" />
+              <span>Backlink Analysis</span>
             </CardTitle>
             <CardDescription>
-              Enter a URL to discover backlinks pointing to that website
+              Select a project to discover and analyze backlinks for SEO optimization
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex space-x-2">
-              <Input
-                placeholder="https://example.com"
-                value={targetUrl}
-                onChange={(e) => setTargetUrl(e.target.value)}
-                className="flex-1"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Project</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a project to analyze" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project._id} value={project._id}>
+                        {project.projectName} - {project.websiteURL}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <Button 
                 onClick={handleScan} 
-                disabled={isScanning}
-                className="min-w-[120px]"
+                disabled={isScanning || !selectedProject}
+                className="w-full"
               >
                 {isScanning ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Scanning...
+                    Scanning Backlinks...
                   </>
                 ) : (
                   <>
                     <Search className="h-4 w-4 mr-2" />
-                    Scan
+                    Scan Backlinks
                   </>
                 )}
               </Button>
@@ -172,215 +240,100 @@ export default function BacklinkScannerPage() {
           </CardContent>
         </Card>
 
-        {/* Results */}
-        {hasScanned && (
-          <>
-            {/* Overall Stats */}
-            {stats && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <ExternalLink className="h-5 w-5 text-primary" />
-                    <span>Backlink Analysis</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Comprehensive analysis of your website's backlink profile and authority
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{stats.totalBacklinks}</div>
-                      <div className="text-sm text-blue-600">Total Backlinks</div>
-                    </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{stats.uniqueDomains}</div>
-                      <div className="text-sm text-green-600">Referring Domains</div>
-                    </div>
-                    <div className="text-center p-4 bg-purple-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">{stats.avgDomainAuthority}</div>
-                      <div className="text-sm text-purple-600">Avg Domain Authority</div>
-                    </div>
-                    <div className="text-center p-4 bg-orange-50 rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">{stats.highQuality}</div>
-                      <div className="text-sm text-orange-600">High Quality Links</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Top Backlinks */}
+        {/* Analysis Results */}
+        {stats && (
+          <div className="space-y-6">
+            {/* Summary Stats */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <TrendingUp className="h-5 w-5" />
-                  <span>Discovered Backlinks</span>
-                </CardTitle>
-                <CardDescription>
-                  Backlinks discovered through automated analysis and directory submissions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {backlinks.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No backlinks found yet. Try scanning a URL to discover backlinks.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {backlinks.slice(0, 10).map((backlink) => (
-                      <div key={backlink._id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <Globe className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-semibold">{backlink.sourceDomain}</span>
-                              {backlink.domainAuthority && (
-                                <Badge variant="outline">DA: {backlink.domainAuthority}</Badge>
-                              )}
-                            </div>
-                            <div className="text-sm text-muted-foreground mb-2">
-                              {backlink.title || backlink.sourceUrl}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {backlink.anchorText && `Anchor: "${backlink.anchorText}"`} • 
-                              Discovered: {new Date(backlink.discoveredAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge 
-                              variant={
-                                backlink.linkQuality === 'high' ? 'default' : 
-                                backlink.linkQuality === 'medium' ? 'secondary' : 
-                                'outline'
-                              }
-                            >
-                              {backlink.linkQuality} Quality
-                            </Badge>
-                            <Badge variant="outline">{backlink.linkType}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Link Profile Analysis */}
-            {stats && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Link Profile Analysis</CardTitle>
-                  <CardDescription>
-                    Detailed breakdown of your backlink profile characteristics
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold mb-3">Link Quality Distribution</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>High Quality:</span>
-                          <span className="font-medium text-green-600">{stats.highQuality} ({stats.totalBacklinks > 0 ? Math.round((stats.highQuality / stats.totalBacklinks) * 100) : 0}%)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Medium Quality:</span>
-                          <span className="font-medium text-blue-600">{stats.mediumQuality} ({stats.totalBacklinks > 0 ? Math.round((stats.mediumQuality / stats.totalBacklinks) * 100) : 0}%)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Low Quality:</span>
-                          <span className="font-medium text-orange-600">{stats.lowQuality} ({stats.totalBacklinks > 0 ? Math.round((stats.lowQuality / stats.totalBacklinks) * 100) : 0}%)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Toxic Links:</span>
-                          <span className="font-medium text-red-600">{stats.toxicLinks} ({stats.totalBacklinks > 0 ? Math.round((stats.toxicLinks / stats.totalBacklinks) * 100) : 0}%)</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-3">Profile Summary</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Total Backlinks:</span>
-                          <span className="font-medium">{stats.totalBacklinks}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Unique Domains:</span>
-                          <span className="font-medium">{stats.uniqueDomains}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Avg Domain Authority:</span>
-                          <span className="font-medium">{stats.avgDomainAuthority}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Profile Health:</span>
-                          <span className={`font-medium ${stats.toxicLinks === 0 ? 'text-green-600' : stats.toxicLinks < 5 ? 'text-yellow-600' : 'text-red-600'}`}>
-                            {stats.toxicLinks === 0 ? 'Clean' : stats.toxicLinks < 5 ? 'Good' : 'Needs Attention'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Recommendations */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span>Link Building Recommendations</span>
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <span>Backlink Statistics</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Alert>
-                    <TrendingUp className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Focus on High-Quality Links:</strong> {stats && stats.highQuality < 5 ? 'You have very few high-quality backlinks. ' : 'Continue building high-quality backlinks from '} reputable, relevant websites with strong domain authority.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <Alert>
-                    <ExternalLink className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Diversify Link Sources:</strong> Use our directory submission tool to automatically generate backlinks from various sources. This helps diversify your link profile naturally.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <Alert>
-                    <Shield className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Monitor Your Profile:</strong> {stats && stats.toxicLinks > 0 ? `You have ${stats.toxicLinks} potentially toxic links. ` : 'Your link profile appears clean. '}Regular monitoring helps maintain a healthy backlink profile.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <Alert>
-                    <Globe className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Automated Link Building:</strong> Our platform automatically generates backlinks through directory submissions and other SEO activities. Results may vary and are not guaranteed.
-                    </AlertDescription>
-                  </Alert>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {stats.totalBacklinks}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Backlinks</div>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {stats.highQuality}
+                    </div>
+                    <div className="text-sm text-muted-foreground">High Quality</div>
+                  </div>
+                  <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                      {stats.mediumQuality}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Medium Quality</div>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                      {stats.lowQuality}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Low Quality</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Additional Disclaimer */}
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                <strong>Automated Backlink Generation:</strong> Our system attempts to generate backlinks automatically through directory submissions and other SEO activities. 
-                However, we cannot guarantee that backlinks will be created or maintained. Backlink generation depends on various factors including directory approval processes, 
-                website policies, and external factors beyond our control. Results may vary significantly between different websites and submission attempts.
-              </AlertDescription>
-            </Alert>
-          </>
+            {/* Backlinks List */}
+            {backlinks.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Globe className="h-5 w-5 text-primary" />
+                    <span>Discovered Backlinks</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {backlinks.slice(0, 10).map((backlink, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono text-sm break-all">{backlink.sourceUrl}</span>
+                          </div>
+                          <div className="mt-1">
+                            <p className="text-sm text-muted-foreground">
+                              Domain: {backlink.sourceDomain}
+                            </p>
+                            {backlink.anchorText && (
+                              <p className="text-sm text-muted-foreground">
+                                Anchor: {backlink.anchorText}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant={backlink.linkQuality === 'high' ? 'default' : backlink.linkQuality === 'medium' ? 'secondary' : 'destructive'}>
+                            {backlink.linkQuality}
+                          </Badge>
+                          {backlink.domainAuthority && (
+                            <Badge variant="outline">
+                              DA: {backlink.domainAuthority}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {backlinks.length > 10 && (
+                      <div className="text-center text-sm text-muted-foreground">
+                        Showing 10 of {backlinks.length} backlinks
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         )}
       </div>
-    </SEOToolLayout>
+    </DashboardLayout>
   )
 }
