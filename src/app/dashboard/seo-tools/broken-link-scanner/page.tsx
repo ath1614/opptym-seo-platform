@@ -103,25 +103,26 @@ export default function BrokenLinkScannerPage() {
       if (response.ok) {
         console.log('Broken Link Analysis Response:', data)
         // Transform the API response to match the expected structure
+        const result = data.data // Access the actual analysis result
         const transformedData = {
-          url: data.url,
+          url: result.url,
           timestamp: new Date().toISOString(),
-          overallScore: data.score,
+          overallScore: result.score,
           brokenLinks: {
-            total: data.totalLinks,
-            broken: data.brokenLinks.length,
-            working: data.workingLinks,
-            redirects: data.redirects,
-            healthScore: data.healthScore,
-            links: data.brokenLinks.map((link: any) => ({
+            total: result.totalLinks,
+            broken: result.brokenLinks.length,
+            working: result.workingLinks,
+            redirects: result.redirects || 0,
+            healthScore: result.healthScore || result.score,
+            links: result.brokenLinks.map((link: any) => ({
               url: link.url,
               status: link.status,
-              type: link.type,
-              foundOn: link.foundOn,
-              impact: link.impact
+              type: link.type || 'unknown',
+              foundOn: link.page || 'unknown',
+              impact: link.impact || 'medium'
             }))
           },
-          recommendations: data.recommendations || []
+          recommendations: result.recommendations || []
         }
         setAnalysisData(transformedData)
         showToast({
