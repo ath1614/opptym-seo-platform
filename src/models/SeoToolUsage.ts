@@ -9,7 +9,7 @@ export interface ISeoToolUsage extends Document {
   url: string
   results: {
     score?: number
-    issues?: number
+    issues?: number | Array<{ type: string; message: string; severity: string }>
     recommendations?: number | string[]
     data?: Record<string, unknown>
   }
@@ -45,7 +45,7 @@ const SeoToolUsageSchema = new Schema<ISeoToolUsage>({
   },
   results: {
     score: { type: Number },
-    issues: { type: Number },
+    issues: { type: Schema.Types.Mixed },
     recommendations: { type: Schema.Types.Mixed },
     data: { type: Schema.Types.Mixed }
   }
