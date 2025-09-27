@@ -15,10 +15,22 @@ interface UsageStats {
   }
   usage: {
     seoTools: number
+    dailyAverage: number
+    weeklyTotal: number
+    monthlyTotal: number
   }
   isAtLimit: {
     seoTools: boolean
   }
+  trendData?: {
+    dates: string[]
+    values: number[]
+    change: number
+  }
+  mostUsedTools?: {
+    name: string
+    count: number
+  }[]
 }
 
 export function SEOUsageStats() {
@@ -98,22 +110,57 @@ export function SEOUsageStats() {
               <Progress value={usagePercentage} className="h-2" />
             </div>
           )}
+          <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+            <div>
+              <div className="font-medium">{stats.usage.dailyAverage}</div>
+              <div>Daily Avg</div>
+            </div>
+            <div>
+              <div className="font-medium">{stats.usage.weeklyTotal}</div>
+              <div>Weekly</div>
+            </div>
+            <div>
+              <div className="font-medium">{stats.usage.monthlyTotal}</div>
+              <div>Monthly</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Remaining Uses */}
+      {/* Usage Trends */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Remaining Uses</CardTitle>
+          <CardTitle className="text-sm font-medium">Usage Trends</CardTitle>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
-            {remainingUses}
+          <div className="flex items-center justify-between">
+            <div className="text-2xl font-bold">
+              {remainingUses}
+            </div>
+            <Badge variant={stats.trendData?.change && stats.trendData.change > 0 ? "default" : "secondary"}>
+              {stats.trendData?.change && stats.trendData.change > 0 ? "+" : ""}{stats.trendData?.change}%
+            </Badge>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mb-2">
             SEO tool analyses left
           </p>
+          
+          {stats.trendData && (
+            <div className="h-16 flex items-end justify-between mt-2">
+              {stats.trendData.values.map((value, i) => (
+                <div 
+                  key={i} 
+                  className="w-[8%] bg-primary/80 rounded-sm"
+                  style={{ 
+                    height: `${(value / Math.max(...stats.trendData!.values)) * 100}%`,
+                    opacity: 0.3 + ((i / stats.trendData!.values.length) * 0.7)
+                  }}
+                  title={`${stats.trendData!.dates[i]}: ${value} uses`}
+                ></div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -149,11 +196,30 @@ export function SEOUsageStats() {
                 variant: 'default'
               })}
             >
-              Upgrade Plan
+              Upgrade Now
             </Button>
           )}
         </CardContent>
       </Card>
+
+      {/* Most Used Tools */}
+      {stats.mostUsedTools && stats.mostUsedTools.length > 0 && (
+        <Card className="md:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Most Used Tools</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {stats.mostUsedTools.map((tool, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                  <span className="font-medium">{tool.name}</span>
+                  <Badge variant="outline">{tool.count} uses</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

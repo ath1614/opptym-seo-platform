@@ -10,84 +10,95 @@ export function MetaTagResults() {
   // This would receive results as props in a real implementation
   const results = {
     url: 'https://example.com',
+    score: 85,
+    industryAverage: 72,
+    competitorScores: [
+      { name: 'competitor1.com', score: 78 },
+      { name: 'competitor2.com', score: 82 },
+      { name: 'competitor3.com', score: 69 }
+    ],
     title: {
       content: 'Example Website - Your Trusted Partner',
       length: 42,
       status: 'good',
-      recommendation: 'Title length is optimal for SEO'
+      recommendation: 'Title length is optimal for SEO',
+      idealLength: '50-60 characters',
+      keywordsPresent: ['website', 'partner'],
+      impact: 'High',
+      bestPractices: [
+        'Include primary keyword near the beginning',
+        'Keep each title unique across the site',
+        'Make it compelling for users to click'
+      ]
     },
     description: {
       content: 'We provide excellent services to help your business grow. Contact us today for a free consultation.',
       length: 98,
       status: 'good',
-      recommendation: 'Description length is within optimal range'
+      recommendation: 'Description length is within optimal range',
+      idealLength: '120-155 characters',
+      keywordsPresent: ['services', 'business', 'consultation'],
+      impact: 'Medium',
+      bestPractices: [
+        'Include primary and secondary keywords naturally',
+        'Add a call-to-action when appropriate',
+        'Avoid duplicate descriptions across pages'
+      ]
     },
     keywords: {
       content: 'business, services, consultation, growth',
       status: 'warning',
-      recommendation: 'Meta keywords are not recommended for SEO. Consider removing them.'
+      recommendation: 'Meta keywords are not recommended for SEO. Consider removing them.',
+      impact: 'Low',
+      bestPractices: [
+        'Most search engines ignore this tag',
+        'Can reveal SEO strategy to competitors',
+        'Focus on content optimization instead'
+      ]
     },
     viewport: {
-      content: 'width=device-width, initial-scale=1.0',
+      content: 'width=device-width, initial-scale=1',
       status: 'good',
-      recommendation: 'Viewport meta tag is properly configured for mobile'
+      recommendation: 'Viewport is properly configured for mobile devices',
+      impact: 'High'
     },
     robots: {
       content: 'index, follow',
       status: 'good',
-      recommendation: 'Robots meta tag allows search engine indexing'
+      recommendation: 'Robots meta tag is properly configured',
+      impact: 'Medium'
     },
     openGraph: {
+      status: 'good',
       title: 'Example Website - Your Trusted Partner',
       description: 'We provide excellent services to help your business grow.',
       image: 'https://example.com/og-image.jpg',
       url: 'https://example.com',
-      status: 'good',
-      recommendation: 'Open Graph tags are properly configured for social sharing'
+      type: 'website',
+      impact: 'High',
+      recommendation: 'All essential Open Graph tags are present'
     },
-    twitter: {
+    twitterCard: {
+      status: 'good',
       card: 'summary_large_image',
       title: 'Example Website - Your Trusted Partner',
       description: 'We provide excellent services to help your business grow.',
       image: 'https://example.com/twitter-image.jpg',
-      status: 'good',
-      recommendation: 'Twitter Card tags are properly configured'
-    },
-    canonical: {
-      content: 'https://example.com',
-      status: 'good',
-      recommendation: 'Canonical URL is properly set'
-    },
-    hreflang: {
-      content: 'en-US',
-      status: 'good',
-      recommendation: 'Hreflang is properly configured for language targeting'
-    },
-    score: 85,
-    issues: [
-      {
-        type: 'warning',
-        message: 'Meta keywords tag is present but not recommended for SEO',
-        severity: 'low'
-      }
-    ],
-    recommendations: [
-      'Remove the meta keywords tag as it is not used by search engines',
-      'Consider adding structured data markup for better search results',
-      'Add more specific Open Graph images for different page types'
-    ]
+      impact: 'Medium',
+      recommendation: 'Twitter Card is properly configured'
+    }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'good':
-        return <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
       case 'error':
-        return <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
+        return <XCircle className="h-4 w-4 text-red-500" />
       default:
-        return <Info className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+        return <Info className="h-4 w-4 text-blue-500" />
     }
   }
 
@@ -107,24 +118,55 @@ export function MetaTagResults() {
   return (
     <div className="space-y-6">
       {/* Overall Score */}
-      <Card>
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Meta Tag Analysis Score</CardTitle>
+          <CardTitle>Overall Meta Tags Score</CardTitle>
           <CardDescription>
             Overall assessment of your meta tags optimization
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-4">
-            <div className="text-4xl font-bold text-primary">{results.score}</div>
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-sm font-medium">Overall Score</span>
+          <div className="flex flex-col items-center">
+            <div className="flex items-center justify-center gap-8 mb-6">
+              <div className="flex flex-col items-center">
+                <div className="text-5xl font-bold text-primary mb-2">{results.score}</div>
+                <span className="text-sm font-medium">Your Score</span>
                 <Badge className={getStatusColor(results.score >= 80 ? 'good' : results.score >= 60 ? 'warning' : 'error')}>
                   {results.score >= 80 ? 'Excellent' : results.score >= 60 ? 'Good' : 'Needs Improvement'}
                 </Badge>
               </div>
-              <Progress value={results.score} className="h-2" />
+              
+              <div className="flex flex-col items-center">
+                <div className="text-4xl font-bold text-amber-500 mb-2">{results.industryAverage}</div>
+                <span className="text-sm font-medium">Industry Average</span>
+              </div>
+            </div>
+            
+            <div className="w-full">
+              <h4 className="text-sm font-medium mb-3">Competitor Comparison</h4>
+              <div className="space-y-3">
+                {results.competitorScores.map((competitor, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <span className="text-xs w-28 truncate">{competitor.name}</span>
+                    <div className="flex-1">
+                      <Progress 
+                        value={competitor.score} 
+                        className={`h-1.5 ${
+                          competitor.score > results.score ? 'bg-red-100 dark:bg-red-900/50' : 
+                          competitor.score === results.score ? 'bg-yellow-100 dark:bg-yellow-900/50' : 
+                          'bg-green-100 dark:bg-green-900/50'
+                        }`} 
+                      />
+                    </div>
+                    <span className="text-xs font-medium">{competitor.score}</span>
+                    <span className="text-xs">
+                      {competitor.score > results.score ? 
+                        <span className="text-red-500">↑</span> : 
+                        <span className="text-green-500">↓</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -137,6 +179,9 @@ export function MetaTagResults() {
             <CardTitle className="flex items-center space-x-2">
               {getStatusIcon(results.title.status)}
               <span>Title Tag</span>
+              <Badge className={getStatusColor(results.title.status)}>
+                {results.title.impact} Impact
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -227,6 +272,9 @@ export function MetaTagResults() {
             <CardTitle className="flex items-center space-x-2">
               {getStatusIcon(results.openGraph.status)}
               <span>Open Graph</span>
+              <Badge className={getStatusColor(results.openGraph.status)}>
+                {results.openGraph.impact} Impact
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -240,7 +288,7 @@ export function MetaTagResults() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Image</p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 break-all">{results.openGraph.image}</p>
+              <p className="text-sm font-mono text-blue-600">{results.openGraph.image}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Recommendation</p>
@@ -252,81 +300,29 @@ export function MetaTagResults() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              {getStatusIcon(results.twitter.status)}
-              <span>Twitter Cards</span>
+              {getStatusIcon(results.twitterCard.status)}
+              <span>Twitter Card</span>
+              <Badge className={getStatusColor(results.twitterCard.status)}>
+                {results.twitterCard.impact} Impact
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Card Type</p>
-              <p className="text-sm font-mono">{results.twitter.card}</p>
+              <p className="text-sm font-mono">{results.twitterCard.card}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Title</p>
-              <p className="text-sm">{results.twitter.title}</p>
+              <p className="text-sm">{results.twitterCard.title}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Image</p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 break-all">{results.twitter.image}</p>
+              <p className="text-sm font-medium text-muted-foreground">Description</p>
+              <p className="text-sm">{results.twitterCard.description}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Recommendation</p>
-              <p className="text-sm text-green-600 dark:text-green-400">{results.twitter.recommendation}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Issues and Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Issues Found</CardTitle>
-            <CardDescription>
-              Problems that need to be addressed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {results.issues.length > 0 ? (
-              <div className="space-y-3">
-                {results.issues.map((issue, index) => (
-                  <Alert key={index} variant={issue.type === 'error' ? 'destructive' : 'default'}>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="flex items-center justify-between">
-                        <span>{issue.message}</span>
-                        <Badge variant="outline" className="ml-2">
-                          {issue.severity}
-                        </Badge>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <CheckCircle className="h-8 w-8 text-green-500 dark:text-green-400 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No issues found!</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recommendations</CardTitle>
-            <CardDescription>
-              Suggestions to improve your meta tags
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {results.recommendations.map((recommendation, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <Info className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm">{recommendation}</p>
-                </div>
-              ))}
+              <p className="text-sm text-green-600 dark:text-green-400">{results.twitterCard.recommendation}</p>
             </div>
           </CardContent>
         </Card>

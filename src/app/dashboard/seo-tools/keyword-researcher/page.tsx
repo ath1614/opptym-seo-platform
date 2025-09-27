@@ -111,7 +111,7 @@ export default function KeywordResearcherPage() {
     
     const csvContent = [
       'URL,Score,Recommendations',
-      `"${analysisData.url}","${analysisData.score}","${analysisData.recommendations.join('; ')}"`
+      `"${analysisData.url}","${analysisData.score}","${analysisData.recommendations?.join('; ') || 'None'}"`
     ].join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })

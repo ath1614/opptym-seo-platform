@@ -124,7 +124,7 @@ export default function CanonicalCheckerPage() {
     
     const csvContent = [
       'URL,Canonical URL,Has Canonical,Self Referencing,Issues',
-      `"${analysisData.url}","${analysisData.canonicalUrl}","${analysisData.hasCanonical}","${analysisData.isSelfReferencing}","${analysisData.canonicalIssues.map(issue => issue.message).join('; ')}"`
+      `"${analysisData.url}","${analysisData.canonicalUrl}","${analysisData.hasCanonical}","${analysisData.isSelfReferencing}","${analysisData.canonicalIssues?.map(issue => issue.message).join('; ') || 'None'}"`
     ].join('\n')
     
     const blob = new Blob([csvContent], { type: 'text/csv' })

@@ -110,7 +110,7 @@ export default function BrokenLinkScannerPage() {
           overallScore: result.score,
           brokenLinks: {
             total: result.totalLinks,
-            broken: result.brokenLinks.length,
+            broken: result.brokenLinks?.length || 0,
             working: result.workingLinks,
             redirects: result.redirects || 0,
             healthScore: result.healthScore || result.score,
@@ -310,7 +310,7 @@ export default function BrokenLinkScannerPage() {
             </Card>
 
             {/* Broken Links List */}
-            {analysisData.brokenLinks.links.length > 0 && (
+            {analysisData.brokenLinks.links && analysisData.brokenLinks.links.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -352,7 +352,7 @@ export default function BrokenLinkScannerPage() {
             )}
 
             {/* Recommendations */}
-            {analysisData.recommendations.length > 0 && (
+            {analysisData.recommendations && analysisData.recommendations.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">

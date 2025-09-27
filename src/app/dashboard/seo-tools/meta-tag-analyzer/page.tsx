@@ -174,7 +174,7 @@ export default function MetaTagAnalyzerPage() {
       'Description Length': analysisResult.description.length,
       'Title Status': analysisResult.title.status,
       'Description Status': analysisResult.description.status,
-      'Issues': analysisResult.issues.map(issue => issue.message).join('; '),
+      'Issues': analysisResult.issues?.map(issue => issue.message).join('; ') || 'None',
       'Score': analysisResult.score
     }]
     
@@ -355,7 +355,7 @@ export default function MetaTagAnalyzerPage() {
                 </div>
 
                 {/* Issues */}
-                {analysisResult.issues.length > 0 && (
+                {analysisResult.issues && analysisResult.issues.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-2">Issues Found</h4>
                     <div className="space-y-2">
@@ -375,7 +375,7 @@ export default function MetaTagAnalyzerPage() {
                 )}
 
                 {/* Recommendations */}
-                {analysisResult.recommendations.length > 0 && (
+                {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
                   <div>
                     <h4 className="font-semibold mb-2">Recommendations</h4>
                     <div className="space-y-2">

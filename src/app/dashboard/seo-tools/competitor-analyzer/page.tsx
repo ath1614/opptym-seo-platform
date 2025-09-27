@@ -127,7 +127,7 @@ export default function CompetitorAnalyzerPage() {
     const csvContent = [
       'Competitor,Domain,DA,Backlinks,Traffic,Keywords,Top Keywords',
       ...analysisData.competitors.map(comp => 
-        `"${comp.name}","${comp.domain}","${comp.domainAuthority}","${comp.backlinks}","${comp.organicTraffic}","${comp.keywords}","${comp.topKeywords.join('; ')}"`
+        `"${comp.name}","${comp.domain}","${comp.domainAuthority}","${comp.backlinks}","${comp.organicTraffic}","${comp.keywords}","${comp.topKeywords?.join('; ') || 'N/A'}"`
       )
     ].join('\n')
     
@@ -264,7 +264,7 @@ export default function CompetitorAnalyzerPage() {
             </Card>
 
             {/* Competitors Analysis */}
-            {analysisData.competitors.length > 0 && (
+            {analysisData.competitors && analysisData.competitors.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -304,7 +304,7 @@ export default function CompetitorAnalyzerPage() {
                           </div>
                         </div>
 
-                        {competitor.topKeywords.length > 0 && (
+                        {competitor.topKeywords && competitor.topKeywords.length > 0 && (
                           <div className="mb-3">
                             <p className="text-sm font-medium mb-2">Top Keywords:</p>
                             <div className="flex flex-wrap gap-1">
@@ -351,7 +351,7 @@ export default function CompetitorAnalyzerPage() {
             )}
 
             {/* Opportunities */}
-            {analysisData.opportunities.length > 0 && (
+            {analysisData.opportunities && analysisData.opportunities.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -373,7 +373,7 @@ export default function CompetitorAnalyzerPage() {
             )}
 
             {/* Recommendations */}
-            {analysisData.recommendations.length > 0 && (
+            {analysisData.recommendations && analysisData.recommendations.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">

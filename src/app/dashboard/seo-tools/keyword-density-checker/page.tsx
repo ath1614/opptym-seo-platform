@@ -22,7 +22,7 @@ interface KeywordDensity {
   keyword: string
   count: number
   density: number
-  position: number[]
+  position?: number[]
 }
 
 interface AnalysisResult {
@@ -90,7 +90,12 @@ export default function KeywordDensityCheckerPage() {
 
       if (response.ok) {
         console.log('Keyword Density Analysis Response:', data)
-        setAnalysisResult(data.data)
+        // Transform the data to match the expected interface
+        const transformedData = {
+          ...data.data,
+          keywordDensities: data.data.keywords || []
+        }
+        setAnalysisResult(transformedData)
         showToast({
           title: 'Analysis Complete',
           description: 'Keyword density analysis completed successfully',
@@ -119,8 +124,8 @@ export default function KeywordDensityCheckerPage() {
     
     const csvContent = [
       'Keyword,Count,Density,Positions',
-      ...analysisResult.keywordDensities.map(kw => 
-        `"${kw.keyword}","${kw.count}","${kw.density.toFixed(2)}%","${kw.position.join('; ')}"`
+      ...(analysisResult.keywordDensities || []).map(kw => 
+        `"${kw.keyword}","${kw.count}","${kw.density.toFixed(2)}%","${kw.position?.join('; ') || 'N/A'}"`
       )
     ].join('\n')
     
@@ -255,7 +260,7 @@ export default function KeywordDensityCheckerPage() {
                   </div>
                   <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
                     <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {analysisResult.keywordDensities.length}
+                      {analysisResult.keywordDensities?.length || 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Keywords Found</div>
                   </div>
@@ -264,7 +269,7 @@ export default function KeywordDensityCheckerPage() {
             </Card>
 
             {/* Keyword Densities */}
-            {analysisResult.keywordDensities.length > 0 && (
+            {analysisResult.keywordDensities && analysisResult.keywordDensities.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -274,7 +279,7 @@ export default function KeywordDensityCheckerPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {analysisResult.keywordDensities.map((keyword, index) => (
+                    {analysisResult.keywordDensities?.map((keyword, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
@@ -286,7 +291,7 @@ export default function KeywordDensityCheckerPage() {
                               Count: {keyword.count} | Density: {keyword.density.toFixed(2)}%
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Positions: {keyword.position.join(', ')}
+                              Positions: {keyword.position?.join(', ') || 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -306,7 +311,7 @@ export default function KeywordDensityCheckerPage() {
             )}
 
             {/* Recommendations */}
-            {analysisResult.recommendations.length > 0 && (
+            {analysisResult.recommendations && analysisResult.recommendations.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">

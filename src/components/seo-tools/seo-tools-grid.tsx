@@ -33,6 +33,11 @@ interface SEOTool {
   category: 'analysis' | 'research' | 'technical' | 'content'
   isAvailable: boolean
   isPremium: boolean
+  lastUsed?: string
+  usageCount?: number
+  difficulty?: 'beginner' | 'intermediate' | 'advanced'
+  estimatedTime?: string
+  recommendedFrequency?: string
 }
 
 interface UsageStats {
@@ -56,7 +61,12 @@ const seoTools: SEOTool[] = [
     icon: Search,
     category: 'analysis',
     isAvailable: true,
-    isPremium: false
+    isPremium: false,
+    lastUsed: '2023-10-15',
+    usageCount: 24,
+    difficulty: 'beginner',
+    estimatedTime: '2-5 min',
+    recommendedFrequency: 'Weekly'
   },
   {
     id: 'keyword-density-checker',
@@ -64,6 +74,15 @@ const seoTools: SEOTool[] = [
     description: 'Check keyword density and distribution across your content',
     icon: BarChart3,
     category: 'analysis',
+    isAvailable: true,
+    isPremium: false
+  },
+  {
+    id: 'schema-markup-generator',
+    name: 'Schema Markup Generator',
+    description: 'Create structured data markup for better search engine visibility',
+    icon: Code,
+    category: 'technical',
     isAvailable: true,
     isPremium: false
   },
@@ -337,18 +356,51 @@ export function SEOToolsGrid() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">{tool.name}</CardTitle>
-                      <Badge className={categoryColors[tool.category]}>
-                        {tool.category}
-                      </Badge>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge className={categoryColors[tool.category]}>
+                          {tool.category}
+                        </Badge>
+                        {tool.difficulty && (
+                          <Badge variant="outline" className="text-xs">
+                            {tool.difficulty}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  {tool.isPremium && usageStats?.plan !== 'free' && (
-                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  {tool.isPremium && (
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                      Premium
+                    </Badge>
                   )}
                 </div>
                 <CardDescription className="mt-2">
                   {tool.description}
                 </CardDescription>
+                {(tool.estimatedTime || tool.recommendedFrequency || tool.usageCount) && (
+                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                    {tool.estimatedTime && (
+                      <div className="flex items-center">
+                        <span className="mr-1">⏱️</span> {tool.estimatedTime}
+                      </div>
+                    )}
+                    {tool.recommendedFrequency && (
+                      <div className="flex items-center">
+                        <span className="mr-1">🔄</span> {tool.recommendedFrequency}
+                      </div>
+                    )}
+                    {tool.usageCount && (
+                      <div className="flex items-center">
+                        <span className="mr-1">📊</span> Used {tool.usageCount} times
+                      </div>
+                    )}
+                  </div>
+                )}
+                {tool.lastUsed && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Last used: {new Date(tool.lastUsed).toLocaleDateString()}
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <Button 

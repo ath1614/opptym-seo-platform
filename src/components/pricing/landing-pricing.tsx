@@ -85,7 +85,7 @@ export function LandingPricing() {
       console.log('Fetching pricing plans...')
       
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
       
       const response = await fetch('/api/pricing', {
         method: 'GET',
@@ -115,6 +115,12 @@ export function LandingPricing() {
       }
     } catch (err) {
       console.error('Error fetching pricing plans:', err)
+      
+      // Handle AbortError specifically
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('Request was aborted due to timeout, keeping default plans')
+        return
+      }
       
       // Retry up to 2 times (since we start with defaults)
       if (retryCount < 2) {
