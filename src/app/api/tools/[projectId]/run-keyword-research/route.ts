@@ -9,7 +9,7 @@ import { trackUsage } from '@/lib/limit-middleware'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,7 +17,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { projectId } = params
+    const { projectId } = await params
     const { seedKeyword } = await request.json()
     
     await connectDB()

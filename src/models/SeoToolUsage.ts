@@ -10,7 +10,7 @@ export interface ISeoToolUsage extends Document {
   results: {
     score?: number
     issues?: number
-    recommendations?: number
+    recommendations?: number | string[]
     data?: Record<string, unknown>
   }
   createdAt: Date
@@ -46,7 +46,7 @@ const SeoToolUsageSchema = new Schema<ISeoToolUsage>({
   results: {
     score: { type: Number },
     issues: { type: Number },
-    recommendations: { type: Number },
+    recommendations: { type: Schema.Types.Mixed },
     data: { type: Schema.Types.Mixed }
   }
 }, {
