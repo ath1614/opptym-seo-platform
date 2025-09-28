@@ -105,6 +105,30 @@ export function CompetitorAnalyzer() {
     fetchProjects()
   }, [])
 
+  // Handler for toggling between manual URL and project selection
+  const handleModeToggle = (useManual: boolean) => {
+    setUseManualUrl(useManual)
+    // Clear previous analysis data when switching modes
+    setAnalysisData(null)
+    setAnalysisMetrics(null)
+    setActiveTab('overview')
+    // Clear form data
+    if (useManual) {
+      setSelectedProject('')
+    } else {
+      setManualUrl('')
+    }
+  }
+
+  // Handler for project selection change
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProject(projectId)
+    // Clear previous analysis data when project changes
+    setAnalysisData(null)
+    setAnalysisMetrics(null)
+    setActiveTab('overview')
+  }
+
   const fetchProjects = async () => {
     try {
       const response = await fetch('/api/projects')
@@ -167,6 +191,10 @@ export function CompetitorAnalyzer() {
       return
     }
 
+    // Clear previous analysis data before starting new analysis
+    setAnalysisData(null)
+    setAnalysisMetrics(null)
+    setActiveTab('overview')
     setIsAnalyzing(true)
     setRetryCount(0)
 
@@ -384,7 +412,7 @@ export function CompetitorAnalyzer() {
               <div className="flex items-center space-x-4">
                 <Button
                   variant={!useManualUrl ? "default" : "outline"}
-                  onClick={() => setUseManualUrl(false)}
+                  onClick={() => handleModeToggle(false)}
                   className="flex items-center gap-2"
                 >
                   <Target className="h-4 w-4" />
@@ -392,7 +420,7 @@ export function CompetitorAnalyzer() {
                 </Button>
                 <Button
                   variant={useManualUrl ? "default" : "outline"}
-                  onClick={() => setUseManualUrl(true)}
+                  onClick={() => handleModeToggle(true)}
                   className="flex items-center gap-2"
                 >
                   <Globe className="h-4 w-4" />
@@ -406,7 +434,7 @@ export function CompetitorAnalyzer() {
                   <Label htmlFor="project">Select Project</Label>
                   <Select 
                     value={selectedProject} 
-                    onValueChange={setSelectedProject}
+                    onValueChange={handleProjectChange}
                     disabled={isLoadingProjects}
                   >
                     <SelectTrigger>
