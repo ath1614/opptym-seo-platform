@@ -969,7 +969,7 @@ export function SchemaMarkupGenerator() {
 
   return (
     <SEOToolLayout 
-      toolId="schema-markup-generator"
+      toolId="schema-validator"
       toolName="Schema Markup Generator"
       toolDescription="Create structured data markup for your website to enhance search engine visibility"
       mockData={{}}
