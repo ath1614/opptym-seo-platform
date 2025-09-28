@@ -22,6 +22,7 @@ interface ProjectFormProps {
 interface CustomField {
   key: string
   value: string
+  type: 'text' | 'url' | 'number' | 'email' | 'phone'
 }
 
 export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
@@ -473,7 +474,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   }
 
   const addCustomField = () => {
-    setCustomFields(prev => [...prev, { key: '', value: '' }])
+    setCustomFields(prev => [...prev, { key: '', value: '', type: 'text' }])
   }
 
   const getFieldError = (fieldName: string): string | undefined => {
@@ -505,7 +506,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       
       // Address
       'address.addressLine1': 'Include street number, street name, and any building/suite information',
-      'address.pincode': 'Enter your postal or ZIP code (5-6 digits)',
+      'address.pincode': 'Enter your postal or ZIP code (e.g., 12345, SW1A 1AA, K1A 0A6)',
       
       // SEO Metadata
       'seoMetadata.metaTitle': 'Include your main keyword and keep it under 60 characters',
@@ -614,7 +615,8 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     
     if (field === 'address.pincode') {
       if (!value?.trim()) return 'Postal/ZIP code is required'
-      if (!/^[0-9]{5,6}$/.test(value)) return 'Please enter a valid postal code (5-6 digits)'
+      // Allow alphanumeric postal codes for international support (e.g., UK: SW1A 1AA, Canada: K1A 0A6)
+      if (!/^[A-Za-z0-9\s\-]{3,10}$/.test(value)) return 'Please enter a valid postal code (3-10 characters, letters, numbers, spaces, and hyphens allowed)'
     }
     
     return null
@@ -624,7 +626,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     setCustomFields(prev => prev.filter((_, i) => i !== index))
   }
 
-  const updateCustomField = (index: number, field: 'key' | 'value', value: string) => {
+  const updateCustomField = (index: number, field: 'key' | 'value' | 'type', value: string) => {
     setCustomFields(prev => prev.map((item, i) => 
       i === index ? { ...item, [field]: value } : item
     ))
@@ -1401,7 +1403,18 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Input
                     id="keywords"
                     value={formData.keywords.join(', ')}
-                    onChange={(e) => handleArrayFieldChange('keywords', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow natural typing with commas - split and process on every change
+                      const array = value ? value.split(',').map(item => item.trim()) : []
+                      handleInputChange('keywords', array)
+                    }}
+                    onBlur={(e) => {
+                      // Clean up empty entries only when user leaves the field
+                      const value = e.target.value
+                      const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                      handleInputChange('keywords', array)
+                    }}
                     placeholder="Enter keywords separated by commas (e.g., seo, digital marketing, web design)"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -1414,7 +1427,18 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Input
                     id="competitors"
                     value={formData.competitors.join(', ')}
-                    onChange={(e) => handleArrayFieldChange('competitors', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow natural typing with commas - split and process on every change
+                      const array = value ? value.split(',').map(item => item.trim()) : []
+                      handleInputChange('competitors', array)
+                    }}
+                    onBlur={(e) => {
+                      // Clean up empty entries only when user leaves the field
+                      const value = e.target.value
+                      const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                      handleInputChange('competitors', array)
+                    }}
                     placeholder="Enter competitor websites separated by commas"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -1466,7 +1490,18 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Input
                     id="keywords"
                     value={formData.seoMetadata.keywords.join(', ')}
-                    onChange={(e) => handleArrayFieldChange('seoMetadata.keywords', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow natural typing with commas - split and process on every change
+                      const array = value ? value.split(',').map(item => item.trim()) : []
+                      handleInputChange('seoMetadata.keywords', array)
+                    }}
+                    onBlur={(e) => {
+                      // Clean up empty entries only when user leaves the field
+                      const value = e.target.value
+                      const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                      handleInputChange('seoMetadata.keywords', array)
+                    }}
                     placeholder="keyword1, keyword2, keyword3"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -1479,7 +1514,18 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Input
                     id="targetKeywords"
                     value={formData.seoMetadata.targetKeywords.join(', ')}
-                    onChange={(e) => handleArrayFieldChange('seoMetadata.targetKeywords', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Allow natural typing with commas - split and process on every change
+                      const array = value ? value.split(',').map(item => item.trim()) : []
+                      handleInputChange('seoMetadata.targetKeywords', array)
+                    }}
+                    onBlur={(e) => {
+                      // Clean up empty entries only when user leaves the field
+                      const value = e.target.value
+                      const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                      handleInputChange('seoMetadata.targetKeywords', array)
+                    }}
                     placeholder="target1, target2, target3"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -1559,7 +1605,17 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Input
                       id="tags"
                       value={formData.articleSubmission.tags.join(', ')}
-                      onChange={(e) => handleArrayFieldChange('articleSubmission.tags', e.target.value)}
+                      onChange={(e) => {
+                        // Temporarily store the raw input value to allow natural comma typing
+                        const rawValue = e.target.value
+                        const array = rawValue.split(',').map(item => item.trim())
+                        handleInputChange('articleSubmission.tags', array)
+                      }}
+                      onBlur={(e) => {
+                        // Clean up empty entries only when user leaves the field
+                        const cleanArray = e.target.value.split(',').map(item => item.trim()).filter(item => item)
+                        handleInputChange('articleSubmission.tags', cleanArray)
+                      }}
                       placeholder="tag1, tag2, tag3"
                     />
                   </div>
@@ -1712,30 +1768,54 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               <CardHeader>
                 <CardTitle>Custom Fields</CardTitle>
                 <CardDescription>
-                  Add custom fields for additional information
+                  Add custom fields for additional information with specific field types
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {customFields.map((field, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Field name"
-                      value={field.key}
-                      onChange={(e) => updateCustomField(index, 'key', e.target.value)}
-                    />
-                    <Input
-                      placeholder="Field value"
-                      value={field.value}
-                      onChange={(e) => updateCustomField(index, 'value', e.target.value)}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeCustomField(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-3">
+                      <Input
+                        placeholder="Field name"
+                        value={field.key}
+                        onChange={(e) => updateCustomField(index, 'key', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={field.type || 'text'} 
+                        onValueChange={(value) => updateCustomField(index, 'type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-6">
+                      <Input
+                        placeholder={`Enter ${field.type || 'text'} value`}
+                        value={field.value}
+                        type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
+                        onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeCustomField(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 <Button

@@ -29,7 +29,8 @@ import {
   Eye,
   Award,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
@@ -390,11 +391,22 @@ export function CompetitorAnalyzer() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Advanced Competitor Analyzer</h1>
-          <p className="text-muted-foreground mt-2">
-            Comprehensive competitor analysis with market insights, competitive gaps, and strategic recommendations
-          </p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Advanced Competitor Analyzer</h1>
+            <p className="text-muted-foreground mt-2">
+              Comprehensive competitor analysis with market insights, competitive gaps, and strategic recommendations
+            </p>
+          </div>
         </div>
       </div>
 

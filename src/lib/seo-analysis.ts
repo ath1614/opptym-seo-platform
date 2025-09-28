@@ -858,7 +858,7 @@ export async function analyzePageSpeed(url: string): Promise<PageSpeedAnalysis> 
   }
 }
 
-// Helper function to extract meaningful keywords from content
+// Helper function to extract meaningful keywords from content (including multi-word phrases)
 function extractMeaningfulKeywords(text: string, minLength: number = 3, maxKeywords: number = 20): string[] {
   // Common stop words to exclude
   const stopWords = new Set([
@@ -881,22 +881,72 @@ function extractMeaningfulKeywords(text: string, minLength: number = 3, maxKeywo
     'able'
   ])
 
-  // Extract words and filter
-  const words = text.toLowerCase().match(/\b[a-z]+\b/g) || []
-  const wordCounts: { [key: string]: number } = {}
+  const allKeywords: { [key: string]: number } = {}
 
-  // Count word frequencies
+  // Extract single words
+  const words = text.toLowerCase().match(/\b[a-z]+\b/g) || []
   words.forEach(word => {
     if (word.length >= minLength && !stopWords.has(word)) {
-      wordCounts[word] = (wordCounts[word] || 0) + 1
+      allKeywords[word] = (allKeywords[word] || 0) + 1
+    }
+  })
+
+  // Extract two-word phrases
+  const sentences = text.toLowerCase().split(/[.!?]+/)
+  sentences.forEach(sentence => {
+    const sentenceWords = sentence.match(/\b[a-z]+\b/g) || []
+    for (let i = 0; i < sentenceWords.length - 1; i++) {
+      const word1 = sentenceWords[i]
+      const word2 = sentenceWords[i + 1]
+      
+      if (word1.length >= minLength && word2.length >= minLength && 
+          !stopWords.has(word1) && !stopWords.has(word2)) {
+        const phrase = `${word1} ${word2}`
+        allKeywords[phrase] = (allKeywords[phrase] || 0) + 1
+      }
+    }
+  })
+
+  // Extract three-word phrases
+  sentences.forEach(sentence => {
+    const sentenceWords = sentence.match(/\b[a-z]+\b/g) || []
+    for (let i = 0; i < sentenceWords.length - 2; i++) {
+      const word1 = sentenceWords[i]
+      const word2 = sentenceWords[i + 1]
+      const word3 = sentenceWords[i + 2]
+      
+      if (word1.length >= minLength && word2.length >= minLength && word3.length >= minLength &&
+          !stopWords.has(word1) && !stopWords.has(word2) && !stopWords.has(word3)) {
+        const phrase = `${word1} ${word2} ${word3}`
+        allKeywords[phrase] = (allKeywords[phrase] || 0) + 1
+      }
+    }
+  })
+
+  // Extract four-word phrases
+  sentences.forEach(sentence => {
+    const sentenceWords = sentence.match(/\b[a-z]+\b/g) || []
+    for (let i = 0; i < sentenceWords.length - 3; i++) {
+      const word1 = sentenceWords[i]
+      const word2 = sentenceWords[i + 1]
+      const word3 = sentenceWords[i + 2]
+      const word4 = sentenceWords[i + 3]
+      
+      if (word1.length >= minLength && word2.length >= minLength && 
+          word3.length >= minLength && word4.length >= minLength &&
+          !stopWords.has(word1) && !stopWords.has(word2) && 
+          !stopWords.has(word3) && !stopWords.has(word4)) {
+        const phrase = `${word1} ${word2} ${word3} ${word4}`
+        allKeywords[phrase] = (allKeywords[phrase] || 0) + 1
+      }
     }
   })
 
   // Sort by frequency and return top keywords
-  return Object.entries(wordCounts)
+  return Object.entries(allKeywords)
     .sort(([, a], [, b]) => b - a)
     .slice(0, maxKeywords)
-    .map(([word]) => word)
+    .map(([keyword]) => keyword)
 }
 
 // Keyword Density Checker
@@ -946,7 +996,17 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
   }
 
   keywordsToAnalyze.forEach(keyword => {
-    const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'g')
+    // Handle multi-word phrases differently from single words
+    let regex: RegExp
+    if (keyword.includes(' ')) {
+      // For multi-word phrases, use word boundaries around the entire phrase
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      regex = new RegExp(`\\b${escapedKeyword}\\b`, 'gi')
+    } else {
+      // For single words, use the existing pattern
+      regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'g')
+    }
+    
     const matches = textContent.toLowerCase().match(regex) || []
     const count = matches.length
     const density = totalWords > 0 ? (count / totalWords) * 100 : 0
@@ -1791,13 +1851,72 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     opportunities: string[]
   }> = []
 
+  // Define domains to exclude from competitor analysis
+  const excludedDomains = new Set([
+    // Social Media Platforms
+    'facebook.com', 'www.facebook.com', 'fb.com',
+    'twitter.com', 'www.twitter.com', 'x.com', 'www.x.com',
+    'linkedin.com', 'www.linkedin.com',
+    'instagram.com', 'www.instagram.com',
+    'youtube.com', 'www.youtube.com',
+    'tiktok.com', 'www.tiktok.com',
+    'pinterest.com', 'www.pinterest.com',
+    'snapchat.com', 'www.snapchat.com',
+    'reddit.com', 'www.reddit.com',
+    'discord.com', 'www.discord.com',
+    
+    // Tech/Utility Platforms
+    'google.com', 'www.google.com', 'gmail.com',
+    'microsoft.com', 'www.microsoft.com',
+    'apple.com', 'www.apple.com',
+    'amazon.com', 'www.amazon.com',
+    'github.com', 'www.github.com',
+    'stackoverflow.com', 'www.stackoverflow.com',
+    'wikipedia.org', 'www.wikipedia.org',
+    
+    // CDNs and Services
+    'cloudflare.com', 'www.cloudflare.com',
+    'amazonaws.com', 'aws.amazon.com',
+    'googleapis.com', 'fonts.googleapis.com',
+    'jquery.com', 'www.jquery.com',
+    'bootstrap.com', 'getbootstrap.com',
+    
+    // Common Non-Competitor Domains
+    'w3.org', 'www.w3.org',
+    'mozilla.org', 'www.mozilla.org',
+    'ietf.org', 'www.ietf.org'
+  ])
+
   externalLinks.each((_, link) => {
     const href = $(link).attr('href')
     if (!href) return
 
     try {
       const linkUrl = new URL(href)
-      const domain = linkUrl.hostname
+      const domain = linkUrl.hostname.toLowerCase()
+      
+      // Skip excluded domains
+      if (excludedDomains.has(domain)) {
+        return
+      }
+      
+      // Skip domains that are clearly not competitors
+      if (domain.includes('cdn.') || 
+          domain.includes('api.') || 
+          domain.includes('static.') ||
+          domain.includes('assets.') ||
+          domain.startsWith('fonts.') ||
+          domain.startsWith('ajax.') ||
+          href.includes('/cdn/') ||
+          href.includes('/api/') ||
+          href.includes('.js') ||
+          href.includes('.css') ||
+          href.includes('.png') ||
+          href.includes('.jpg') ||
+          href.includes('.gif') ||
+          href.includes('.svg')) {
+        return
+      }
       
       // Count occurrences
       domainMap.set(domain, (domainMap.get(domain) || 0) + 1)

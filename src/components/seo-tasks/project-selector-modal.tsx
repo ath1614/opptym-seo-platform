@@ -321,6 +321,13 @@ javascript:(function(){
                           <span>{project.phone}</span>
                         </div>
                       )}
+                      {project.category && (
+                        <div className="flex items-center justify-between mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {project.category}
+                          </Badge>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -393,7 +400,6 @@ javascript:(function(){
                     variant: 'destructive'
                   })
                 }}
-                onSelectStartCapture={(e) => e.preventDefault()}
                 onCopy={(e) => {
                   e.preventDefault()
                   showToast({

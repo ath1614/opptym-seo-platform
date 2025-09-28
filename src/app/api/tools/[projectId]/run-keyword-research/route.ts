@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
-const { default: Project } = await import('@/models/Project')
-const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
 import { analyzeKeywordTracking, analyzeKeywordResearch } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 
