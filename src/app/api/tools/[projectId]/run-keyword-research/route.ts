@@ -44,13 +44,30 @@ export async function POST(
 
     // Perform keyword research analysis
     try {
+       console.log(`🔍 Starting keyword research for project: ${projectId}, URL: ${project.websiteURL}`)
+       
+       // Validate website URL
+       if (!project.websiteURL) {
+         console.log('⚠️ No website URL found for project')
+         return NextResponse.json(
+           { 
+             error: 'No website URL found for this project',
+             message: 'Please add a website URL to your project settings to use keyword research'
+           },
+           { status: 400 }
+         )
+       }
+
        // Run keyword research analysis
        const analysisResult = await analyzeKeywordResearch(project.websiteURL)
        
        // Add seed keyword to results if provided
        if (seedKeyword) {
          analysisResult.seedKeyword = seedKeyword
+         console.log(`📝 Added seed keyword: ${seedKeyword}`)
        }
+       
+       console.log(`✅ Keyword research analysis completed successfully for ${project.websiteURL}`)
        
        // Only save usage to database AFTER successful analysis
        const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
@@ -65,6 +82,7 @@ export async function POST(
        })
 
        await seoToolUsage.save()
+       console.log(`💾 Saved keyword research results to database`)
 
        return NextResponse.json({
          success: true,
@@ -72,12 +90,17 @@ export async function POST(
          message: 'Keyword research analysis completed successfully'
        })
      } catch (analysisError) {
-       console.error('Keyword research analysis failed:', analysisError)
-       // Don't save stats if analysis fails
+       console.error('❌ Keyword research analysis failed:', analysisError)
+       
+       // Return a more user-friendly error response
+       const errorMessage = analysisError instanceof Error ? analysisError.message : 'Unknown analysis error'
+       
        return NextResponse.json(
          { 
-           error: 'Analysis failed',
-           details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+           error: 'Keyword research analysis failed',
+           message: 'Unable to analyze the website. This could be due to network issues or website accessibility problems.',
+           details: errorMessage,
+           success: false
          },
          { status: 500 }
        )

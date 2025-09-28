@@ -29,6 +29,16 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  
+  // Separate display values for comma-separated fields to allow natural typing
+  const [displayValues, setDisplayValues] = useState({
+    competitors: '',
+    keywords: '',
+    targetKeywords: '',
+    seoKeywords: '',
+    tags: ''
+  })
+  
   const router = useRouter()
   const { showToast } = useToast()
 
@@ -173,6 +183,15 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       }
       setFormData(mergedData as any)
       setCustomFields((initialData as any).customFields || [])
+      
+      // Initialize display values for comma-separated fields
+      setDisplayValues({
+        competitors: ((initialData as any).competitors || []).join(', '),
+        keywords: (((initialData as any).keywords) || []).join(', '),
+        seoKeywords: (((initialData as any).seoMetadata?.keywords) || []).join(', '),
+        targetKeywords: (((initialData as any).seoMetadata?.targetKeywords) || []).join(', '),
+        tags: (((initialData as any).articleSubmission?.tags) || []).join(', ')
+      })
     }
   }, [initialData])
 
@@ -1402,23 +1421,43 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="keywords">Keywords</Label>
                   <Input
                     id="keywords"
-                    value={formData.keywords.join(', ')}
+                    value={displayValues.keywords}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // Allow natural typing with commas - split and process on every change
-                      const array = value ? value.split(',').map(item => item.trim()) : []
-                      handleInputChange('keywords', array)
+                      // Allow natural typing - just update display value
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        keywords: e.target.value
+                      }))
                     }}
                     onBlur={(e) => {
-                      // Clean up empty entries only when user leaves the field
+                      // Process comma-separated values when user leaves the field
                       const value = e.target.value
                       const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
                       handleInputChange('keywords', array)
+                      // Update display value to show cleaned up version
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        keywords: array.join(', ')
+                      }))
                     }}
-                    placeholder="Enter keywords separated by commas (e.g., seo, digital marketing, web design)"
+                    onKeyDown={(e) => {
+                      // Handle Enter key to process comma-separated values
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const value = e.currentTarget.value
+                        const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                        handleInputChange('keywords', array)
+                        // Update display value to show cleaned up version
+                        setDisplayValues(prev => ({
+                          ...prev,
+                          keywords: array.join(', ')
+                        }))
+                      }
+                    }}
+                    placeholder="keyword1, keyword2, keyword3"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Separate multiple keywords with commas
+                    Separate keywords with commas
                   </p>
                 </div>
 
@@ -1426,18 +1465,38 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="competitors">Competitors</Label>
                   <Input
                     id="competitors"
-                    value={formData.competitors.join(', ')}
+                    value={displayValues.competitors}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // Allow natural typing with commas - split and process on every change
-                      const array = value ? value.split(',').map(item => item.trim()) : []
-                      handleInputChange('competitors', array)
+                      // Allow natural typing - just update display value
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        competitors: e.target.value
+                      }))
                     }}
                     onBlur={(e) => {
-                      // Clean up empty entries only when user leaves the field
+                      // Process comma-separated values when user leaves the field
                       const value = e.target.value
                       const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
                       handleInputChange('competitors', array)
+                      // Update display value to show cleaned up version
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        competitors: array.join(', ')
+                      }))
+                    }}
+                    onKeyDown={(e) => {
+                      // Handle Enter key to process comma-separated values
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const value = e.currentTarget.value
+                        const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                        handleInputChange('competitors', array)
+                        // Update display value to show cleaned up version
+                        setDisplayValues(prev => ({
+                          ...prev,
+                          competitors: array.join(', ')
+                        }))
+                      }
                     }}
                     placeholder="Enter competitor websites separated by commas"
                   />
@@ -1489,18 +1548,38 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="keywords">Keywords</Label>
                   <Input
                     id="keywords"
-                    value={formData.seoMetadata.keywords.join(', ')}
+                    value={displayValues.seoKeywords}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // Allow natural typing with commas - split and process on every change
-                      const array = value ? value.split(',').map(item => item.trim()) : []
-                      handleInputChange('seoMetadata.keywords', array)
+                      // Allow natural typing - just update display value
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        seoKeywords: e.target.value
+                      }))
                     }}
                     onBlur={(e) => {
-                      // Clean up empty entries only when user leaves the field
+                      // Process comma-separated values when user leaves the field
                       const value = e.target.value
                       const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
                       handleInputChange('seoMetadata.keywords', array)
+                      // Update display value to show cleaned up version
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        seoKeywords: array.join(', ')
+                      }))
+                    }}
+                    onKeyDown={(e) => {
+                      // Handle Enter key to process comma-separated values
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const value = e.currentTarget.value
+                        const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                        handleInputChange('seoMetadata.keywords', array)
+                        // Update display value to show cleaned up version
+                        setDisplayValues(prev => ({
+                          ...prev,
+                          seoKeywords: array.join(', ')
+                        }))
+                      }
                     }}
                     placeholder="keyword1, keyword2, keyword3"
                   />
@@ -1513,18 +1592,38 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="targetKeywords">Target Keywords</Label>
                   <Input
                     id="targetKeywords"
-                    value={formData.seoMetadata.targetKeywords.join(', ')}
+                    value={displayValues.targetKeywords}
                     onChange={(e) => {
-                      const value = e.target.value
-                      // Allow natural typing with commas - split and process on every change
-                      const array = value ? value.split(',').map(item => item.trim()) : []
-                      handleInputChange('seoMetadata.targetKeywords', array)
+                      // Allow natural typing - just update display value
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        targetKeywords: e.target.value
+                      }))
                     }}
                     onBlur={(e) => {
-                      // Clean up empty entries only when user leaves the field
+                      // Process comma-separated values when user leaves the field
                       const value = e.target.value
                       const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
                       handleInputChange('seoMetadata.targetKeywords', array)
+                      // Update display value to show cleaned up version
+                      setDisplayValues(prev => ({
+                        ...prev,
+                        targetKeywords: array.join(', ')
+                      }))
+                    }}
+                    onKeyDown={(e) => {
+                      // Handle Enter key to process comma-separated values
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const value = e.currentTarget.value
+                        const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                        handleInputChange('seoMetadata.targetKeywords', array)
+                        // Update display value to show cleaned up version
+                        setDisplayValues(prev => ({
+                          ...prev,
+                          targetKeywords: array.join(', ')
+                        }))
+                      }
                     }}
                     placeholder="target1, target2, target3"
                   />
@@ -1604,17 +1703,38 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="tags">Tags</Label>
                     <Input
                       id="tags"
-                      value={formData.articleSubmission.tags.join(', ')}
+                      value={displayValues.tags || ''}
                       onChange={(e) => {
-                        // Temporarily store the raw input value to allow natural comma typing
-                        const rawValue = e.target.value
-                        const array = rawValue.split(',').map(item => item.trim())
-                        handleInputChange('articleSubmission.tags', array)
+                        // Allow natural typing by storing in display state
+                        setDisplayValues(prev => ({
+                          ...prev,
+                          tags: e.target.value
+                        }))
                       }}
                       onBlur={(e) => {
-                        // Clean up empty entries only when user leaves the field
-                        const cleanArray = e.target.value.split(',').map(item => item.trim()).filter(item => item)
-                        handleInputChange('articleSubmission.tags', cleanArray)
+                        // Process comma-separated values when user leaves the field
+                        const value = e.target.value
+                        const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                        handleInputChange('articleSubmission.tags', array)
+                        // Update display value to show cleaned up version
+                        setDisplayValues(prev => ({
+                          ...prev,
+                          tags: array.join(', ')
+                        }))
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle Enter key to process comma-separated values
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          const value = e.currentTarget.value
+                          const array = value ? value.split(',').map(item => item.trim()).filter(item => item) : []
+                          handleInputChange('articleSubmission.tags', array)
+                          // Update display value to show cleaned up version
+                          setDisplayValues(prev => ({
+                            ...prev,
+                            tags: array.join(', ')
+                          }))
+                        }
                       }}
                       placeholder="tag1, tag2, tag3"
                     />
