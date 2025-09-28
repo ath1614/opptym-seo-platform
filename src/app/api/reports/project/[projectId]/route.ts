@@ -7,6 +7,14 @@ import User from '@/models/User'
 import SeoToolUsage from '@/models/SeoToolUsage'
 import Submission from '@/models/Submission'
 import mongoose from 'mongoose'
+import { 
+  analyzeMetaTags, 
+  analyzePageSpeed, 
+  analyzeMobileFriendly, 
+  analyzeCompetitors,
+  analyzeTechnicalSEO,
+  analyzeBacklinks
+} from '@/lib/seo-analysis'
 
 export async function GET(
   request: NextRequest,
@@ -78,7 +86,7 @@ export async function GET(
         toolData.lastUsed = usage.createdAt
       }
       // Extract real data from analysisResults
-      const analysisResults = usage.analysisResults || {}
+      const analysisResults = usage.analysisResults || {} as Record<string, unknown> // Use Record type for stored analysis results
       const score = analysisResults.score || 0
       const issues = Array.isArray(analysisResults.issues) ? analysisResults.issues.length : 0
       const recommendations = Array.isArray(analysisResults.recommendations) ? analysisResults.recommendations.length : 0
@@ -114,7 +122,7 @@ export async function GET(
     let totalSeoAnalyses = 0
     
     seoToolUsages.forEach(usage => {
-      const analysisResults = usage.analysisResults || {}
+      const analysisResults = usage.analysisResults || {} as Record<string, unknown>
       totalSeoAnalyses++
       
       // Deduct points for issues found
@@ -222,6 +230,24 @@ export async function GET(
       })
       .slice(-6) // Show last 6 months
 
+    // Generate comprehensive SEO analysis if website URL is available
+    let comprehensiveSeoAnalysis = null
+    if (project.websiteURL) {
+      try {
+        comprehensiveSeoAnalysis = {
+          metaTags: await analyzeMetaTags(project.websiteURL),
+          performance: await analyzePageSpeed(project.websiteURL),
+          mobileFriendliness: await analyzeMobileFriendly(project.websiteURL),
+          technicalSEO: await analyzeTechnicalSEO(project.websiteURL),
+          backlinks: await analyzeBacklinks(project.websiteURL),
+          competitors: await analyzeCompetitors(project.websiteURL)
+        }
+      } catch (analysisError) {
+        console.error('SEO analysis error:', analysisError)
+        // Continue without comprehensive analysis if it fails
+      }
+    }
+
     const reportData = {
       project: {
         id: project._id,
@@ -248,6 +274,7 @@ export async function GET(
       seoToolsUsage,
       submissionsData,
       monthlyTrend,
+      comprehensiveSeoAnalysis,
       generatedAt: new Date()
     }
 

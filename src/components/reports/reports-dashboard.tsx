@@ -34,6 +34,14 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { SEOIssuesAnalysis } from './seo-issues-analysis'
+import { 
+  MetaTagAnalysis, 
+  PageSpeedAnalysis, 
+  MobileAnalysis, 
+  TechnicalSEOAnalysis,
+  BacklinkAnalysis,
+  CompetitorAnalysis
+} from '@/lib/seo-analysis'
 
 interface Project {
   _id: string
@@ -112,7 +120,7 @@ interface ReportData {
           imagesWithAlt?: number
           imagesWithoutAlt?: number
         }
-        [key: string]: any
+        [key: string]: unknown
       }
     }>
   }>
@@ -127,6 +135,20 @@ interface ReportData {
     submissions: number
     seoTools: number
   }>
+  comprehensiveSeoAnalysis?: {
+    metaTags?: MetaTagAnalysis
+    performance?: PageSpeedAnalysis
+    mobileFriendliness?: MobileAnalysis
+    accessibility?: PageSpeedAnalysis
+    seoStructure?: TechnicalSEOAnalysis
+    technicalSEO?: TechnicalSEOAnalysis
+    contentQuality?: TechnicalSEOAnalysis
+    keywordOptimization?: TechnicalSEOAnalysis
+    socialMedia?: TechnicalSEOAnalysis
+    localSEO?: TechnicalSEOAnalysis
+    backlinks?: BacklinkAnalysis
+    competitors?: CompetitorAnalysis
+  }
   generatedAt: string
 }
 
@@ -1074,6 +1096,240 @@ export function ReportsDashboard() {
                 recommendations: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.recommendations || []
               }}
             />
+          )}
+
+          {/* Comprehensive SEO Analysis */}
+          {reportData.comprehensiveSeoAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Search className="h-5 w-5" />
+                  <span>Comprehensive SEO Analysis</span>
+                </CardTitle>
+                <CardDescription>Detailed analysis of your website's SEO performance across all categories</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  
+                  {/* Meta Tags Analysis */}
+                  {reportData.comprehensiveSeoAnalysis.metaTags && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Code className="h-4 w-4 text-blue-600" />
+                        <h4 className="font-semibold">Meta Tags</h4>
+                        <Badge variant="outline">Score: {reportData.comprehensiveSeoAnalysis.metaTags?.score || 0}/100</Badge>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>Title Tag:</span>
+                          <span className={reportData.comprehensiveSeoAnalysis.metaTags.title?.status === 'good' ? 'text-green-600' : 'text-red-600'}>
+                            {reportData.comprehensiveSeoAnalysis.metaTags.title?.status === 'good' ? '✓' : '✗'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Description:</span>
+                          <span className={reportData.comprehensiveSeoAnalysis.metaTags.description?.status === 'good' ? 'text-green-600' : 'text-red-600'}>
+                            {reportData.comprehensiveSeoAnalysis.metaTags.description?.status === 'good' ? '✓' : '✗'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Issues:</span>
+                            <span className="text-orange-600">{
+                              reportData.comprehensiveSeoAnalysis.metaTags && 
+                              'issues' in reportData.comprehensiveSeoAnalysis.metaTags && 
+                              reportData.comprehensiveSeoAnalysis.metaTags.issues?.length || 0
+                            }</span>
+                          </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Performance Analysis */}
+                  {reportData.comprehensiveSeoAnalysis.performance && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Zap className="h-4 w-4 text-yellow-600" />
+                        <h4 className="font-semibold">Performance</h4>
+                        <Badge variant="outline">Score: {reportData.comprehensiveSeoAnalysis.performance?.overallScore || 0}/100</Badge>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Load Time:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.performance?.performance?.metrics?.firstContentfulPaint || 'N/A'}ms</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Page Score:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.performance?.performance?.score || 'N/A'}/100</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Issues:</span>
+                            <span className="text-orange-600">{
+                              reportData.comprehensiveSeoAnalysis.performance && 
+                              'accessibility' in reportData.comprehensiveSeoAnalysis.performance && 
+                              reportData.comprehensiveSeoAnalysis.performance.accessibility?.issues?.length || 0
+                            }</span>
+                          </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {/* Mobile Friendliness */}
+                  {reportData.comprehensiveSeoAnalysis.mobileFriendliness && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Smartphone className="h-4 w-4 text-green-600" />
+                        <h4 className="font-semibold">Mobile Friendly</h4>
+                        <Badge variant="outline">Score: {reportData.comprehensiveSeoAnalysis.mobileFriendliness?.score || 0}/100</Badge>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Mobile Friendly:</span>
+                            <span className={reportData.comprehensiveSeoAnalysis.mobileFriendliness?.isMobileFriendly ? 'text-green-600' : 'text-red-600'}>
+                              {reportData.comprehensiveSeoAnalysis.mobileFriendliness?.isMobileFriendly ? '✓' : '✗'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Viewport:</span>
+                            <span className={reportData.comprehensiveSeoAnalysis.mobileFriendliness.viewport?.configured ? 'text-green-600' : 'text-red-600'}>
+                              {reportData.comprehensiveSeoAnalysis.mobileFriendliness.viewport?.configured ? '✓' : '✗'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Issues:</span>
+                            <span className="text-orange-600">{reportData.comprehensiveSeoAnalysis.mobileFriendliness?.recommendations?.length || 0}</span>
+                          </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {/* Technical SEO */}
+                  {reportData.comprehensiveSeoAnalysis.technicalSEO && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Settings className="h-4 w-4 text-purple-600" />
+                        <h4 className="font-semibold">Technical SEO</h4>
+                        <Badge variant="outline">Score: {reportData.comprehensiveSeoAnalysis.technicalSEO?.score || 0}/100</Badge>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Issues Found:</span>
+                            <span className="text-orange-600">{
+                              (reportData.comprehensiveSeoAnalysis.technicalSEO?.crawlability?.issues?.length || 0) +
+                              (reportData.comprehensiveSeoAnalysis.technicalSEO?.indexability?.issues?.length || 0) +
+                              (reportData.comprehensiveSeoAnalysis.technicalSEO?.siteStructure?.issues?.length || 0) +
+                              (reportData.comprehensiveSeoAnalysis.technicalSEO?.performance?.issues?.length || 0) +
+                              (reportData.comprehensiveSeoAnalysis.technicalSEO?.security?.issues?.length || 0)
+                            }</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Recommendations:</span>
+                            <span className="text-blue-600">{reportData.comprehensiveSeoAnalysis.technicalSEO?.recommendations?.length || 0}</span>
+                          </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {/* Backlinks Analysis */}
+                  {reportData.comprehensiveSeoAnalysis.backlinks && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Link className="h-4 w-4 text-indigo-600" />
+                        <h4 className="font-semibold">Backlinks</h4>
+                        <Badge variant="outline">Score: {reportData.comprehensiveSeoAnalysis.backlinks?.score || 0}/100</Badge>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Total Backlinks:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.backlinks?.totalBacklinks || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Unique Domains:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.backlinks?.referringDomains || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Domain Authority:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.backlinks?.topReferringDomains?.[0]?.domainAuthority || 'N/A'}</span>
+                          </div>
+                        </div>
+                    </div>
+                  )}
+
+                  {/* Competitors Analysis */}
+                  {reportData.comprehensiveSeoAnalysis.competitors && (
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Target className="h-4 w-4 text-red-600" />
+                        <h4 className="font-semibold">Competitors</h4>
+                        <Badge variant="outline">Score: {reportData.comprehensiveSeoAnalysis.competitors?.score || 0}/100</Badge>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span>Competitors Found:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.competitors?.competitors?.length || 0}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Competitive Gaps:</span>
+                            <span>{reportData.comprehensiveSeoAnalysis.competitors?.competitiveGaps?.length || 0}</span>
+                          </div>
+                        </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Detailed Issues and Recommendations */}
+                <div className="mt-6 space-y-4">
+                  <h4 className="font-semibold text-lg">Detailed Analysis</h4>
+                  
+                  {/* All Issues */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="p-4 bg-orange-50 dark:bg-orange-950/50 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <AlertTriangle className="h-4 w-4 text-orange-600" />
+                        <h5 className="font-medium">Critical Issues</h5>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {Object.entries(reportData.comprehensiveSeoAnalysis).map(([key, analysis]) => {
+                          // Only show analyses that have issues or recommendations arrays
+                          if (key === 'metaTags' && analysis && 'issues' in analysis && analysis.issues) {
+                            return analysis.issues.map((issue: { message?: string; type?: string }, index: number) => (
+                              <div key={`${key}-issue-${index}`} className="text-sm p-2 bg-white dark:bg-gray-800 rounded border">
+                                <span className="font-medium text-orange-700 dark:text-orange-300 capitalize">{key}:</span> {issue.message || 'Issue detected'}
+                              </div>
+                            ));
+                          }
+                          if (key === 'performance' && analysis && 'accessibility' in analysis && analysis.accessibility?.issues) {
+                            return analysis.accessibility.issues.map((issue: { message?: string; type?: string }, index: number) => (
+                              <div key={`${key}-issue-${index}`} className="text-sm p-2 bg-white dark:bg-gray-800 rounded border">
+                                <span className="font-medium text-orange-700 dark:text-orange-300 capitalize">{key}:</span> {issue.message || 'Issue detected'}
+                              </div>
+                            ));
+                          }
+                          return null;
+                        }).filter(Boolean)}
+                      </div>
+                    </div>
+
+                    {/* All Recommendations */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <h5 className="font-medium">Recommendations</h5>
+                      </div>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {Object.entries(reportData.comprehensiveSeoAnalysis).map(([key, analysis]) => 
+                          analysis?.recommendations?.map((rec: string, index: number) => (
+                            <div key={`${key}-rec-${index}`} className="text-sm p-2 bg-white dark:bg-gray-800 rounded border">
+                              <span className="font-medium text-blue-700 dark:text-blue-300 capitalize">{key}:</span> {rec}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Submission History */}

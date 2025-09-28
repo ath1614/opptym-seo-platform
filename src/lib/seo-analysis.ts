@@ -167,6 +167,7 @@ export interface MobileAnalysis {
 
 export interface KeywordResearchAnalysis {
   url: string
+  seedKeyword?: string
   primaryKeywords: Array<{
     keyword: string
     searchVolume: number
@@ -498,7 +499,12 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
         type: 'error',
         message: 'Unable to fetch webpage for analysis',
         severity: 'high'
-      }]
+      }],
+      recommendations: [
+        'Check URL accessibility',
+        'Ensure website is online and reachable',
+        'Verify URL format is correct'
+      ]
     }
   }
 
@@ -1540,12 +1546,16 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   // Analyze external domains as potential competitors
   const domainMap = new Map<string, number>()
   const competitors: Array<{
+    name: string
     domain: string
     domainAuthority: number
     backlinks: number
     organicTraffic: number
     keywords: number
     topKeywords: string[]
+    strengths: string[]
+    weaknesses: string[]
+    opportunities: string[]
   }> = []
 
   externalLinks.each((_, link) => {
@@ -1895,6 +1905,8 @@ export async function analyzeAltText(url: string): Promise<AltTextAnalysis> {
     imagesWithAlt,
     imagesWithoutAlt,
     imagesWithPoorAlt,
+    altTextCoverage: totalImages > 0 ? Math.round((imagesWithAlt / totalImages) * 100) : 100,
+    images: [],
     imageIssues,
     recommendations,
     score
