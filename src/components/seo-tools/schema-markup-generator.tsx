@@ -320,15 +320,18 @@ export function SchemaMarkupGenerator() {
   const generateSchema = () => {
     setIsValidating(true)
     
+    const schemaTypeMapping: { [key: string]: string } = {
+      'localBusiness': 'LocalBusiness',
+      'blogPosting': 'BlogPosting',
+      'newsArticle': 'NewsArticle',
+      'jobPosting': 'JobPosting',
+      'videoObject': 'VideoObject',
+      'breadcrumbList': 'BreadcrumbList'
+    }
+    
     let schema: SchemaData = {
       '@context': 'https://schema.org',
-      '@type': schemaType === 'localBusiness' ? 'LocalBusiness' : 
-               schemaType === 'blogPosting' ? 'BlogPosting' :
-               schemaType === 'newsArticle' ? 'NewsArticle' :
-               schemaType === 'jobPosting' ? 'JobPosting' :
-               schemaType === 'videoObject' ? 'VideoObject' :
-               schemaType === 'breadcrumbList' ? 'BreadcrumbList' :
-               schemaType.charAt(0).toUpperCase() + schemaType.slice(1),
+      '@type': schemaTypeMapping[schemaType] || schemaType.charAt(0).toUpperCase() + schemaType.slice(1),
       name: formData.name,
       description: formData.description,
       url: formData.url,

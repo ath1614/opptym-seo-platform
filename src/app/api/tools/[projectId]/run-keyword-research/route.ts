@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 const { default: Project } = await import('@/models/Project')
 const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-import { analyzeKeywordTracking } from '@/lib/seo-analysis'
+import { analyzeKeywordTracking, analyzeKeywordResearch } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 
 export async function POST(
@@ -44,8 +44,8 @@ export async function POST(
       }, { status: 429 })
     }
 
-    // Run keyword research analysis
-    const analysisResult = await analyzeKeywordTracking(project.websiteURL)
+    // Perform keyword research analysis
+    const analysisResult = await analyzeKeywordResearch(project.websiteURL)
     
     // Add seed keyword to results if provided
     if (seedKeyword) {

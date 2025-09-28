@@ -62,6 +62,7 @@ export interface MetaTagAnalysis {
     message: string
     severity: 'high' | 'medium' | 'low'
   }>
+  recommendations: string[]
 }
 
 export interface PageSpeedAnalysis {
@@ -256,12 +257,16 @@ export interface KeywordTrackingAnalysis {
 export interface CompetitorAnalysis {
   url: string
   competitors: Array<{
+    name: string
     domain: string
     domainAuthority: number
     backlinks: number
     organicTraffic: number
     keywords: number
     topKeywords: string[]
+    strengths: string[]
+    weaknesses: string[]
+    opportunities: string[]
   }>
   competitiveGaps: Array<{
     keyword: string
@@ -322,6 +327,16 @@ export interface AltTextAnalysis {
   imagesWithAlt: number
   imagesWithoutAlt: number
   imagesWithPoorAlt: number
+  altTextCoverage: number
+  images: Array<{
+    src: string
+    alt: string
+    status: 'good' | 'warning' | 'error'
+    recommendation: string
+    size?: string
+    type?: string
+    accessibility: 'excellent' | 'good' | 'poor' | 'critical'
+  }>
   imageIssues: Array<{
     src: string
     alt: string
@@ -691,7 +706,15 @@ export async function analyzeMetaTags(url: string): Promise<MetaTagAnalysis> {
       recommendation: hreflangRecommendation
     },
     score: Math.max(0, score),
-    issues
+    issues,
+    recommendations: [
+      'Optimize meta title length (50-60 characters)',
+      'Write compelling meta descriptions (120-155 characters)',
+      'Ensure viewport meta tag is present for mobile optimization',
+      'Use Open Graph tags for better social media sharing',
+      'Add Twitter Card meta tags for Twitter sharing',
+      'Implement canonical URLs to avoid duplicate content issues'
+    ]
   }
 }
 
@@ -1561,13 +1584,36 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
       domainAuthority += 10
     }
 
+    // Generate company name from domain
+    const name = domain.replace(/\.(com|org|net|edu|gov)$/, '').replace(/^www\./, '').split('.')[0]
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1)
+
     competitors.push({
+      name: capitalizedName,
       domain,
       domainAuthority: Math.min(100, domainAuthority),
       backlinks: Math.floor(Math.random() * 10000) + 1000,
       organicTraffic: Math.floor(Math.random() * 100000) + 10000,
       keywords: Math.floor(Math.random() * 5000) + 500,
-      topKeywords: ['SEO tools', 'website analysis', 'digital marketing'].slice(0, 3)
+      topKeywords: ['SEO tools', 'website analysis', 'digital marketing'].slice(0, 3),
+      strengths: [
+        'Strong domain authority',
+        'High organic traffic',
+        'Comprehensive SEO tools',
+        'Active content marketing'
+      ].slice(0, Math.floor(Math.random() * 3) + 2),
+      weaknesses: [
+        'Limited mobile optimization',
+        'Slow page load times',
+        'Poor user experience',
+        'Outdated content'
+      ].slice(0, Math.floor(Math.random() * 2) + 1),
+      opportunities: [
+        'Expand content marketing',
+        'Improve technical SEO',
+        'Target long-tail keywords',
+        'Enhance social media presence'
+      ].slice(0, Math.floor(Math.random() * 3) + 2)
     })
   }
 
@@ -1575,20 +1621,28 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   if (competitors.length === 0) {
     competitors.push(
       {
+        name: 'Ahrefs',
         domain: 'ahrefs.com',
         domainAuthority: 95,
         backlinks: 50000,
         organicTraffic: 1000000,
         keywords: 100000,
-        topKeywords: ['SEO tools', 'backlink checker', 'keyword research']
+        topKeywords: ['SEO tools', 'backlink checker', 'keyword research'],
+        strengths: ['Industry leader', 'Comprehensive toolset', 'Accurate data'],
+        weaknesses: ['Expensive pricing', 'Complex interface'],
+        opportunities: ['Expand to small businesses', 'Improve user onboarding']
       },
       {
+        name: 'Semrush',
         domain: 'semrush.com',
         domainAuthority: 90,
         backlinks: 40000,
         organicTraffic: 800000,
         keywords: 80000,
-        topKeywords: ['SEO analysis', 'competitor research', 'marketing tools']
+        topKeywords: ['SEO analysis', 'competitor research', 'marketing tools'],
+        strengths: ['All-in-one platform', 'Strong competitor analysis', 'Good reporting'],
+        weaknesses: ['High learning curve', 'Limited free features'],
+        opportunities: ['Better mobile app', 'More integrations']
       }
     )
   }

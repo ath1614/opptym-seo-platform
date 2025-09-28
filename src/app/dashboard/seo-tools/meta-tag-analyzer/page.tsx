@@ -9,77 +9,14 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { FileText, CheckCircle, XCircle, AlertTriangle, Loader2, Download, ArrowLeft } from 'lucide-react'
+import { FileText, CheckCircle, AlertTriangle, Loader2, Download, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
+import { MetaTagAnalysis } from '@/lib/seo-analysis'
 
 interface Project {
   _id: string
   projectName: string
   websiteURL: string
-}
-
-interface AnalysisResult {
-  url: string
-  title: {
-    content: string
-    length: number
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  description: {
-    content: string
-    length: number
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  keywords: {
-    content: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  viewport: {
-    content: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  robots: {
-    content: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  openGraph: {
-    title: string
-    description: string
-    image: string
-    url: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  twitter: {
-    card: string
-    title: string
-    description: string
-    image: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  canonical: {
-    content: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  hreflang: {
-    content: string
-    status: 'good' | 'warning' | 'error'
-    recommendation: string
-  }
-  issues: Array<{
-    type: 'error' | 'warning' | 'info'
-    message: string
-    severity: 'high' | 'medium' | 'low'
-  }>
-  recommendations: string[]
-  score: number
 }
 
 export default function MetaTagAnalyzerPage() {
@@ -90,7 +27,7 @@ export default function MetaTagAnalyzerPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProject, setSelectedProject] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<MetaTagAnalysis | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -111,8 +48,8 @@ export default function MetaTagAnalyzerPage() {
         const data = await response.json()
         setProjects(data.projects || [])
       }
-    } catch (error) {
-      console.error('Failed to fetch projects:', error)
+    } catch (_error) {
+      console.error('Failed to fetch projects:', _error)
     }
   }
 
@@ -152,7 +89,7 @@ export default function MetaTagAnalyzerPage() {
           variant: 'destructive'
         })
       }
-    } catch (error) {
+    } catch {
       showToast({
         title: 'Error',
         description: 'Network error occurred during analysis',
@@ -174,7 +111,7 @@ export default function MetaTagAnalyzerPage() {
       'Description Length': analysisResult.description.length,
       'Title Status': analysisResult.title.status,
       'Description Status': analysisResult.description.status,
-      'Issues': analysisResult.issues?.map(issue => issue.message).join('; ') || 'None',
+      'Issues': analysisResult.issues?.map((issue: { message: string }) => issue.message).join('; ') || 'None',
       'Score': analysisResult.score
     }]
     
@@ -359,7 +296,7 @@ export default function MetaTagAnalyzerPage() {
                   <div>
                     <h4 className="font-semibold mb-2">Issues Found</h4>
                     <div className="space-y-2">
-                      {analysisResult.issues.map((issue, index) => (
+                      {analysisResult.issues.map((issue: { type: string; message: string; severity: string }, index: number) => (
                         <Alert key={index}>
                           <AlertTriangle className="h-4 w-4" />
                           <AlertDescription>
@@ -379,7 +316,7 @@ export default function MetaTagAnalyzerPage() {
                   <div>
                     <h4 className="font-semibold mb-2">Recommendations</h4>
                     <div className="space-y-2">
-                      {analysisResult.recommendations.map((recommendation, index) => (
+                      {analysisResult.recommendations.map((recommendation: string, index: number) => (
                         <Alert key={index}>
                           <CheckCircle className="h-4 w-4" />
                           <AlertDescription>{recommendation}</AlertDescription>

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Search, CheckCircle, XCircle, AlertTriangle, Loader2, Download, BarChart3, ArrowLeft } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
+import { KeywordDensityAnalysis } from '@/lib/seo-analysis'
 
 interface Project {
   _id: string
@@ -28,7 +29,13 @@ interface KeywordDensity {
 interface AnalysisResult {
   url: string
   totalWords: number
-  keywordDensities: KeywordDensity[]
+  keywordDensities: Array<{
+    keyword: string
+    count: number
+    density: number
+    status: 'good' | 'warning' | 'error'
+    position?: number[]
+  }>
   recommendations: string[]
   score: number
 }
@@ -90,10 +97,19 @@ export default function KeywordDensityCheckerPage() {
 
       if (response.ok) {
         console.log('Keyword Density Analysis Response:', data)
-        // Transform the data to match the expected interface
-        const transformedData = {
-          ...data.data,
-          keywordDensities: data.data.keywords || []
+        // Transform the KeywordDensityAnalysis data to match the expected interface
+        const transformedData: AnalysisResult = {
+          url: data.data.url,
+          totalWords: data.data.totalWords,
+          keywordDensities: data.data.keywords.map((kw: { keyword: string; count: number; density: number; status: 'good' | 'warning' | 'error' }) => ({
+            keyword: kw.keyword,
+            count: kw.count,
+            density: kw.density,
+            status: kw.status,
+            position: [] // Position data not available from backend
+          })),
+          recommendations: data.data.recommendations,
+          score: data.data.score
         }
         setAnalysisResult(transformedData)
         showToast({
