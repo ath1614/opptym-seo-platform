@@ -3,11 +3,20 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 
+interface SessionUser {
+  id: string
+  role?: string
+}
+
+interface ExtendedSession {
+  user?: SessionUser
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as ExtendedSession | null
     
-    if (!(session as any)?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -33,9 +42,9 @@ export async function GET(request: NextRequest) {
         'directory': 'Directory Submission',
         'article': 'Article Submission',
         'press-release': 'Press Release',
-        'bookmarking': 'BookMarking',
+        'bookmarking': 'Social Bookmarking',
         'business-listing': 'Business Listing',
-        'classified': 'Classified',
+        'classified': 'Classified Ads',
         'other': 'More SEO'
       }
       query.classification = categoryMap[category] || category
@@ -91,9 +100,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as ExtendedSession | null
     
-    if (!(session as any)?.user?.id) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -101,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
-    if ((session as any).user.role !== 'admin') {
+    if (session.user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
@@ -125,7 +134,7 @@ export async function POST(request: NextRequest) {
       ...body,
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: (session as any).user.id
+      createdBy: session.user.id
     }
     
     // Insert new link into directories collection

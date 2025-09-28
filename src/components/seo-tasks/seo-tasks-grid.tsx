@@ -252,35 +252,23 @@ export function SEOTasksGrid() {
     }
   }, [])
 
+  // Initial load - only run once
   useEffect(() => {
-    fetchLinks(1, selectedCategory, searchTerm)
+    fetchLinks(1, 'all', '')
     fetchUsageStats()
     fetchSubmissionStatus()
     fetchLocations()
-  }, [fetchLinks, fetchUsageStats, fetchSubmissionStatus, fetchLocations])
-
-  // Handle category and location change
-  useEffect(() => {
-    if (selectedCategory !== 'all' || selectedLocation !== 'all' || searchTerm) {
-      setCurrentPage(1)
-      fetchLinks(1, selectedCategory, searchTerm, selectedLocation)
-    }
-  }, [selectedCategory, selectedLocation, searchTerm, fetchLinks])
+  }, []) // Remove dependencies to prevent infinite loops
 
   // Handle search with debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm) {
-        setCurrentPage(1)
-        fetchLinks(1, selectedCategory, searchTerm)
-      } else if (selectedCategory !== 'all') {
-        setCurrentPage(1)
-        fetchLinks(1, selectedCategory, '')
-      }
+      setCurrentPage(1)
+      fetchLinks(1, selectedCategory, searchTerm, selectedLocation)
     }, 500) // 500ms debounce
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, selectedCategory, fetchLinks])
+  }, [searchTerm, selectedCategory, selectedLocation]) // Remove fetchLinks dependency
 
   const handleFillForm = (link: Link) => {
     // Check if user has reached their submission limit
