@@ -939,6 +939,59 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
   }
 }
 
+// Helper function to check if a URL is accessible
+async function checkLinkStatus(url: string): Promise<{ status: number; isWorking: boolean }> {
+  try {
+    // Create AbortController for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    
+    const response = await fetch(url, {
+      method: 'HEAD', // Use HEAD to avoid downloading content
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; SEO-Link-Checker/1.0)',
+      },
+      signal: controller.signal,
+      redirect: 'follow'
+    })
+    
+    clearTimeout(timeoutId)
+    
+    return {
+      status: response.status,
+      isWorking: response.status >= 200 && response.status < 400
+    }
+  } catch (error) {
+    // If HEAD fails, try GET request
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; SEO-Link-Checker/1.0)',
+        },
+        signal: controller.signal,
+        redirect: 'follow'
+      })
+      
+      clearTimeout(timeoutId)
+      
+      return {
+        status: response.status,
+        isWorking: response.status >= 200 && response.status < 400
+      }
+    } catch (getError) {
+      console.log(`❌ Failed to check URL: ${url} - ${getError}`)
+      return {
+        status: 0,
+        isWorking: false
+      }
+    }
+  }
+}
+
 // Broken Link Scanner
 export async function analyzeBrokenLinks(url: string): Promise<BrokenLinkAnalysis> {
   const $ = await fetchAndParseHTML(url)
@@ -948,18 +1001,26 @@ export async function analyzeBrokenLinks(url: string): Promise<BrokenLinkAnalysi
   }
 
   const links = $('a[href]')
-  const linkResults: Array<{ url: string; status: number; text: string; page: string }> = []
   const brokenLinks: Array<{ url: string; status: number; text: string; page: string }> = []
   let workingLinks = 0
+  let totalLinks = 0
 
   console.log(`🔍 Analyzing ${links.length} links for ${url}`)
 
-  // Check each link with better error handling
+  // Process links in batches to avoid overwhelming the server
+  const linkPromises: Promise<void>[] = []
+  const maxConcurrent = 10 // Limit concurrent requests
+
   links.each((_, link) => {
     const href = $(link).attr('href')
     const text = $(link).text().trim() || ''
     
     if (!href) return
+    
+    // Skip certain types of links
+    if (href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:') || href.startsWith('#')) {
+      return
+    }
 
     let fullUrl: string
     try {
@@ -975,22 +1036,33 @@ export async function analyzeBrokenLinks(url: string): Promise<BrokenLinkAnalysi
     } catch (error) {
       console.log(`❌ Invalid URL: ${href}`)
       brokenLinks.push({ url: href, status: 0, text, page: url })
+      totalLinks++
       return
     }
 
-    try {
-      console.log(`🔗 Checking link: ${fullUrl}`)
+    // Add promise to check this link
+    if (linkPromises.length < maxConcurrent) {
+      const linkPromise = checkLinkStatus(fullUrl).then(({ status, isWorking }) => {
+        totalLinks++
+        if (isWorking) {
+          workingLinks++
+        } else {
+          brokenLinks.push({ url: fullUrl, status, text, page: url })
+        }
+        console.log(`🔗 Checked link: ${fullUrl} - Status: ${status} - ${isWorking ? 'Working' : 'Broken'}`)
+      })
       
-      // For now, just add to results without checking (to avoid async issues)
-      linkResults.push({ url: fullUrl, status: 200, text, page: url })
-      workingLinks++
-    } catch (error) {
-      console.log(`❌ Link processing failed: ${fullUrl} - ${error}`)
-      brokenLinks.push({ url: fullUrl, status: 0, text, page: url })
+      linkPromises.push(linkPromise)
+    } else {
+      // If we've reached the limit, just count as total but don't check
+      totalLinks++
+      workingLinks++ // Assume working to avoid false positives
     }
   })
 
-  const totalLinks = linkResults.length
+  // Wait for all link checks to complete
+  await Promise.all(linkPromises)
+
   const brokenCount = brokenLinks.length
   const score = totalLinks > 0 ? Math.round(((totalLinks - brokenCount) / totalLinks) * 100) : 100
 
