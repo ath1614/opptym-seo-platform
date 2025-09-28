@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,8 +10,27 @@ import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Code, CheckCircle, AlertTriangle, ExternalLink, Copy, Download, Eye, Zap } from 'lucide-react'
+import { Code, CheckCircle, AlertTriangle, ExternalLink, Copy, Download, Eye, Zap, Sparkles, Loader2 } from 'lucide-react'
 import { SEOToolLayout } from './seo-tool-layout'
+import { useToast } from '@/components/ui/toast'
+
+interface Project {
+  _id: string
+  projectName: string
+  websiteURL?: string
+  companyName?: string
+  businessDescription?: string
+  metaTitle?: string
+  metaDescription?: string
+  logoImageURL?: string
+  streetAddress?: string
+  city?: string
+  state?: string
+  zipCode?: string
+  phone?: string
+  priceRange?: string
+  establishedYear?: string
+}
 
 const schemaTypes = [
   { value: 'article', label: 'Article', category: 'Content' },
@@ -154,6 +173,14 @@ export function SchemaMarkupGenerator() {
   const [isValidating, setIsValidating] = useState(false)
   const [validationResults, setValidationResults] = useState<ValidationResult | null>(null)
   
+  // Project-related state
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProject, setSelectedProject] = useState('')
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true)
+  const [isAutoPopulating, setIsAutoPopulating] = useState(false)
+  
+  const { showToast } = useToast()
+  
   const [formData, setFormData] = useState({
     // Common fields
     name: '',
@@ -216,6 +243,118 @@ export function SchemaMarkupGenerator() {
     videoDuration: '',
     thumbnailUrl: ''
   })
+
+  // Fetch projects on component mount
+  useEffect(() => {
+    fetchProjects()
+  }, [])
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      } else {
+        console.error('Failed to fetch projects')
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    } finally {
+      setIsLoadingProjects(false)
+    }
+  }
+
+  // Auto-populate form with project data
+  const autoPopulateFromProject = async () => {
+    if (!selectedProject) {
+      showToast({
+        title: 'No Project Selected',
+        description: 'Please select a project to auto-populate the form.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setIsAutoPopulating(true)
+    
+    try {
+      const project = projects.find(p => p._id === selectedProject)
+      if (!project) {
+        throw new Error('Project not found')
+      }
+
+      // Map project data to form fields based on schema type
+      const updatedFormData = { ...formData }
+      
+      // Common mappings for all schema types
+      updatedFormData.name = project.projectName || project.companyName || ''
+      updatedFormData.description = project.businessDescription || project.metaDescription || ''
+      updatedFormData.url = project.websiteURL || ''
+      updatedFormData.image = project.logoImageURL || ''
+      
+      // Schema-specific mappings
+      switch (schemaType) {
+        case 'article':
+        case 'blogPosting':
+        case 'newsArticle':
+          updatedFormData.headline = project.metaTitle || project.projectName || ''
+          updatedFormData.author = project.companyName || ''
+          updatedFormData.publisher = project.companyName || ''
+          updatedFormData.datePublished = new Date().toISOString().split('T')[0]
+          break
+          
+        case 'localBusiness':
+        case 'restaurant':
+          updatedFormData.name = project.companyName || project.projectName || ''
+          updatedFormData.address = `${project.streetAddress || ''} ${project.city || ''} ${project.state || ''} ${project.zipCode || ''}`.trim()
+          updatedFormData.telephone = project.phone || ''
+          updatedFormData.priceRange = project.priceRange || ''
+          break
+          
+        case 'product':
+          updatedFormData.name = project.projectName || ''
+          updatedFormData.brand = project.companyName || ''
+          updatedFormData.description = project.businessDescription || ''
+          break
+          
+        case 'organization':
+          updatedFormData.name = project.companyName || project.projectName || ''
+          updatedFormData.foundingDate = project.establishedYear ? `${project.establishedYear}-01-01` : ''
+          updatedFormData.address = `${project.streetAddress || ''} ${project.city || ''} ${project.state || ''} ${project.zipCode || ''}`.trim()
+          updatedFormData.telephone = project.phone || ''
+          break
+          
+        case 'website':
+          updatedFormData.name = project.projectName || ''
+          updatedFormData.description = project.metaDescription || project.businessDescription || ''
+          break
+          
+        case 'jobPosting':
+          updatedFormData.name = project.projectName || ''
+          updatedFormData.description = project.businessDescription || ''
+          break
+      }
+      
+      setFormData(updatedFormData)
+      
+      showToast({
+        title: 'Form Auto-Populated',
+        description: 'Form fields have been filled with project data. You can now review and modify as needed.',
+        variant: 'success'
+      })
+      
+    } catch (error) {
+      console.error('Error auto-populating form:', error)
+      showToast({
+        title: 'Auto-Population Failed',
+        description: 'There was an error auto-populating the form. Please try again.',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsAutoPopulating(false)
+    }
+  }
 
   // Validation functions
   const validateSchema = (schema: SchemaData): ValidationResult => {
@@ -1012,6 +1151,60 @@ export function SchemaMarkupGenerator() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Project Selection and Auto-Fill */}
+                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Sparkles className="h-4 w-4 text-blue-600" />
+                        Auto-Fill from Project
+                      </CardTitle>
+                      <CardDescription className="text-xs">
+                        Select a project to automatically populate schema fields with your project data
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <Select 
+                            value={selectedProject} 
+                            onValueChange={setSelectedProject}
+                            disabled={isLoadingProjects}
+                          >
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder={isLoadingProjects ? "Loading projects..." : "Select a project"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {projects.map((project) => (
+                                <SelectItem key={project._id} value={project._id}>
+                                  {project.projectName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          onClick={autoPopulateFromProject}
+                          disabled={!selectedProject || isAutoPopulating}
+                          variant="outline"
+                          size="sm"
+                          className="bg-white hover:bg-blue-50 border-blue-200"
+                        >
+                          {isAutoPopulating ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Filling...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-4 w-4 mr-2" />
+                              Auto-Fill
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                   
                   {renderFormFields()}
                   
