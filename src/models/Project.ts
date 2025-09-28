@@ -22,6 +22,13 @@ export interface IProject extends Document {
   // Business Description
   businessDescription: string
   
+  // Project-specific fields
+  keywords: string[]
+  targetAudience: string
+  competitors: string[]
+  goals: string
+  notes: string
+  
   // Address
   address: {
     building: string
@@ -158,6 +165,31 @@ const ProjectSchema = new Schema<IProject>({
     required: [true, 'Business description is required'],
     trim: true,
     maxlength: [2000, 'Business description cannot exceed 2000 characters']
+  },
+  
+  // Project-specific fields
+  keywords: [{
+    type: String,
+    trim: true
+  }],
+  targetAudience: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Target audience cannot exceed 500 characters']
+  },
+  competitors: [{
+    type: String,
+    trim: true
+  }],
+  goals: {
+    type: String,
+    trim: true,
+    maxlength: [1000, 'Goals cannot exceed 1000 characters']
+  },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: [2000, 'Notes cannot exceed 2000 characters']
   },
   
   // Address
