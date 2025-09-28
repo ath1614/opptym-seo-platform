@@ -135,10 +135,12 @@ export function ProjectList() {
         method: 'DELETE'
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         showToast({
           title: 'Project Deleted',
-          description: `"${projectName}" has been deleted successfully.`,
+          description: data.message || `"${projectName}" has been deleted successfully.`,
           variant: 'success'
         })
         fetchProjects() // Refresh the list
@@ -146,14 +148,15 @@ export function ProjectList() {
       } else {
         showToast({
           title: 'Error',
-          description: 'Failed to delete project',
+          description: data.message || data.error || 'Failed to delete project',
           variant: 'destructive'
         })
       }
-    } catch {
+    } catch (error) {
+      console.error('Delete project error:', error)
       showToast({
         title: 'Error',
-        description: 'Network error while deleting project',
+        description: 'Network error while deleting project. Please check your connection and try again.',
         variant: 'destructive'
       })
     }

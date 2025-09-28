@@ -145,24 +145,27 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
         method: 'DELETE'
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         showToast({
           title: 'Project Deleted',
-          description: `"${project.projectName}" has been deleted successfully.`,
+          description: data.message || `"${project.projectName}" has been deleted successfully.`,
           variant: 'success'
         })
         router.push('/dashboard/projects')
       } else {
         showToast({
           title: 'Error',
-          description: 'Failed to delete project',
+          description: data.message || data.error || 'Failed to delete project',
           variant: 'destructive'
         })
       }
-    } catch {
+    } catch (error) {
+      console.error('Delete project error:', error)
       showToast({
         title: 'Error',
-        description: 'Network error while deleting project',
+        description: 'Network error while deleting project. Please check your connection and try again.',
         variant: 'destructive'
       })
     }

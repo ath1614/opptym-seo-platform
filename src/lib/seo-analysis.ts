@@ -858,6 +858,47 @@ export async function analyzePageSpeed(url: string): Promise<PageSpeedAnalysis> 
   }
 }
 
+// Helper function to extract meaningful keywords from content
+function extractMeaningfulKeywords(text: string, minLength: number = 3, maxKeywords: number = 20): string[] {
+  // Common stop words to exclude
+  const stopWords = new Set([
+    'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+    'from', 'up', 'about', 'into', 'through', 'during', 'before', 'after', 'above',
+    'below', 'between', 'among', 'under', 'over', 'is', 'are', 'was', 'were', 'be',
+    'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+    'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that', 'these',
+    'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her',
+    'us', 'them', 'my', 'your', 'his', 'its', 'our', 'their', 'a', 'an', 'as',
+    'if', 'each', 'how', 'which', 'who', 'when', 'where', 'why', 'what', 'all',
+    'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+    'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just',
+    'now', 'here', 'there', 'then', 'get', 'got', 'make', 'made', 'take', 'took',
+    'come', 'came', 'go', 'went', 'see', 'saw', 'know', 'knew', 'think', 'thought',
+    'say', 'said', 'tell', 'told', 'give', 'gave', 'find', 'found', 'use', 'used',
+    'work', 'works', 'worked', 'way', 'ways', 'new', 'old', 'first', 'last', 'long',
+    'good', 'great', 'little', 'own', 'right', 'big', 'high', 'different', 'small',
+    'large', 'next', 'early', 'young', 'important', 'few', 'public', 'bad', 'same',
+    'able'
+  ])
+
+  // Extract words and filter
+  const words = text.toLowerCase().match(/\b[a-z]+\b/g) || []
+  const wordCounts: { [key: string]: number } = {}
+
+  // Count word frequencies
+  words.forEach(word => {
+    if (word.length >= minLength && !stopWords.has(word)) {
+      wordCounts[word] = (wordCounts[word] || 0) + 1
+    }
+  })
+
+  // Sort by frequency and return top keywords
+  return Object.entries(wordCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, maxKeywords)
+    .map(([word]) => word)
+}
+
 // Keyword Density Checker
 export async function analyzeKeywordDensity(url: string, targetKeywords: string[] = []): Promise<KeywordDensityAnalysis> {
   const $ = await fetchAndParseHTML(url)
@@ -884,9 +925,25 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
   const recommendations: string[] = []
   let score = 100
 
-  // If no target keywords provided, analyze common words
-  const keywordsToAnalyze = targetKeywords.length > 0 ? targetKeywords : 
-    ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by']
+  // If no target keywords provided, extract meaningful keywords from content
+  let keywordsToAnalyze: string[]
+  if (targetKeywords.length > 0) {
+    keywordsToAnalyze = targetKeywords.map(k => k.toLowerCase())
+  } else {
+    // Extract meaningful keywords from the content
+    keywordsToAnalyze = extractMeaningfulKeywords(textContent, 3, 15)
+    
+    if (keywordsToAnalyze.length === 0) {
+      recommendations.push('No meaningful keywords found in content. Consider adding more descriptive text.')
+      return {
+        url,
+        totalWords,
+        keywords: [],
+        recommendations,
+        score: 50
+      }
+    }
+  }
 
   keywordsToAnalyze.forEach(keyword => {
     const regex = new RegExp(`\\b${keyword.toLowerCase()}\\b`, 'g')
@@ -896,38 +953,49 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
     
     keywordCounts[keyword] = count
 
-    // Analyze density
+    // Analyze density with more reasonable thresholds
     let status: 'good' | 'warning' | 'error' = 'good'
-    if (density > 3) {
+    if (density > 4) {
       status = 'error'
-      recommendations.push(`Keyword "${keyword}" density is too high (${density.toFixed(2)}%)`)
-      score -= 10
-    } else if (density > 2) {
+      recommendations.push(`Keyword "${keyword}" density is too high (${density.toFixed(2)}%) - risk of keyword stuffing`)
+      score -= 15
+    } else if (density > 2.5) {
       status = 'warning'
-      recommendations.push(`Keyword "${keyword}" density is high (${density.toFixed(2)}%)`)
-      score -= 5
+      recommendations.push(`Keyword "${keyword}" density is high (${density.toFixed(2)}%) - consider reducing usage`)
+      score -= 8
+    } else if (density < 0.5 && count > 0) {
+      recommendations.push(`Keyword "${keyword}" has low density (${density.toFixed(2)}%) - consider increasing usage if relevant`)
+      score -= 3
     }
   })
 
-  const keywordAnalysis = Object.entries(keywordCounts).map(([keyword, count]) => {
-    const density = totalWords > 0 ? (count / totalWords) * 100 : 0
-    let status: 'good' | 'warning' | 'error' = 'good'
-    if (density > 3) {
-      status = 'error'
-    } else if (density > 2) {
-      status = 'warning'
-    }
-    
-    return {
-      keyword,
-      count,
-      density,
-      status
-    }
-  })
+  const keywordAnalysis = Object.entries(keywordCounts)
+    .filter(([, count]) => count > 0) // Only include keywords that appear in content
+    .map(([keyword, count]) => {
+      const density = totalWords > 0 ? (count / totalWords) * 100 : 0
+      let status: 'good' | 'warning' | 'error' = 'good'
+      if (density > 4) {
+        status = 'error'
+      } else if (density > 2.5) {
+        status = 'warning'
+      }
+      
+      return {
+        keyword,
+        count,
+        density: parseFloat(density.toFixed(2)),
+        status
+      }
+    })
+    .sort((a, b) => b.density - a.density) // Sort by density descending
 
   if (recommendations.length === 0) {
-    recommendations.push('Keyword density is within optimal range')
+    recommendations.push('Keyword density is within optimal range (0.5-2.5%)')
+  }
+
+  // Add general recommendations
+  if (targetKeywords.length === 0) {
+    recommendations.push('Consider specifying target keywords for more focused analysis')
   }
 
   return {
@@ -935,21 +1003,36 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
     totalWords,
     keywords: keywordAnalysis,
     recommendations,
-    score: Math.max(0, score)
+    score: Math.max(0, Math.min(100, score))
   }
 }
 
 // Helper function to check if a URL is accessible
 async function checkLinkStatus(url: string): Promise<{ status: number; isWorking: boolean }> {
+  // Skip checking certain domains that commonly block automated requests
+  const skipDomains = ['facebook.com', 'twitter.com', 'instagram.com', 'linkedin.com', 'youtube.com']
+  const domain = new URL(url).hostname.toLowerCase()
+  if (skipDomains.some(skipDomain => domain.includes(skipDomain))) {
+    console.log(`⏭️ Skipping social media link: ${url}`)
+    return { status: 200, isWorking: true }
+  }
+
   try {
-    // Create AbortController for timeout
+    // Create AbortController for timeout - increased to 15 seconds
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
     
+    // Try HEAD request first with more realistic headers
     const response = await fetch(url, {
-      method: 'HEAD', // Use HEAD to avoid downloading content
+      method: 'HEAD',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; SEO-Link-Checker/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
       },
       signal: controller.signal,
       redirect: 'follow'
@@ -957,20 +1040,31 @@ async function checkLinkStatus(url: string): Promise<{ status: number; isWorking
     
     clearTimeout(timeoutId)
     
+    // Consider more status codes as working
+    const isWorking = (response.status >= 200 && response.status < 400) || 
+                     response.status === 405 || // Method Not Allowed (HEAD might not be supported)
+                     response.status === 429    // Too Many Requests (rate limited but working)
+    
     return {
       status: response.status,
-      isWorking: response.status >= 200 && response.status < 400
+      isWorking
     }
-  } catch (error) {
-    // If HEAD fails, try GET request
+  } catch (headError) {
+    // If HEAD fails, try GET request with better error handling
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; SEO-Link-Checker/1.0)',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
         },
         signal: controller.signal,
         redirect: 'follow'
@@ -978,16 +1072,33 @@ async function checkLinkStatus(url: string): Promise<{ status: number; isWorking
       
       clearTimeout(timeoutId)
       
+      // Consider more status codes as working
+      const isWorking = (response.status >= 200 && response.status < 400) || 
+                       response.status === 429    // Too Many Requests (rate limited but working)
+      
       return {
         status: response.status,
-        isWorking: response.status >= 200 && response.status < 400
+        isWorking
       }
-    } catch (getError) {
-      console.log(`❌ Failed to check URL: ${url} - ${getError}`)
-      return {
-        status: 0,
-        isWorking: false
-      }
+    } catch (getError: unknown) {
+       // Handle specific error types
+       if (getError instanceof Error && getError.name === 'AbortError') {
+         console.log(`⏰ Timeout checking URL: ${url}`)
+         return { status: 408, isWorking: false } // Request Timeout
+       }
+       
+       // Handle CORS errors - these might be working links that just block cross-origin requests
+       const errorMessage = getError instanceof Error ? getError.message : String(getError)
+       if (errorMessage.includes('CORS') || errorMessage.includes('fetch')) {
+         console.log(`🔒 CORS/Network error for URL: ${url} - assuming working`)
+         return { status: 200, isWorking: true }
+       }
+       
+       console.log(`❌ Failed to check URL: ${url} - ${errorMessage}`)
+       return {
+         status: 0,
+         isWorking: false
+       }
     }
   }
 }

@@ -1070,7 +1070,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
                     <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className={getFieldError('category') ? 'border-red-500' : ''}>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1085,6 +1085,12 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                    {getFieldError('category') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('category')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('category')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1097,7 +1103,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('companyName', e.target.value)}
                       placeholder="Enter company name"
                       required
+                      className={getFieldError('companyName') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('companyName') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('companyName')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('companyName')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone *</Label>
@@ -1107,7 +1120,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       placeholder="+1 (555) 123-4567"
                       required
+                      className={getFieldError('phone') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('phone') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('phone')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('phone')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1130,7 +1150,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     placeholder="Describe your business..."
                     rows={4}
                     required
+                    className={getFieldError('businessDescription') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('businessDescription') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('businessDescription')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('businessDescription')}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Project-specific fields */}
@@ -1233,7 +1260,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     onChange={(e) => handleInputChange('address.addressLine1', e.target.value)}
                     placeholder="Street address"
                     required
+                    className={getFieldError('address.addressLine1') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('address.addressLine1') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('address.addressLine1')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('address.addressLine1')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1265,7 +1299,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('address.district', e.target.value)}
                       placeholder="District"
                       required
+                      className={getFieldError('address.district') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('address.district') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('address.district')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('address.district')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">City *</Label>
@@ -1275,7 +1316,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('address.city', e.target.value)}
                       placeholder="City"
                       required
+                      className={getFieldError('address.city') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('address.city') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('address.city')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('address.city')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1288,7 +1336,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('address.state', e.target.value)}
                       placeholder="State"
                       required
+                      className={getFieldError('address.state') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('address.state') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('address.state')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('address.state')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="country">Country *</Label>
@@ -1298,7 +1353,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       onChange={(e) => handleInputChange('address.country', e.target.value)}
                       placeholder="Country"
                       required
+                      className={getFieldError('address.country') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('address.country') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('address.country')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('address.country')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1310,7 +1372,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     onChange={(e) => handleInputChange('address.pincode', e.target.value)}
                     placeholder="Postal code"
                     required
+                    className={getFieldError('address.pincode') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('address.pincode') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('address.pincode')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('address.pincode')}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1332,7 +1401,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Input
                     id="keywords"
                     value={formData.keywords.join(', ')}
-                    onChange={(e) => handleInputChange('keywords', e.target.value.split(',').map(k => k.trim()).filter(k => k))}
+                    onChange={(e) => handleArrayFieldChange('keywords', e.target.value)}
                     placeholder="Enter keywords separated by commas (e.g., seo, digital marketing, web design)"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -1345,7 +1414,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Input
                     id="competitors"
                     value={formData.competitors.join(', ')}
-                    onChange={(e) => handleInputChange('competitors', e.target.value.split(',').map(c => c.trim()).filter(c => c))}
+                    onChange={(e) => handleArrayFieldChange('competitors', e.target.value)}
                     placeholder="Enter competitor websites separated by commas"
                   />
                   <p className="text-xs text-muted-foreground">
