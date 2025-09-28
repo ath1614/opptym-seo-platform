@@ -42,9 +42,9 @@ export async function GET(request: NextRequest) {
         'directory': 'Directory Submission',
         'article': 'Article Submission',
         'press-release': 'Press Release',
-        'bookmarking': 'Social Bookmarking',
+        'bookmarking': 'BookMarking',
         'business-listing': 'Business Listing',
-        'classified': 'Classified Ads',
+        'classified': 'Classified',
         'other': 'More SEO'
       }
       query.classification = categoryMap[category] || category

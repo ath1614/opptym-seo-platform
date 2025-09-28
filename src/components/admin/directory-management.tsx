@@ -722,10 +722,12 @@ export function DirectoryManagement() {
                     <>
                       <SelectItem value="Directory Submission">Directory Submission</SelectItem>
                       <SelectItem value="Article Submission">Article Submission</SelectItem>
-                      <SelectItem value="Press Release">Press Release</SelectItem>
-                      <SelectItem value="Social Bookmarking">Social Bookmarking</SelectItem>
+                      <SelectItem value="Article">Article</SelectItem>
+                      <SelectItem value="BookMarking">BookMarking</SelectItem>
                       <SelectItem value="Business Listing">Business Listing</SelectItem>
-                      <SelectItem value="Classified Ads">Classified Ads</SelectItem>
+                      <SelectItem value="Classified">Classified</SelectItem>
+                      <SelectItem value="More SEO">More SEO</SelectItem>
+                      <SelectItem value="Press Release">Press Release</SelectItem>
                     </>
                   )}
                 </SelectContent>
