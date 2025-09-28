@@ -42,28 +42,40 @@ export async function POST(
       }, { status: 429 })
     }
 
-    // Run competitor analysis
-    const analysisResult = await analyzeCompetitors(project.websiteURL)
-    
-    // Save usage to database
-    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-    const seoToolUsage = new SeoToolUsage({
-      userId: session.user.id,
-      projectId: projectId,
-      toolId: 'competitor-analyzer',
-      toolName: 'Competitor Analyzer',
-      url: project.websiteURL,
-      results: analysisResult,
-      createdAt: new Date()
-    })
+    try {
+      // Run competitor analysis
+      const analysisResult = await analyzeCompetitors(project.websiteURL)
+      
+      // Only save usage to database AFTER successful analysis
+      const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+      const seoToolUsage = new SeoToolUsage({
+        userId: session.user.id,
+        projectId: projectId,
+        toolId: 'competitor-analyzer',
+        toolName: 'Competitor Analyzer',
+        url: project.websiteURL,
+        results: analysisResult,
+        createdAt: new Date()
+      })
 
-    await seoToolUsage.save()
+      await seoToolUsage.save()
 
-    return NextResponse.json({
-      success: true,
-      data: analysisResult,
-      message: 'Competitor analysis completed successfully'
-    })
+      return NextResponse.json({
+        success: true,
+        data: analysisResult,
+        message: 'Competitor analysis completed successfully'
+      })
+    } catch (analysisError) {
+      console.error('Competitor analysis failed:', analysisError)
+      // Don't save stats if analysis fails
+      return NextResponse.json(
+        { 
+          error: 'Analysis failed',
+          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Competitor analyzer error:', error)

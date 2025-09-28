@@ -45,32 +45,45 @@ export async function POST(
     }
 
     // Perform keyword research analysis
-    const analysisResult = await analyzeKeywordResearch(project.websiteURL)
-    
-    // Add seed keyword to results if provided
-    if (seedKeyword) {
-      analysisResult.seedKeyword = seedKeyword
-    }
-    
-    // Save usage to database
-    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-    const seoToolUsage = new SeoToolUsage({
-      userId: session.user.id,
-      projectId: projectId,
-      toolId: 'keyword-researcher',
-      toolName: 'Keyword Researcher',
-      url: project.websiteURL,
-      results: analysisResult,
-      createdAt: new Date()
-    })
+    try {
+       // Run keyword research analysis
+       const analysisResult = await analyzeKeywordResearch(project.websiteURL)
+       
+       // Add seed keyword to results if provided
+       if (seedKeyword) {
+         analysisResult.seedKeyword = seedKeyword
+       }
+       
+       // Only save usage to database AFTER successful analysis
+       const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+       const seoToolUsage = new SeoToolUsage({
+         userId: session.user.id,
+         projectId: projectId,
+         toolId: 'keyword-research',
+         toolName: 'Keyword Research',
+         url: project.websiteURL,
+         results: analysisResult,
+         createdAt: new Date()
+       })
 
-    await seoToolUsage.save()
+       await seoToolUsage.save()
 
-    return NextResponse.json({
-      success: true,
-      data: analysisResult,
-      message: 'Keyword research completed successfully'
-    })
+       return NextResponse.json({
+         success: true,
+         data: analysisResult,
+         message: 'Keyword research analysis completed successfully'
+       })
+     } catch (analysisError) {
+       console.error('Keyword research analysis failed:', analysisError)
+       // Don't save stats if analysis fails
+       return NextResponse.json(
+         { 
+           error: 'Analysis failed',
+           details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+         },
+         { status: 500 }
+       )
+     }
 
   } catch (error) {
     console.error('Keyword researcher error:', error)

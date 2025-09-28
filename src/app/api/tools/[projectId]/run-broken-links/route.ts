@@ -42,28 +42,40 @@ export async function POST(
       }, { status: 429 })
     }
 
-    // Run broken link analysis
-    const analysisResult = await analyzeBrokenLinks(project.websiteURL)
-    
-    // Save usage to database
-    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-    const seoToolUsage = new SeoToolUsage({
-      userId: session.user.id,
-      projectId: projectId,
-      toolId: 'broken-link-scanner',
-      toolName: 'Broken Link Scanner',
-      url: project.websiteURL,
-      results: analysisResult,
-      createdAt: new Date()
-    })
+    try {
+      // Run broken link analysis
+      const analysisResult = await analyzeBrokenLinks(project.websiteURL)
+      
+      // Only save usage to database AFTER successful analysis
+      const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+      const seoToolUsage = new SeoToolUsage({
+        userId: session.user.id,
+        projectId: projectId,
+        toolId: 'broken-link-scanner',
+        toolName: 'Broken Link Scanner',
+        url: project.websiteURL,
+        results: analysisResult,
+        createdAt: new Date()
+      })
 
-    await seoToolUsage.save()
+      await seoToolUsage.save()
 
-    return NextResponse.json({
-      success: true,
-      data: analysisResult,
-      message: 'Broken link analysis completed successfully'
-    })
+      return NextResponse.json({
+        success: true,
+        data: analysisResult,
+        message: 'Broken link analysis completed successfully'
+      })
+    } catch (analysisError) {
+      console.error('Broken link analysis failed:', analysisError)
+      // Don't save stats if analysis fails
+      return NextResponse.json(
+        { 
+          error: 'Analysis failed',
+          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Broken link scanner error:', error)

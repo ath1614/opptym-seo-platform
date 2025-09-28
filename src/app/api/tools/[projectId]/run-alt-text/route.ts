@@ -42,28 +42,40 @@ export async function POST(
       }, { status: 429 })
     }
 
-    // Run alt text analysis
-    const analysisResult = await analyzeAltText(project.websiteURL)
-    
-    // Save usage to database
-    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-    const seoToolUsage = new SeoToolUsage({
-      userId: session.user.id,
-      projectId: projectId,
-      toolId: 'alt-text-checker',
-      toolName: 'Alt Text Checker',
-      url: project.websiteURL,
-      results: analysisResult,
-      createdAt: new Date()
-    })
+    try {
+      // Run alt text analysis
+      const analysisResult = await analyzeAltText(project.websiteURL)
+      
+      // Only save usage to database AFTER successful analysis
+      const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+      const seoToolUsage = new SeoToolUsage({
+        userId: session.user.id,
+        projectId: projectId,
+        toolId: 'alt-text-analyzer',
+        toolName: 'Alt Text Analyzer',
+        url: project.websiteURL,
+        results: analysisResult,
+        createdAt: new Date()
+      })
 
-    await seoToolUsage.save()
+      await seoToolUsage.save()
 
-    return NextResponse.json({
-      success: true,
-      data: analysisResult,
-      message: 'Alt text analysis completed successfully'
-    })
+      return NextResponse.json({
+        success: true,
+        data: analysisResult,
+        message: 'Alt text analysis completed successfully'
+      })
+    } catch (analysisError) {
+      console.error('Alt text analysis failed:', analysisError)
+      // Don't save stats if analysis fails
+      return NextResponse.json(
+        { 
+          error: 'Analysis failed',
+          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Alt text checker error:', error)

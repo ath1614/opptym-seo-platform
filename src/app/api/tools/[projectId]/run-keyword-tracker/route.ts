@@ -54,28 +54,40 @@ export async function POST(
       throw new Error(`Invalid project URL: ${project.websiteURL}`)
     }
     
-    const analysisResult = await analyzeKeywordTracking(project.websiteURL)
-    console.log(`✅ Analysis completed for project: ${projectId}`)
-    
-    // Save usage to database
-    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-    const seoToolUsage = new SeoToolUsage({
-      userId: session.user.id,
-      projectId: projectId,
-      toolId: 'keyword-tracker',
-      toolName: 'Keyword Tracker',
-      url: project.websiteURL,
-      results: analysisResult,
-      createdAt: new Date()
-    })
+    try {
+      // Run keyword tracking analysis
+      const analysisResult = await analyzeKeywordTracking(project.websiteURL)
+      
+      // Only save usage to database AFTER successful analysis
+      const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+      const seoToolUsage = new SeoToolUsage({
+        userId: session.user.id,
+        projectId: projectId,
+        toolId: 'keyword-tracker',
+        toolName: 'Keyword Tracker',
+        url: project.websiteURL,
+        results: analysisResult,
+        createdAt: new Date()
+      })
 
-    await seoToolUsage.save()
+      await seoToolUsage.save()
 
-    return NextResponse.json({
-      success: true,
-      data: analysisResult,
-      message: 'Keyword tracking analysis completed successfully'
-    })
+      return NextResponse.json({
+        success: true,
+        data: analysisResult,
+        message: 'Keyword tracking analysis completed successfully'
+      })
+    } catch (analysisError) {
+      console.error('Keyword tracking analysis failed:', analysisError)
+      // Don't save stats if analysis fails
+      return NextResponse.json(
+        { 
+          error: 'Analysis failed',
+          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Keyword tracker error:', error)

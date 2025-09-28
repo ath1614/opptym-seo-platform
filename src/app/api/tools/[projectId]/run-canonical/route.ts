@@ -43,27 +43,40 @@ export async function POST(
     }
 
     // Run canonical analysis
-    const analysisResult = await analyzeCanonical(project.websiteURL)
-    
-    // Save usage to database
-    const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
-    const seoToolUsage = new SeoToolUsage({
-      userId: session.user.id,
-      projectId: projectId,
-      toolId: 'canonical-checker',
-      toolName: 'Canonical Checker',
-      url: project.websiteURL,
-      results: analysisResult,
-      createdAt: new Date()
-    })
+    try {
+      // Run canonical URL analysis
+      const analysisResult = await analyzeCanonical(project.websiteURL)
+      
+      // Only save usage to database AFTER successful analysis
+      const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+      const seoToolUsage = new SeoToolUsage({
+        userId: session.user.id,
+        projectId: projectId,
+        toolId: 'canonical-url-checker',
+        toolName: 'Canonical URL Checker',
+        url: project.websiteURL,
+        results: analysisResult,
+        createdAt: new Date()
+      })
 
-    await seoToolUsage.save()
+      await seoToolUsage.save()
 
-    return NextResponse.json({
-      success: true,
-      data: analysisResult,
-      message: 'Canonical analysis completed successfully'
-    })
+      return NextResponse.json({
+        success: true,
+        data: analysisResult,
+        message: 'Canonical URL analysis completed successfully'
+      })
+    } catch (analysisError) {
+      console.error('Canonical URL analysis failed:', analysisError)
+      // Don't save stats if analysis fails
+      return NextResponse.json(
+        { 
+          error: 'Analysis failed',
+          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
+        },
+        { status: 500 }
+      )
+    }
 
   } catch (error) {
     console.error('Canonical checker error:', error)
