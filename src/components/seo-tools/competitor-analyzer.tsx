@@ -31,7 +31,6 @@ import {
   Sparkles,
   RefreshCw
 } from 'lucide-react'
-import { SEOToolLayout } from './seo-tool-layout'
 import { useToast } from '@/components/ui/toast'
 
 interface Project {
@@ -388,12 +387,17 @@ export function CompetitorAnalyzer() {
   }
 
   return (
-    <SEOToolLayout 
-      toolId="competitor-analyzer"
-      toolName="Advanced Competitor Analyzer"
-      toolDescription="Comprehensive competitor analysis with market insights, competitive gaps, and strategic recommendations"
-      mockData={{}}
-    >
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Advanced Competitor Analyzer</h1>
+          <p className="text-muted-foreground mt-2">
+            Comprehensive competitor analysis with market insights, competitive gaps, and strategic recommendations
+          </p>
+        </div>
+      </div>
+
       <div className="space-y-6">
         {/* Analysis Configuration */}
         <Card>
@@ -867,7 +871,7 @@ export function CompetitorAnalyzer() {
           </Card>
         )}
       </div>
-    </SEOToolLayout>
+    </div>
   )
 }
 
