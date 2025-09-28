@@ -1,4 +1,3 @@
-import axios from 'axios'
 import * as cheerio from 'cheerio'
 
 export interface MetaTagAnalysis {
@@ -362,11 +361,22 @@ export interface CanonicalAnalysis {
   score: number
 }
 
-// Utility function to fetch and parse HTML using axios and cheerio
+// Utility function to fetch and parse HTML using native fetch and cheerio
 async function fetchAndParseHTML(url: string): Promise<cheerio.CheerioAPI | null> {
   try {
     console.log(`🌐 Fetching URL: ${url}`)
     
+    // Validate URL format
+    if (!url || typeof url !== 'string') {
+      throw new Error('Invalid URL provided')
+    }
+
+    // Ensure URL has protocol
+    let validUrl = url
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      validUrl = `https://${url}`
+    }
+
     // Try multiple user agents to avoid blocking
     const userAgents = [
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -377,32 +387,49 @@ async function fetchAndParseHTML(url: string): Promise<cheerio.CheerioAPI | null
     
     const randomUserAgent = userAgents[Math.floor(Math.random() * userAgents.length)]
     
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': randomUserAgent,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip, deflate',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      },
-      timeout: 15000, // 15 second timeout
-      maxRedirects: 5,
-      validateStatus: (status) => status < 400
-    })
+    // Use AbortController for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
     
-    console.log(`📡 Response status: ${response.status}`)
-    console.log(`📄 HTML length: ${response.data.length} characters`)
-    
-    if (response.data.length < 100) {
-      throw new Error('Response too short, likely blocked or invalid')
+    try {
+      const response = await fetch(validUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': randomUserAgent,
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        signal: controller.signal,
+        redirect: 'follow'
+      })
+      
+      clearTimeout(timeoutId)
+      
+      console.log(`📡 Response status: ${response.status}`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const html = await response.text()
+      console.log(`📄 HTML length: ${html.length} characters`)
+      
+      if (html.length < 100) {
+        throw new Error('Response too short, likely blocked or invalid')
+      }
+      
+      const $ = cheerio.load(html)
+      console.log(`✅ Successfully parsed HTML for ${validUrl}`)
+      return $
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      throw fetchError
     }
-    
-    const $ = cheerio.load(response.data)
-    console.log(`✅ Successfully parsed HTML for ${url}`)
-    return $
   } catch (error) {
     console.error('❌ Error fetching URL:', error)
     console.error('Error details:', {
@@ -1386,6 +1413,12 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
   try {
     console.log(`🔍 Starting keyword research analysis for ${url}`)
     
+    // Validate input URL
+    if (!url || typeof url !== 'string') {
+      console.log('⚠️ Invalid URL provided, using fallback analysis')
+      return getFallbackKeywordAnalysis(url || 'unknown')
+    }
+    
     const $ = await fetchAndParseHTML(url)
     
     if (!$) {
@@ -1393,14 +1426,21 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
       return getFallbackKeywordAnalysis(url)
     }
 
-    // Extract keywords from content
+    // Extract keywords from content with better error handling
     const body = $('body')
     if (body.length === 0) {
       console.log('⚠️ No body content found, using fallback analysis')
       return getFallbackKeywordAnalysis(url)
     }
 
-    const textContent = body.text() || ''
+    let textContent = ''
+    try {
+      textContent = body.text() || ''
+    } catch (error) {
+      console.error('Error extracting text content:', error)
+      return getFallbackKeywordAnalysis(url)
+    }
+    
     const words = textContent.toLowerCase().match(/\b\w+\b/g) || []
     
     if (words.length === 0) {
@@ -1408,24 +1448,27 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
       return getFallbackKeywordAnalysis(url)
     }
     
-    // Simple keyword extraction (in real implementation, this would use more sophisticated algorithms)
+    // Simple keyword extraction with improved filtering
     const wordCounts: { [key: string]: number } = {}
+    const stopWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use'])
+    
     words.forEach((word: string) => {
-      if (word.length > 3) { // Filter out short words
+      if (word.length > 3 && !stopWords.has(word) && /^[a-zA-Z]+$/.test(word)) {
         wordCounts[word] = (wordCounts[word] || 0) + 1
       }
     })
 
-    // Get top keywords
+    // Get top keywords with better validation
     const topKeywords = Object.entries(wordCounts)
+      .filter(([, count]) => count >= 2) // Only include words that appear at least twice
       .sort(([,a], [,b]) => b - a)
       .slice(0, 10)
       .map(([keyword, count]) => ({
         keyword,
         searchVolume: Math.floor(Math.random() * 10000) + 100, // Mock data
         difficulty: Math.floor(Math.random() * 100),
-        cpc: Math.random() * 5,
-        competition: Math.random() > 0.5 ? 'medium' : 'low' as 'low' | 'medium' | 'high'
+        cpc: Math.round((Math.random() * 5) * 100) / 100, // Round to 2 decimal places
+        competition: (Math.random() > 0.6 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low') as 'low' | 'medium' | 'high'
       }))
 
     if (topKeywords.length === 0) {
@@ -1435,7 +1478,7 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
 
     const relatedKeywords = topKeywords.slice(0, 5).map(kw => ({
       ...kw,
-      relevance: Math.floor(Math.random() * 100)
+      relevance: Math.floor(Math.random() * 30) + 70 // 70-100% relevance
     }))
 
     const longTailKeywords = topKeywords.slice(0, 3).map(kw => ({
@@ -1462,8 +1505,9 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
     }
   } catch (error) {
     console.error('❌ Error in keyword research analysis:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     console.log('🔄 Falling back to default analysis')
-    return getFallbackKeywordAnalysis(url)
+    return getFallbackKeywordAnalysis(url || 'unknown')
   }
 }
 
