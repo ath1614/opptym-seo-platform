@@ -677,7 +677,7 @@ export default function BacklinkScannerPage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {analysisData.tips.map((tip, index) => (
-                    <div key={index} className="p-4 border rounded-lg">
+                    <div key={index} className="p-4 border rounded-lg dark:border-gray-700 dark:bg-gray-800/50">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="text-xs">
                           {tip.category}
@@ -686,7 +686,7 @@ export default function BacklinkScannerPage() {
                           {tip.difficulty}
                         </Badge>
                       </div>
-                      <h4 className="font-medium mb-2">{tip.title}</h4>
+                      <h4 className="font-medium mb-2 dark:text-gray-100">{tip.title}</h4>
                       <p className="text-sm text-muted-foreground">{tip.description}</p>
                     </div>
                   ))}
@@ -705,9 +705,9 @@ export default function BacklinkScannerPage() {
               <CardContent>
                 <div className="space-y-6">
                   {analysisData.detailedRecommendations.map((rec, index) => (
-                    <div key={index} className="border rounded-lg p-4">
+                    <div key={index} className="border rounded-lg p-4 dark:border-gray-700 dark:bg-gray-800/50">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-lg">{rec.title}</h4>
+                        <h4 className="font-medium text-lg dark:text-gray-100">{rec.title}</h4>
                         <div className="flex space-x-2">
                           <Badge variant="outline" className={getPriorityColor(rec.priority)}>
                             {rec.priority} priority
@@ -724,7 +724,7 @@ export default function BacklinkScannerPage() {
                         </span>
                       </div>
                       <div>
-                        <h5 className="font-medium mb-2">Implementation Steps:</h5>
+                        <h5 className="font-medium mb-2 dark:text-gray-100">Implementation Steps:</h5>
                         <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                           {rec.steps.map((step, stepIndex) => (
                             <li key={stepIndex}>{step}</li>
@@ -749,11 +749,11 @@ export default function BacklinkScannerPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {analysisData.backlinks.slice(0, 10).map((backlink, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg dark:border-gray-700 dark:bg-gray-800/50">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-mono text-sm break-all">{backlink.sourceUrl}</span>
+                            <span className="font-mono text-sm break-all dark:text-gray-200">{backlink.sourceUrl}</span>
                             <Button
                               variant="ghost"
                               size="sm"

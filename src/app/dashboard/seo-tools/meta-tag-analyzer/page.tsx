@@ -249,7 +249,7 @@ export default function MetaTagAnalyzerPage() {
                       {analysisResult.title.status}
                     </Badge>
                   </h4>
-                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.title.content || 'No title found'}</p>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-950/20 p-3 rounded mb-2">{analysisResult.title.content || 'No title found'}</p>
                   <p className="text-xs text-muted-foreground">Length: {analysisResult.title.length} characters</p>
                   <p className="text-xs text-muted-foreground">{analysisResult.title.recommendation}</p>
                 </div>
@@ -262,7 +262,7 @@ export default function MetaTagAnalyzerPage() {
                       {analysisResult.description.status}
                     </Badge>
                   </h4>
-                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.description.content || 'No description found'}</p>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-950/20 p-3 rounded mb-2">{analysisResult.description.content || 'No description found'}</p>
                   <p className="text-xs text-muted-foreground">Length: {analysisResult.description.length} characters</p>
                   <p className="text-xs text-muted-foreground">{analysisResult.description.recommendation}</p>
                 </div>
@@ -275,7 +275,7 @@ export default function MetaTagAnalyzerPage() {
                       {analysisResult.keywords.status}
                     </Badge>
                   </h4>
-                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.keywords.content || 'No keywords found'}</p>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-950/20 p-3 rounded mb-2">{analysisResult.keywords.content || 'No keywords found'}</p>
                   <p className="text-xs text-muted-foreground">{analysisResult.keywords.recommendation}</p>
                 </div>
 
@@ -287,7 +287,7 @@ export default function MetaTagAnalyzerPage() {
                       {analysisResult.viewport.status}
                     </Badge>
                   </h4>
-                  <p className="text-sm bg-gray-50 p-3 rounded mb-2">{analysisResult.viewport.content || 'No viewport found'}</p>
+                  <p className="text-sm bg-gray-50 dark:bg-gray-950/20 p-3 rounded mb-2">{analysisResult.viewport.content || 'No viewport found'}</p>
                   <p className="text-xs text-muted-foreground">{analysisResult.viewport.recommendation}</p>
                 </div>
 

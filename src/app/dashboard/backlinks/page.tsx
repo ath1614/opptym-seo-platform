@@ -72,6 +72,12 @@ export default function BacklinksPage() {
     }
   }, [status, router])
 
+  useEffect(() => {
+    if (session?.user) {
+      loadBacklinks()
+    }
+  }, [session?.user, currentPage, searchTerm, qualityFilter, statusFilter])
+
   if (status === 'loading') {
     return (
       <DashboardLayout>
@@ -174,29 +180,23 @@ export default function BacklinksPage() {
     }
   }
 
-  useEffect(() => {
-    if (session?.user) {
-      loadBacklinks()
-    }
-  }, [session?.user, currentPage, searchTerm, qualityFilter, statusFilter])
-
   const getQualityColor = (quality: string) => {
     switch (quality) {
-      case 'high': return 'text-green-600 bg-green-50'
-      case 'medium': return 'text-blue-600 bg-blue-50'
-      case 'low': return 'text-orange-600 bg-orange-50'
-      case 'toxic': return 'text-red-600 bg-red-50'
-      default: return 'text-gray-600 bg-gray-50'
+      case 'high': return 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950/20'
+      case 'medium': return 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/20'
+      case 'low': return 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-950/20'
+      case 'toxic': return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/20'
+      default: return 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950/20'
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-50'
-      case 'lost': return 'text-red-600 bg-red-50'
-      case 'pending': return 'text-yellow-600 bg-yellow-50'
-      case 'disavowed': return 'text-gray-600 bg-gray-50'
-      default: return 'text-gray-600 bg-gray-50'
+      case 'active': return 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950/20'
+      case 'lost': return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/20'
+      case 'pending': return 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-950/20'
+      case 'disavowed': return 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950/20'
+      default: return 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950/20'
     }
   }
 
@@ -225,9 +225,9 @@ export default function BacklinksPage() {
         </div>
 
       {/* Important Disclaimer */}
-      <Alert className="border-amber-200 bg-amber-50">
-        <Info className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800">
+      <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+        <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <AlertDescription className="text-amber-800 dark:text-amber-200">
           <strong>Important Disclaimer:</strong> Our backlink scanner provides automated analysis based on available data sources. 
           We do not guarantee the accuracy or completeness of backlink detection. Backlinks are generated automatically when possible 
           through directory submissions and other SEO activities, but results may vary. This tool is for informational purposes only 
@@ -390,12 +390,12 @@ export default function BacklinksPage() {
           ) : (
             <div className="space-y-4">
               {backlinks.map((backlink) => (
-                <div key={backlink._id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                <div key={backlink._id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors dark:border-gray-700 dark:hover:bg-gray-800/50">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
                         <Globe className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">{backlink.sourceDomain}</span>
+                        <span className="font-semibold dark:text-gray-100">{backlink.sourceDomain}</span>
                         {backlink.domainAuthority && (
                           <Badge variant="outline">DA: {backlink.domainAuthority}</Badge>
                         )}
@@ -453,9 +453,9 @@ export default function BacklinksPage() {
       </Card>
 
       {/* Additional Disclaimer */}
-      <Alert className="border-blue-200 bg-blue-50">
-        <Info className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
+      <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <AlertDescription className="text-blue-800 dark:text-blue-200">
           <strong>Automated Backlink Generation:</strong> Our system attempts to generate backlinks automatically through directory submissions and other SEO activities. 
           However, we cannot guarantee that backlinks will be created or maintained. Backlink generation depends on various factors including directory approval processes, 
           website policies, and external factors beyond our control. Results may vary significantly between different websites and submission attempts.

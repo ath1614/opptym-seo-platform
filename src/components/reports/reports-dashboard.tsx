@@ -31,7 +31,8 @@ import {
   Settings,
   Code,
   Image,
-  ExternalLink
+  ExternalLink,
+  Tag
 } from 'lucide-react'
 import { SEOIssuesAnalysis } from './seo-issues-analysis'
 import { 
@@ -85,43 +86,60 @@ interface ReportData {
       issues: number
       recommendations: number
       analysisResults: {
-        metaTags?: {
-          title?: string
-          description?: string
-          keywords?: string
-          viewport?: string
-        }
-        performance?: {
-          images?: number
-          headings?: number
-          links?: number
+          metaTags?: {
+            title?: string
+            description?: string
+            keywords?: string
+            viewport?: string
+          }
+          performance?: {
+            images?: number
+            headings?: number
+            links?: number
+            score?: number
+            loadTime?: number
+            pageSize?: string
+            requests?: number
+            compressionEnabled?: boolean
+            cacheEnabled?: boolean
+            minified?: boolean
+            imageOptimized?: boolean
+          }
+          mobileFriendliness?: {
+            isMobileFriendly?: boolean
+            viewport?: {
+              configured?: boolean
+              total?: number
+            }
+            touchTargets?: {
+              total?: number
+            }
+          }
+          isMobileFriendly?: boolean
+          viewport?: {
+            configured?: boolean
+            total?: number
+          }
+          touchTargets?: {
+            total?: number
+          }
           score?: number
+          issues?: string[]
+          recommendations?: string[]
+          brokenLinks?: number
+          totalLinks?: number
+          workingLinks?: number
+          totalWords?: number
+          uniqueWords?: number
+          topKeywords?: string[]
+          keywordDensity?: Record<string, number>
+          altText?: {
+            totalImages?: number
+            imagesWithAlt?: number
+            imagesWithoutAlt?: number
+          }
+          [key: string]: unknown
         }
-        isMobileFriendly?: boolean
-        viewport?: {
-          configured?: boolean
-          total?: number
-        }
-        touchTargets?: {
-          total?: number
-        }
-        score?: number
-        issues?: string[]
-        recommendations?: string[]
-        brokenLinks?: number
-        totalLinks?: number
-        workingLinks?: number
-        totalWords?: number
-        uniqueWords?: number
-        topKeywords?: string[]
-        keywordDensity?: Record<string, number>
-        altText?: {
-          totalImages?: number
-          imagesWithAlt?: number
-          imagesWithoutAlt?: number
-        }
-        [key: string]: unknown
-      }
     }>
   }>
   submissionsData: Array<{
@@ -725,62 +743,258 @@ export function ReportsDashboard() {
                                     {/* Detailed Analysis Results */}
                                     {result.analysisResults && (
                                       <div className="space-y-4">
-                                        {/* Issues Section */}
+                                        {/* Enhanced Issues Section */}
                                         {result.analysisResults.issues && Array.isArray(result.analysisResults.issues) && result.analysisResults.issues.length > 0 && (
                                           <div>
                                             <div className="flex items-center space-x-2 mb-3">
-                                              <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                              <span className="font-medium text-sm">Issues Found ({result.analysisResults.issues?.length || 0})</span>
+                                              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                              <span className="font-medium text-sm">Critical Issues Found ({result.analysisResults.issues?.length || 0})</span>
                                             </div>
                                             <div className="space-y-3">
-                                              {result.analysisResults.issues.map((issue: string, issueIndex: number) => (
-                                                <div key={`${tool.toolId}-issue-${issueIndex}-${issue.substring(0, 20)}`} className="p-3 bg-orange-50 dark:bg-orange-950/50 rounded-lg border border-orange-200 dark:border-orange-800">
-                                                  <div className="flex items-start space-x-2">
-                                                    <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                                                    <div className="flex-1">
-                                                      <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-1">
-                                                        Issue #{issueIndex + 1}
-                                                      </div>
-                                                      <div className="text-sm text-orange-700 dark:text-orange-300 mb-2">
-                                                        {issue}
-                                                      </div>
-                                                      <div className="text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 p-2 rounded">
-                                                        <strong>Impact:</strong> This issue affects your website's SEO performance and user experience.
+                                              {result.analysisResults.issues.map((issue: string | { message?: string; description?: string; severity?: string; category?: string; type?: string }, issueIndex: number) => {
+                                                // Handle both string and object issues
+                                                const issueText = typeof issue === 'string' ? issue : issue.message || issue.description || 'Unknown issue';
+                                                const severity = typeof issue === 'object' ? issue.severity || 'medium' : 'medium';
+                                                const category = typeof issue === 'object' ? issue.category || issue.type || 'general' : 'general';
+                                                
+                                                // Generate specific solutions based on issue content
+                                                const getSolution = (issueText: string, toolName: string) => {
+                                                  const lowerIssue = issueText.toLowerCase();
+                                                  
+                                                  if (lowerIssue.includes('title') && lowerIssue.includes('missing')) {
+                                                    return "Add a unique, descriptive title tag (50-60 characters) that includes your primary keyword and accurately describes the page content.";
+                                                  } else if (lowerIssue.includes('title') && (lowerIssue.includes('long') || lowerIssue.includes('short'))) {
+                                                    return "Optimize your title tag length to 50-60 characters. Include primary keywords near the beginning and make it compelling for users.";
+                                                  } else if (lowerIssue.includes('description') && lowerIssue.includes('missing')) {
+                                                    return "Add a meta description (150-160 characters) that summarizes your page content and includes relevant keywords to improve click-through rates.";
+                                                  } else if (lowerIssue.includes('description') && (lowerIssue.includes('long') || lowerIssue.includes('short'))) {
+                                                    return "Optimize your meta description to 150-160 characters. Make it compelling and include a call-to-action to encourage clicks.";
+                                                  } else if (lowerIssue.includes('viewport')) {
+                                                    return "Add the viewport meta tag: <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> to ensure proper mobile display.";
+                                                  } else if (lowerIssue.includes('mobile') || lowerIssue.includes('responsive')) {
+                                                    return "Implement responsive design using CSS media queries, flexible layouts, and mobile-first approach to improve mobile user experience.";
+                                                  } else if (lowerIssue.includes('speed') || lowerIssue.includes('performance') || lowerIssue.includes('slow')) {
+                                                    return "Optimize page speed by compressing images, minifying CSS/JS, enabling browser caching, and using a Content Delivery Network (CDN).";
+                                                  } else if (lowerIssue.includes('image') && lowerIssue.includes('alt')) {
+                                                    return "Add descriptive alt text to all images for accessibility and SEO. Use keywords naturally while describing the image content.";
+                                                  } else if (lowerIssue.includes('link') && lowerIssue.includes('broken')) {
+                                                    return "Fix or remove broken links. Use tools like Google Search Console to identify and replace broken internal/external links.";
+                                                  } else if (lowerIssue.includes('heading') || lowerIssue.includes('h1')) {
+                                                    return "Structure your content with proper heading hierarchy (H1, H2, H3). Use only one H1 per page and include relevant keywords.";
+                                                  } else if (lowerIssue.includes('keyword') && lowerIssue.includes('density')) {
+                                                    return "Optimize keyword density to 1-3% of total content. Use keywords naturally and include semantic variations and related terms.";
+                                                  } else if (lowerIssue.includes('ssl') || lowerIssue.includes('https')) {
+                                                    return "Implement SSL certificate and redirect all HTTP traffic to HTTPS for security and SEO benefits.";
+                                                  } else if (toolName.toLowerCase().includes('meta')) {
+                                                    return "Review and optimize your meta tags according to current SEO best practices and search engine guidelines.";
+                                                  } else if (toolName.toLowerCase().includes('performance')) {
+                                                    return "Focus on Core Web Vitals: optimize Largest Contentful Paint (LCP), First Input Delay (FID), and Cumulative Layout Shift (CLS).";
+                                                  } else if (toolName.toLowerCase().includes('mobile')) {
+                                                    return "Ensure your website passes Google's Mobile-Friendly Test and provides excellent user experience on all devices.";
+                                                  } else {
+                                                    return "Review this issue carefully and implement the necessary changes to improve your website's SEO performance and user experience.";
+                                                  }
+                                                };
+
+                                                const solution = getSolution(issueText, tool.toolName);
+                                                
+                                                return (
+                                                  <div key={`${tool.toolId}-issue-${issueIndex}-${issueText.substring(0, 20)}`} className="p-4 bg-red-50 dark:bg-red-950/50 rounded-lg border border-red-200 dark:border-red-800">
+                                                    <div className="flex items-start space-x-3">
+                                                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                                                        severity === 'high' ? 'bg-red-500' :
+                                                        severity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
+                                                      }`} />
+                                                      <div className="flex-1">
+                                                        <div className="flex items-center space-x-2 mb-2">
+                                                          <Badge variant={
+                                                            severity === 'high' ? 'destructive' :
+                                                            severity === 'medium' ? 'default' : 'secondary'
+                                                          } className="text-xs">
+                                                            {severity.toUpperCase()}
+                                                          </Badge>
+                                                          <Badge variant="outline" className="text-xs">
+                                                            {category.toUpperCase()}
+                                                          </Badge>
+                                                        </div>
+                                                        <div className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+                                                          Issue #{issueIndex + 1}: {issueText}
+                                                        </div>
+                                                        
+                                                        {/* Solution Section */}
+                                                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800">
+                                                          <div className="flex items-center space-x-2 mb-2">
+                                                            <Info className="h-4 w-4 text-blue-600" />
+                                                            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">How to Fix:</span>
+                                                          </div>
+                                                          <p className="text-sm text-blue-700 dark:text-blue-300">{solution}</p>
+                                                        </div>
+                                                        
+                                                        {/* Impact Assessment */}
+                                                        <div className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-2 rounded">
+                                                          <strong>SEO Impact:</strong> {
+                                                            severity === 'high' ? 'High - Immediate attention required' :
+                                                            severity === 'medium' ? 'Medium - Should be addressed soon' :
+                                                            'Low - Consider fixing when possible'
+                                                          }
+                                                        </div>
                                                       </div>
                                                     </div>
                                                   </div>
-                                                </div>
-                                              ))}
+                                                );
+                                              })}
                                             </div>
                                           </div>
                                         )}
 
-                                        {/* Recommendations Section */}
+                                        {/* Enhanced Recommendations Section */}
                                         {result.analysisResults.recommendations && Array.isArray(result.analysisResults.recommendations) && result.analysisResults.recommendations.length > 0 && (
                                           <div>
                                             <div className="flex items-center space-x-2 mb-3">
-                                              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                              <span className="font-medium text-sm">Recommendations ({result.analysisResults.recommendations?.length || 0})</span>
+                                              <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                              <span className="font-medium text-sm">SEO Recommendations ({result.analysisResults.recommendations?.length || 0})</span>
                                             </div>
                                             <div className="space-y-3">
-                                              {result.analysisResults.recommendations.map((recommendation: string, recIndex: number) => (
-                                                <div key={`${tool.toolId}-rec-${recIndex}-${recommendation.substring(0, 20)}`} className="p-3 bg-blue-50 dark:bg-blue-950/50 rounded-lg border border-blue-200 dark:border-blue-800">
-                                                  <div className="flex items-start space-x-2">
-                                                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                                                    <div className="flex-1">
-                                                      <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-                                                        Fix #{recIndex + 1}
-                                                      </div>
-                                                      <div className="text-sm text-blue-700 dark:text-blue-300 mb-2">
-                                                        {recommendation}
-                                                      </div>
-                                                      <div className="text-xs text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 p-2 rounded">
-                                                        <strong>Action Required:</strong> Implement this fix to improve your website's SEO performance.
+                                              {result.analysisResults.recommendations.map((recommendation: string | { message?: string; title?: string; description?: string; priority?: string; impact?: string }, recIndex: number) => {
+                                                // Handle both string and object recommendations
+                                                const recText = typeof recommendation === 'string' ? recommendation : recommendation.message || recommendation.title || 'Optimization recommendation';
+                                                const priority = typeof recommendation === 'object' ? recommendation.priority || 'medium' : 'medium';
+                                                const impact = typeof recommendation === 'object' ? recommendation.impact : null;
+                                                const description = typeof recommendation === 'object' ? recommendation.description : null;
+                                                
+                                                // Generate implementation steps based on recommendation content
+                                                const getImplementationSteps = (recText: string, toolName: string) => {
+                                                  const lowerRec = recText.toLowerCase();
+                                                  
+                                                  if (lowerRec.includes('title') || lowerRec.includes('meta title')) {
+                                                    return [
+                                                      "Research primary keywords for your page topic",
+                                                      "Write a compelling title (50-60 characters)",
+                                                      "Include primary keyword near the beginning",
+                                                      "Make it unique and descriptive",
+                                                      "Test different variations for better CTR"
+                                                    ];
+                                                  } else if (lowerRec.includes('description') || lowerRec.includes('meta description')) {
+                                                    return [
+                                                      "Write a compelling summary (150-160 characters)",
+                                                      "Include primary and secondary keywords naturally",
+                                                      "Add a clear call-to-action",
+                                                      "Make it unique for each page",
+                                                      "Preview how it appears in search results"
+                                                    ];
+                                                  } else if (lowerRec.includes('image') || lowerRec.includes('alt')) {
+                                                    return [
+                                                      "Audit all images on your website",
+                                                      "Add descriptive alt text to each image",
+                                                      "Include relevant keywords naturally",
+                                                      "Keep alt text concise but descriptive",
+                                                      "Use empty alt=\"\" for decorative images"
+                                                    ];
+                                                  } else if (lowerRec.includes('speed') || lowerRec.includes('performance')) {
+                                                    return [
+                                                      "Compress and optimize all images",
+                                                      "Minify CSS, JavaScript, and HTML",
+                                                      "Enable browser caching",
+                                                      "Use a Content Delivery Network (CDN)",
+                                                      "Optimize server response times"
+                                                    ];
+                                                  } else if (lowerRec.includes('mobile') || lowerRec.includes('responsive')) {
+                                                    return [
+                                                      "Test your site on various mobile devices",
+                                                      "Implement responsive CSS design",
+                                                      "Optimize touch targets (minimum 44px)",
+                                                      "Ensure text is readable without zooming",
+                                                      "Test mobile page speed separately"
+                                                    ];
+                                                  } else if (lowerRec.includes('heading') || lowerRec.includes('h1')) {
+                                                    return [
+                                                      "Use only one H1 tag per page",
+                                                      "Create a logical heading hierarchy (H1→H2→H3)",
+                                                      "Include keywords in headings naturally",
+                                                      "Make headings descriptive and useful",
+                                                      "Ensure headings improve content structure"
+                                                    ];
+                                                  } else if (lowerRec.includes('content') || lowerRec.includes('keyword')) {
+                                                    return [
+                                                      "Research relevant keywords for your topic",
+                                                      "Create high-quality, original content",
+                                                      "Use keywords naturally (1-3% density)",
+                                                      "Include semantic keywords and variations",
+                                                      "Update content regularly to keep it fresh"
+                                                    ];
+                                                  } else {
+                                                    return [
+                                                      "Analyze the current state of this SEO element",
+                                                      "Research best practices for implementation",
+                                                      "Create a step-by-step action plan",
+                                                      "Implement changes systematically",
+                                                      "Monitor results and adjust as needed"
+                                                    ];
+                                                  }
+                                                };
+
+                                                const steps = getImplementationSteps(recText, tool.toolName);
+                                                
+                                                return (
+                                                  <div key={`${tool.toolId}-rec-${recIndex}-${recText.substring(0, 20)}`} className="p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800">
+                                                    <div className="flex items-start space-x-3">
+                                                      <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                                                      <div className="flex-1">
+                                                        <div className="flex items-center space-x-2 mb-2">
+                                                          <Badge variant="outline" className={`text-xs ${
+                                                            priority === 'high' ? 'border-red-300 text-red-700' :
+                                                            priority === 'medium' ? 'border-orange-300 text-orange-700' :
+                                                            'border-green-300 text-green-700'
+                                                          }`}>
+                                                            {priority.toUpperCase()} PRIORITY
+                                                          </Badge>
+                                                        </div>
+                                                        <div className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                                          Recommendation #{recIndex + 1}: {recText}
+                                                        </div>
+                                                        
+                                                        {description && (
+                                                          <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+                                                            {description}
+                                                          </p>
+                                                        )}
+                                                        
+                                                        {/* Implementation Steps */}
+                                                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800">
+                                                          <div className="flex items-center space-x-2 mb-2">
+                                                            <Settings className="h-4 w-4 text-blue-600" />
+                                                            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Implementation Steps:</span>
+                                                          </div>
+                                                          <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                                                            {steps.map((step, stepIndex) => (
+                                                              <li key={stepIndex} className="flex items-start space-x-2">
+                                                                <span className="text-blue-600 font-medium">{stepIndex + 1}.</span>
+                                                                <span>{step}</span>
+                                                              </li>
+                                                            ))}
+                                                          </ol>
+                                                        </div>
+                                                        
+                                                        {/* Expected Impact */}
+                                                        {impact && (
+                                                          <div className="mt-2 text-xs text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 p-2 rounded">
+                                                            <strong>Expected Impact:</strong> {impact}
+                                                          </div>
+                                                        )}
+                                                        
+                                                        {/* Priority Indicator */}
+                                                        <div className="mt-2 text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 p-2 rounded">
+                                                          <strong>Priority Level:</strong> {
+                                                            priority === 'high' ? 'High - Implement immediately for best results' :
+                                                            priority === 'medium' ? 'Medium - Important for SEO improvement' :
+                                                            'Low - Consider implementing when resources allow'
+                                                          }
+                                                        </div>
                                                       </div>
                                                     </div>
                                                   </div>
-                                                </div>
-                                              ))}
+                                                );
+                                              })}
                                             </div>
                                           </div>
                                         )}
@@ -1013,6 +1227,364 @@ export function ReportsDashboard() {
                                                       <span className="text-lg font-bold text-orange-600">{result.analysisResults.score || 0}/100</span>
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">Keyword optimization score</div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* Enhanced Tool-specific detailed results */}
+                                            {tool.toolName === 'Meta Tag Analysis' && result.analysisResults.metaTags && (
+                                              <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-950/50 rounded-lg border border-purple-200 dark:border-purple-800">
+                                                <div className="flex items-center space-x-2 mb-3">
+                                                  <Tag className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                                  <span className="font-medium text-sm text-purple-800 dark:text-purple-200">Meta Tag Analysis Details</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                  {/* Title Analysis */}
+                                                  {result.analysisResults.metaTags.title && (
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium text-purple-800 dark:text-purple-200">Title Tag</span>
+                                                        <Badge variant={result.analysisResults.metaTags.title.length >= 50 && result.analysisResults.metaTags.title.length <= 60 ? "default" : "destructive"}>
+                                                          {result.analysisResults.metaTags.title.length} chars
+                                                        </Badge>
+                                                      </div>
+                                                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">"{result.analysisResults.metaTags.title}"</p>
+                                                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                        {result.analysisResults.metaTags.title.length < 50 ? 
+                                                          "⚠️ Too short - Consider expanding to 50-60 characters" :
+                                                          result.analysisResults.metaTags.title.length > 60 ?
+                                                          "⚠️ Too long - May be truncated in search results" :
+                                                          "✅ Optimal length for search results"
+                                                        }
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {/* Description Analysis */}
+                                                  {result.analysisResults.metaTags.description && (
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium text-purple-800 dark:text-purple-200">Meta Description</span>
+                                                        <Badge variant={result.analysisResults.metaTags.description.length >= 150 && result.analysisResults.metaTags.description.length <= 160 ? "default" : "destructive"}>
+                                                          {result.analysisResults.metaTags.description.length} chars
+                                                        </Badge>
+                                                      </div>
+                                                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">"{result.analysisResults.metaTags.description}"</p>
+                                                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                        {result.analysisResults.metaTags.description.length < 150 ? 
+                                                          "⚠️ Too short - Consider expanding to 150-160 characters" :
+                                                          result.analysisResults.metaTags.description.length > 160 ?
+                                                          "⚠️ Too long - May be truncated in search results" :
+                                                          "✅ Optimal length for search results"
+                                                        }
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {/* Keywords Analysis */}
+                                                  {result.analysisResults.metaTags.keywords && (
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <span className="font-medium text-purple-800 dark:text-purple-200">Meta Keywords</span>
+                                                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">"{result.analysisResults.metaTags.keywords}"</p>
+                                                      <div className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                                                        ℹ️ Meta keywords are largely ignored by search engines. Focus on content optimization instead.
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {/* Missing Elements Warning */}
+                                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/50 rounded border border-yellow-200 dark:border-yellow-800">
+                                                    <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                                                      <strong>SEO Checklist:</strong>
+                                                      <ul className="mt-2 space-y-1 text-xs">
+                                                        <li>• {result.analysisResults.metaTags.title ? '✅' : '❌'} Title tag present</li>
+                                                        <li>• {result.analysisResults.metaTags.description ? '✅' : '❌'} Meta description present</li>
+                                                        <li>• {result.analysisResults.metaTags.viewport ? '✅' : '❌'} Viewport meta tag</li>
+                                                        <li>• {result.analysisResults.metaTags.keywords ? '✅' : '❌'} Meta keywords specified</li>
+                                                      </ul>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* Enhanced Page Speed Analysis Details */}
+                                            {tool.toolName === 'Page Speed Analysis' && result.analysisResults.performance && (
+                                              <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-950/50 rounded-lg border border-orange-200 dark:border-orange-800">
+                                                <div className="flex items-center space-x-2 mb-3">
+                                                  <Zap className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                                  <span className="font-medium text-sm text-orange-800 dark:text-orange-200">Performance Analysis Details</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                  {/* Core Web Vitals */}
+                                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    {result.analysisResults.performance.loadTime && (
+                                                      <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                        <div className="text-center">
+                                                          <div className="text-2xl font-bold text-orange-600">{result.analysisResults.performance.loadTime}ms</div>
+                                                          <div className="text-sm text-gray-600 dark:text-gray-400">Load Time</div>
+                                                          <div className="text-xs mt-1">
+                                                            {result.analysisResults.performance.loadTime < 2000 ? 
+                                                              <span className="text-green-600">✅ Excellent</span> :
+                                                              result.analysisResults.performance.loadTime < 4000 ?
+                                                              <span className="text-yellow-600">⚠️ Needs Improvement</span> :
+                                                              <span className="text-red-600">❌ Poor</span>
+                                                            }
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                    
+                                                    {result.analysisResults.performance.pageSize && (
+                                                      <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                        <div className="text-center">
+                                                          <div className="text-2xl font-bold text-orange-600">{result.analysisResults.performance.pageSize}</div>
+                                                          <div className="text-sm text-gray-600 dark:text-gray-400">Page Size</div>
+                                                          <div className="text-xs mt-1">
+                                                            <span className="text-blue-600">📊 Resource Usage</span>
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                    
+                                                    {result.analysisResults.performance.requests && (
+                                                      <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                        <div className="text-center">
+                                                          <div className="text-2xl font-bold text-orange-600">{result.analysisResults.performance.requests}</div>
+                                                          <div className="text-sm text-gray-600 dark:text-gray-400">HTTP Requests</div>
+                                                          <div className="text-xs mt-1">
+                                                            {result.analysisResults.performance.requests < 50 ? 
+                                                              <span className="text-green-600">✅ Good</span> :
+                                                              result.analysisResults.performance.requests < 100 ?
+                                                              <span className="text-yellow-600">⚠️ Moderate</span> :
+                                                              <span className="text-red-600">❌ Too Many</span>
+                                                            }
+                                                          </div>
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  
+                                                  {/* Performance Features */}
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">Performance Features</div>
+                                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                                      <div className="flex items-center space-x-2">
+                                                        {result.analysisResults.performance.compressionEnabled ? 
+                                                          <span className="text-green-600">✅</span> : 
+                                                          <span className="text-red-600">❌</span>
+                                                        }
+                                                        <span>Compression Enabled</span>
+                                                      </div>
+                                                      <div className="flex items-center space-x-2">
+                                                        {result.analysisResults.performance.cacheEnabled ? 
+                                                          <span className="text-green-600">✅</span> : 
+                                                          <span className="text-red-600">❌</span>
+                                                        }
+                                                        <span>Browser Caching</span>
+                                                      </div>
+                                                      <div className="flex items-center space-x-2">
+                                                        {result.analysisResults.performance.minified ? 
+                                                          <span className="text-green-600">✅</span> : 
+                                                          <span className="text-red-600">❌</span>
+                                                        }
+                                                        <span>Code Minification</span>
+                                                      </div>
+                                                      <div className="flex items-center space-x-2">
+                                                        {result.analysisResults.performance.imageOptimized ? 
+                                                          <span className="text-green-600">✅</span> : 
+                                                          <span className="text-red-600">❌</span>
+                                                        }
+                                                        <span>Image Optimization</span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  {/* Performance Score Breakdown */}
+                                                  <div className="p-3 bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-950/50 dark:to-yellow-950/50 rounded border">
+                                                    <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">Performance Score Breakdown</div>
+                                                    <div className="text-xs text-orange-700 dark:text-orange-300">
+                                                      <p><strong>Current Score:</strong> {result.analysisResults.score ?? 0}/100</p>
+                                                      <p className="mt-1">
+                                                        {(result.analysisResults.score ?? 0) >= 90 ? "🎉 Excellent performance! Your site loads quickly." :
+                                                         (result.analysisResults.score ?? 0) >= 70 ? "👍 Good performance with room for improvement." :
+                                                         (result.analysisResults.score ?? 0) >= 50 ? "⚠️ Average performance. Consider optimizations." :
+                                                         "🚨 Poor performance. Immediate optimization needed."}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* Enhanced Mobile Analysis Details */}
+                                            {tool.toolName === 'Mobile Analysis' && result.analysisResults.mobileFriendliness && (
+                                              <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/50 rounded-lg border border-green-200 dark:border-green-800">
+                                                <div className="flex items-center space-x-2 mb-3">
+                                                  <Smartphone className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                  <span className="font-medium text-sm text-green-800 dark:text-green-200">Mobile Friendliness Details</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                  {/* Mobile Score */}
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="font-medium text-green-800 dark:text-green-200">Mobile Score</span>
+                                                      <Badge variant={(result.analysisResults.score ?? 0) >= 80 ? "default" : (result.analysisResults.score ?? 0) >= 60 ? "secondary" : "destructive"}>
+                                                        {result.analysisResults.score ?? 0}/100
+                                                      </Badge>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                      {(result.analysisResults.score ?? 0) >= 80 ? 
+                                                        "✅ Excellent mobile experience" :
+                                                        (result.analysisResults.score ?? 0) >= 60 ?
+                                                        "⚠️ Good but needs improvement" :
+                                                        "❌ Poor mobile experience - needs immediate attention"
+                                                      }
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  {/* Mobile Features */}
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium text-green-800 dark:text-green-200">Mobile Friendly</span>
+                                                        {result.analysisResults.mobileFriendliness.isMobileFriendly ? 
+                                                          <span className="text-green-600">✅</span> : 
+                                                          <span className="text-red-600">❌</span>
+                                                        }
+                                                      </div>
+                                                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                        {result.analysisResults.mobileFriendliness.isMobileFriendly ? 
+                                                          "Site is optimized for mobile devices" :
+                                                          "Site needs mobile optimization"
+                                                        }
+                                                      </div>
+                                                    </div>
+                                                    
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium text-green-800 dark:text-green-200">Viewport</span>
+                                                        {result.analysisResults.mobileFriendliness.viewport?.configured ? 
+                                                          <span className="text-green-600">✅</span> : 
+                                                          <span className="text-red-600">❌</span>
+                                                        }
+                                                      </div>
+                                                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                        {result.analysisResults.mobileFriendliness.viewport?.configured ? 
+                                                          "Viewport meta tag properly configured" :
+                                                          "Missing or incorrect viewport configuration"
+                                                        }
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  {/* Touch Targets */}
+                                                  {result.analysisResults.mobileFriendliness.touchTargets && (
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium text-green-800 dark:text-green-200">Touch Targets</span>
+                                                        <Badge variant="outline">
+                                                          {result.analysisResults.mobileFriendliness.touchTargets.total} elements
+                                                        </Badge>
+                                                      </div>
+                                                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                        Interactive elements analyzed for touch accessibility
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                  
+                                                  {/* Mobile Recommendations */}
+                                                  <div className="p-3 bg-blue-50 dark:bg-blue-950/50 rounded border border-blue-200 dark:border-blue-800">
+                                                    <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Mobile Optimization Tips</div>
+                                                    <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                                                      <li>• Ensure touch targets are at least 44px in size</li>
+                                                      <li>• Use responsive design for all screen sizes</li>
+                                                      <li>• Optimize images for mobile loading speeds</li>
+                                                      <li>• Test on real devices for best results</li>
+                                                    </ul>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                            {/* Enhanced Broken Links Analysis Details */}
+                                            {tool.toolName === 'Broken Links Analysis' && result.analysisResults.brokenLinks !== undefined && (
+                                              <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/50 rounded-lg border border-red-200 dark:border-red-800">
+                                                <div className="flex items-center space-x-2 mb-3">
+                                                  <Link className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                                  <span className="font-medium text-sm text-red-800 dark:text-red-200">Link Health Analysis</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                  {/* Link Statistics */}
+                                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="text-center">
+                                                        <div className="text-2xl font-bold text-red-600">{result.analysisResults.brokenLinks || 0}</div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Broken Links</div>
+                                                        <div className="text-xs mt-1">
+                                                          {(result.analysisResults.brokenLinks || 0) === 0 ? 
+                                                            <span className="text-green-600">✅ No Issues</span> :
+                                                            (result.analysisResults.brokenLinks || 0) < 5 ?
+                                                            <span className="text-yellow-600">⚠️ Minor Issues</span> :
+                                                            <span className="text-red-600">❌ Major Issues</span>
+                                                          }
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                    
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="text-center">
+                                                        <div className="text-2xl font-bold text-green-600">{result.analysisResults.workingLinks || 0}</div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Working Links</div>
+                                                        <div className="text-xs mt-1">
+                                                          <span className="text-green-600">✅ Functional</span>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                    
+                                                    <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                      <div className="text-center">
+                                                        <div className="text-2xl font-bold text-blue-600">{result.analysisResults.totalLinks || 0}</div>
+                                                        <div className="text-sm text-gray-600 dark:text-gray-400">Total Links</div>
+                                                        <div className="text-xs mt-1">
+                                                          <span className="text-blue-600">📊 Analyzed</span>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  {/* Link Health Score */}
+                                                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                      <span className="font-medium text-red-800 dark:text-red-200">Link Health Score</span>
+                                                      <Badge variant={
+                                                        (result.analysisResults.totalLinks && result.analysisResults.workingLinks) ?
+                                                        ((result.analysisResults.workingLinks / result.analysisResults.totalLinks) * 100) >= 95 ? "default" :
+                                                        ((result.analysisResults.workingLinks / result.analysisResults.totalLinks) * 100) >= 85 ? "secondary" : "destructive"
+                                                        : "outline"
+                                                      }>
+                                                        {result.analysisResults.totalLinks && result.analysisResults.workingLinks ? 
+                                                          `${Math.round((result.analysisResults.workingLinks / result.analysisResults.totalLinks) * 100)}%` : 
+                                                          'N/A'
+                                                        }
+                                                      </Badge>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                                                      Percentage of working links on your website
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  {/* Link Health Recommendations */}
+                                                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/50 rounded border border-yellow-200 dark:border-yellow-800">
+                                                    <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">Link Maintenance Tips</div>
+                                                    <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-1">
+                                                      <li>• {(result.analysisResults.brokenLinks || 0) > 0 ? `Fix ${result.analysisResults.brokenLinks} broken links immediately` : '✅ No broken links found'}</li>
+                                                      <li>• Regularly audit links using automated tools</li>
+                                                      <li>• Set up 301 redirects for moved content</li>
+                                                      <li>• Monitor external links for changes</li>
+                                                      <li>• Use relative URLs for internal links when possible</li>
+                                                    </ul>
                                                   </div>
                                                 </div>
                                               </div>

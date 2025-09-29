@@ -5,7 +5,7 @@ export const emailTemplates = {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Verify Your Email - Opptym SEO Platform</title>
+        <title>Verify Your Email - OPPTYM AI SEO</title>
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -78,15 +78,15 @@ export const emailTemplates = {
     <body>
         <div class="container">
             <div class="header">
-                <img src="http://localhost:3000/logo.png" alt="Opptym SEO Platform" class="logo">
-                <h1 class="title">Welcome to Opptym SEO Platform!</h1>
+                <img src="https://opptym.com/logo.png" alt="OPPTYM AI SEO" class="logo">
+                <h1 class="title">Welcome to OPPTYM AI SEO!</h1>
                 <p class="subtitle">Please verify your email address to get started</p>
             </div>
             
             <div class="content">
                 <p>Hi ${userName},</p>
                 
-                <p>Thank you for signing up for Opptym SEO Platform! We're excited to help you boost your website's search engine rankings.</p>
+                <p>Thank you for signing up for OPPTYM AI SEO! We're excited to help you boost your website's search engine rankings with our AI-powered tools.</p>
                 
                 <p>To complete your registration and start using our powerful SEO tools, please verify your email address by clicking the button below:</p>
                 
@@ -97,20 +97,12 @@ export const emailTemplates = {
                 <p>If the button doesn't work, you can also copy and paste this link into your browser:</p>
                 <p><a href="${verificationUrl}" class="link">${verificationUrl}</a></p>
                 
-                <p><strong>What's next?</strong></p>
-                <ul>
-                    <li>Create your first SEO project</li>
-                    <li>Run comprehensive SEO analysis</li>
-                    <li>Submit to 2,800+ directories</li>
-                    <li>Track your rankings and progress</li>
-                </ul>
-                
                 <p>If you didn't create an account with us, please ignore this email.</p>
             </div>
             
             <div class="footer">
-                <p>This email was sent from Opptym SEO Platform. If you have any questions, please contact our support team.</p>
-                <p>&copy; 2024 Opptym SEO Platform. All rights reserved.</p>
+                <p>This email was sent from OPPTYM AI SEO. If you have any questions, please contact our support team.</p>
+                <p>&copy; 2024 OPPTYM AI SEO. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -123,7 +115,7 @@ export const emailTemplates = {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Reset Your Password - Opptym SEO Platform</title>
+        <title>Reset Your Password - OPPTYM AI SEO</title>
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -165,7 +157,7 @@ export const emailTemplates = {
             }
             .button {
                 display: inline-block;
-                background-color: #dc2626;
+                background-color: #3b82f6;
                 color: #ffffff;
                 padding: 12px 24px;
                 text-decoration: none;
@@ -174,7 +166,14 @@ export const emailTemplates = {
                 margin: 20px 0;
             }
             .button:hover {
-                background-color: #b91c1c;
+                background-color: #2563eb;
+            }
+            .warning {
+                background-color: #fef3c7;
+                border: 1px solid #f59e0b;
+                border-radius: 6px;
+                padding: 16px;
+                margin: 20px 0;
             }
             .footer {
                 text-align: center;
@@ -191,28 +190,20 @@ export const emailTemplates = {
             .link:hover {
                 text-decoration: underline;
             }
-            .warning {
-                background-color: #fef2f2;
-                border: 1px solid #fecaca;
-                border-radius: 6px;
-                padding: 16px;
-                margin: 20px 0;
-                color: #991b1b;
-            }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <img src="http://localhost:3000/logo.png" alt="Opptym SEO Platform" class="logo">
-                <h1 class="title">Password Reset Request</h1>
-                <p class="subtitle">Reset your Opptym SEO Platform password</p>
+                <img src="https://opptym.com/logo.png" alt="OPPTYM AI SEO" class="logo">
+                <h1 class="title">Reset Your Password</h1>
+                <p class="subtitle">We received a request to reset your password</p>
             </div>
             
             <div class="content">
                 <p>Hi ${userName},</p>
                 
-                <p>We received a request to reset your password for your Opptym SEO Platform account.</p>
+                <p>We received a request to reset your password for your OPPTYM AI SEO account.</p>
                 
                 <p>To reset your password, click the button below:</p>
                 
@@ -236,8 +227,8 @@ export const emailTemplates = {
             </div>
             
             <div class="footer">
-                <p>This email was sent from Opptym SEO Platform. If you have any questions, please contact our support team.</p>
-                <p>&copy; 2024 Opptym SEO Platform. All rights reserved.</p>
+                <p>This email was sent from OPPTYM AI SEO. If you have any questions, please contact our support team.</p>
+                <p>&copy; 2024 OPPTYM AI SEO. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -250,7 +241,7 @@ export const emailTemplates = {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to Opptym SEO Platform</title>
+        <title>Welcome to OPPTYM AI SEO!</title>
         <style>
             body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -292,7 +283,7 @@ export const emailTemplates = {
             }
             .button {
                 display: inline-block;
-                background-color: #10b981;
+                background-color: #3b82f6;
                 color: #ffffff;
                 padding: 12px 24px;
                 text-decoration: none;
@@ -301,7 +292,18 @@ export const emailTemplates = {
                 margin: 20px 0;
             }
             .button:hover {
-                background-color: #059669;
+                background-color: #2563eb;
+            }
+            .feature-list {
+                background-color: #f8fafc;
+                border-radius: 6px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            .feature-list h3 {
+                color: #1f2937;
+                margin-top: 0;
+                margin-bottom: 10px;
             }
             .footer {
                 text-align: center;
@@ -318,26 +320,20 @@ export const emailTemplates = {
             .link:hover {
                 text-decoration: underline;
             }
-            .feature-list {
-                background-color: #f8fafc;
-                border-radius: 6px;
-                padding: 20px;
-                margin: 20px 0;
-            }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <img src="http://localhost:3000/logo.png" alt="Opptym SEO Platform" class="logo">
-                <h1 class="title">Welcome to Opptym SEO Platform!</h1>
+                <img src="https://opptym.com/logo.png" alt="OPPTYM AI SEO" class="logo">
+                <h1 class="title">Welcome to OPPTYM AI SEO!</h1>
                 <p class="subtitle">Your account is now verified and ready to use</p>
             </div>
             
             <div class="content">
                 <p>Hi ${userName},</p>
                 
-                <p>Congratulations! Your email has been verified and your Opptym SEO Platform account is now active.</p>
+                <p>Congratulations! Your email has been verified and your OPPTYM AI SEO account is now active.</p>
                 
                 <p>You're currently on the <strong>${plan}</strong> plan. Here's what you can do:</p>
                 
@@ -353,12 +349,12 @@ export const emailTemplates = {
                 </div>
                 
                 <div style="text-align: center;">
-                    <a href="http://localhost:3000/dashboard" class="button">Go to Dashboard</a>
+                    <a href="https://opptym.com/dashboard" class="button">Go to Dashboard</a>
                 </div>
                 
                 <p><strong>Need help getting started?</strong></p>
                 <ul>
-                    <li>Check out our <a href="http://localhost:3000/#knowledge-base" class="link">Knowledge Base</a></li>
+                    <li>Check out our <a href="https://opptym.com/#knowledge-base" class="link">Knowledge Base</a></li>
                     <li>Watch our tutorial videos</li>
                     <li>Contact our support team</li>
                 </ul>
@@ -367,8 +363,8 @@ export const emailTemplates = {
             </div>
             
             <div class="footer">
-                <p>This email was sent from Opptym SEO Platform. If you have any questions, please contact our support team.</p>
-                <p>&copy; 2024 Opptym SEO Platform. All rights reserved.</p>
+                <p>This email was sent from OPPTYM AI SEO. If you have any questions, please contact our support team.</p>
+                <p>&copy; 2024 OPPTYM AI SEO. All rights reserved.</p>
             </div>
         </div>
     </body>
