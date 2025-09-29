@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/toast'
-import { Building, Globe, Mail, Phone, ExternalLink } from 'lucide-react'
+import { Building, Globe, Mail, Phone, ExternalLink, CheckCircle, Loader2 } from 'lucide-react'
 
 interface Project {
   _id: string
@@ -76,48 +76,79 @@ interface ProjectSelectorModalProps {
   onBookmarkletGenerated?: (linkId: string) => void
 }
 
+interface BookmarkletData {
+  maxUsage: number
+  totalSubmissions: number
+  token: string
+}
+
 export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGenerated }: ProjectSelectorModalProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [bookmarkletGenerated, setBookmarkletGenerated] = useState(false)
   const [bookmarkletCode, setBookmarkletCode] = useState('')
-  const [bookmarkletData, setBookmarkletData] = useState<{maxUsage: number, totalSubmissions: number} | null>(null)
+  const [bookmarkletData, setBookmarkletData] = useState<BookmarkletData | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const { showToast } = useToast()
 
+  // Fetch projects from API
   const fetchProjects = useCallback(async () => {
+    if (!isOpen) return
+    
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/projects')
+      const response = await fetch('/api/projects', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       
-      if (response.ok) {
+      if (data.success && Array.isArray(data.projects)) {
         setProjects(data.projects)
       } else {
-        showToast({
-          title: 'Error',
-          description: 'Failed to fetch projects',
-          variant: 'destructive'
-        })
+        throw new Error(data.error || 'Invalid response format')
       }
-    } catch {
+    } catch (error) {
+      console.error('Error fetching projects:', error)
       showToast({
         title: 'Error',
-        description: 'Network error while fetching projects',
+        description: error instanceof Error ? error.message : 'Failed to fetch projects',
         variant: 'destructive'
       })
+      setProjects([])
+    } finally {
+      setIsLoading(false)
     }
-  }, [showToast])
+  }, [isOpen, showToast])
 
+  // Load projects when modal opens
   useEffect(() => {
     if (isOpen) {
       fetchProjects()
     }
   }, [isOpen, fetchProjects])
 
+  // Generate secure bookmarklet
   const generateBookmarklet = async (project: Project) => {
-    if (!link) return
+    if (!link || !project) {
+      showToast({
+        title: 'Error',
+        description: 'Missing project or link information',
+        variant: 'destructive'
+      })
+      return
+    }
 
+    setIsGenerating(true)
     try {
-      // Generate secure token
       const response = await fetch('/api/bookmarklet/validate', {
         method: 'PUT',
         headers: {
@@ -129,85 +160,98 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
         })
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        
         if (response.status === 429) {
-          // Handle plan limit exceeded
           showToast({
             title: 'Plan Limit Reached',
-            description: data.error || 'You have reached your submission limit. Please upgrade your plan to continue.',
+            description: errorData.error || 'You have reached your submission limit. Please upgrade your plan to continue.',
+            variant: 'destructive'
+          })
+        } else if (response.status === 401) {
+          showToast({
+            title: 'Authentication Error',
+            description: 'Please log in again to continue.',
             variant: 'destructive'
           })
         } else {
           showToast({
             title: 'Error',
-            description: data.error || 'Failed to generate bookmarklet',
+            description: errorData.error || `Failed to generate bookmarklet (${response.status})`,
             variant: 'destructive'
           })
         }
         return
       }
 
-      // Create secure bookmarklet that validates each use
-      const bookmarkletTitle = `Fill Form - ${project.projectName}`;
-      const bookmarkletCode = `
-javascript:(function(){
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '${window.location.origin}/api/bookmarklet/script?token=${data.token}&projectId=${project._id}&linkId=${link._id}&t=' + Date.now(), true);
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4) {
-        if (xhr.status === 200) {
-          try {
-            eval(xhr.responseText);
-          } catch (evalError) {
-            alert('Error executing bookmarklet: ' + evalError.message);
-          }
-        } else if (xhr.status === 429) {
-          alert('Usage limit reached. Please upgrade your plan to continue.');
-        } else if (xhr.status === 400) {
-          alert('Bookmarklet expired or invalid. Please generate a new one.');
-        } else {
-          alert('Error loading bookmarklet: HTTP ' + xhr.status);
-        }
+      const data = await response.json()
+      
+      if (!data.token) {
+        throw new Error('No token received from server')
       }
-    };
-    xhr.send();
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-})();
-      `.trim()
 
-      setBookmarkletCode(bookmarkletCode)
-      setBookmarkletGenerated(true)
+      // Create secure bookmarklet code
+      const bookmarkletTitle = `Fill Form - ${project.projectName}`
+      const secureBookmarkletCode = `javascript:(function(){
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', '${window.location.origin}/api/bookmarklet/script?token=${data.token}&projectId=${project._id}&linkId=${link._id}&t=' + Date.now(), true);
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  eval(xhr.responseText);
+                } catch (evalError) {
+                  alert('Error executing bookmarklet: ' + evalError.message);
+                }
+              } else if (xhr.status === 429) {
+                alert('Usage limit reached. Please upgrade your plan to continue.');
+              } else if (xhr.status === 400) {
+                alert('Bookmarklet expired or invalid. Please generate a new one.');
+              } else {
+                alert('Error loading bookmarklet: HTTP ' + xhr.status);
+              }
+            }
+          };
+          xhr.send();
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      })();`.replace(/\s+/g, ' ').trim()
+
+      setBookmarkletCode(secureBookmarkletCode)
       setBookmarkletData({
-        maxUsage: data.maxUsage,
-        totalSubmissions: data.totalSubmissions || 0
+        maxUsage: data.maxUsage || 1,
+        totalSubmissions: data.totalSubmissions || 0,
+        token: data.token
       })
+      setBookmarkletGenerated(true)
 
-      // Notify parent component that bookmarklet was generated
+      // Notify parent component
       if (onBookmarkletGenerated && link) {
         onBookmarkletGenerated(link._id)
       }
 
       showToast({
-        title: 'Bookmarklet Generated',
-        description: `Secure bookmarklet created! ${data.maxUsage} uses available. Total submissions: ${data.totalSubmissions || 0}`,
+        title: 'Bookmarklet Generated Successfully',
+        description: `Secure bookmarklet created! ${data.maxUsage || 1} uses available.`,
         variant: 'success'
       })
 
     } catch (error) {
+      console.error('Error generating bookmarklet:', error)
       showToast({
-        title: 'Error',
-        description: 'Failed to generate secure bookmarklet',
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Failed to generate secure bookmarklet',
         variant: 'destructive'
       })
+    } finally {
+      setIsGenerating(false)
     }
   }
 
-
+  // Handle generate button click
   const handleGenerateBookmarklet = () => {
     if (!selectedProject) {
       showToast({
@@ -221,14 +265,18 @@ javascript:(function(){
     generateBookmarklet(selectedProject)
   }
 
+  // Handle modal close
   const handleClose = () => {
     setSelectedProject(null)
     setBookmarkletGenerated(false)
     setBookmarkletCode('')
     setBookmarkletData(null)
+    setIsLoading(false)
+    setIsGenerating(false)
     onClose()
   }
 
+  // Get status badge variant
   const getStatusBadgeVariant = (status: Project['status']) => {
     switch (status) {
       case 'active': return 'default' as const
@@ -239,184 +287,195 @@ javascript:(function(){
     }
   }
 
+  // Handle drag start for bookmarklet
+  const handleDragStart = (e: React.DragEvent) => {
+    if (!bookmarkletCode || !selectedProject) return
+    
+    const bookmarkTitle = `🚀 Fill Form - ${selectedProject.projectName}`
+    
+    e.dataTransfer.setData('text/uri-list', bookmarkletCode)
+    e.dataTransfer.setData('text/plain', bookmarkletCode)
+    e.dataTransfer.setData('text/html', `<a href="${bookmarkletCode}" title="${bookmarkTitle}">${bookmarkTitle}</a>`)
+    e.dataTransfer.effectAllowed = 'copy'
+  }
+
+  // Prevent copy operations
+  const preventCopy = (e: React.ClipboardEvent | React.MouseEvent) => {
+    e.preventDefault()
+    showToast({
+      title: 'Copy Protected',
+      description: 'This bookmarklet is secured and cannot be copied. Drag it to your bookmarks bar instead.',
+      variant: 'destructive'
+    })
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent 
-        className="max-w-4xl max-h-[80vh] overflow-y-auto"
-        onContextMenu={(e) => e.preventDefault()}
-        onCopy={(e) => {
-          if (bookmarkletGenerated) {
-            e.preventDefault()
-            showToast({
-              title: 'Copy Blocked',
-              description: 'Copying is disabled for security.',
-              variant: 'destructive'
-            })
-          }
-        }}
-        onKeyDown={(e) => {
-          if (bookmarkletGenerated) {
-            // Block common copy shortcuts
-            if (e.ctrlKey && (e.key === 'c' || e.key === 'a' || e.key === 'v' || e.key === 'u')) {
-              e.preventDefault()
-            }
-            if (e.key === 'F12' || e.key === 'F2') {
-              e.preventDefault()
-            }
-          }
-        }}
+        className="max-w-4xl max-h-[85vh] overflow-y-auto"
+        onContextMenu={bookmarkletGenerated ? preventCopy : undefined}
+        onCopy={bookmarkletGenerated ? preventCopy : undefined}
         style={{ 
           userSelect: bookmarkletGenerated ? 'none' : 'auto',
           WebkitUserSelect: bookmarkletGenerated ? 'none' : 'auto'
         }}
       >
         <DialogHeader>
-          <DialogTitle>Select Project for {link?.name}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {link && (
+              <>
+                <Globe className="h-5 w-5" />
+                Select Project for {link.name}
+              </>
+            )}
+          </DialogTitle>
           <DialogDescription>
-            Choose a project to generate a bookmarklet that will autofill form fields on {link?.domain}
+            {link && `Choose a project to generate a bookmarklet that will autofill form fields on ${link.domain}`}
           </DialogDescription>
         </DialogHeader>
 
         {!bookmarkletGenerated ? (
           <div className="space-y-6">
-            {/* Project Selection */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Select a Project</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {projects.map((project) => (
-                  <Card 
-                    key={project._id} 
-                    className={`cursor-pointer transition-all hover:shadow-lg ${
-                      selectedProject?._id === project._id ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => setSelectedProject(project)}
-                  >
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{project.projectName}</CardTitle>
-                        <Badge variant={getStatusBadgeVariant(project.status)}>
-                          {project.status}
-                        </Badge>
-                      </div>
-                      <CardDescription>{project.title}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate">{project.websiteURL}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span>{project.email}</span>
-                      </div>
-                      {project.companyName && (
-                        <div className="flex items-center space-x-2 text-sm">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <span>{project.companyName}</span>
-                        </div>
-                      )}
-                      {project.phone && (
-                        <div className="flex items-center space-x-2 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{project.phone}</span>
-                        </div>
-                      )}
-                      {project.category && (
-                        <div className="flex items-center justify-between mt-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {project.category}
-                          </Badge>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Loading projects...</span>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Project Selection */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Select a Project</h3>
+                  {projects.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No projects found. Please create a project first.</p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => window.open('/dashboard/projects', '_blank')}
+                      >
+                        Create Project
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                      {projects.map((project) => (
+                        <Card 
+                          key={project._id} 
+                          className={`cursor-pointer transition-all hover:shadow-lg ${
+                            selectedProject?._id === project._id ? 'ring-2 ring-primary bg-primary/5' : ''
+                          }`}
+                          onClick={() => setSelectedProject(project)}
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg truncate">{project.projectName}</CardTitle>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={getStatusBadgeVariant(project.status)}>
+                                  {project.status}
+                                </Badge>
+                                {selectedProject?._id === project._id && (
+                                  <CheckCircle className="h-5 w-5 text-primary" />
+                                )}
+                              </div>
+                            </div>
+                            <CardDescription className="truncate">{project.title}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-2 pt-0">
+                            <div className="flex items-center space-x-2 text-sm">
+                              <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{project.websiteURL}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-sm">
+                              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">{project.email}</span>
+                            </div>
+                            {project.companyName && (
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="truncate">{project.companyName}</span>
+                              </div>
+                            )}
+                            {project.phone && (
+                              <div className="flex items-center space-x-2 text-sm">
+                                <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                <span className="truncate">{project.phone}</span>
+                              </div>
+                            )}
+                            {project.category && (
+                              <div className="flex items-center justify-between mt-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {project.category}
+                                </Badge>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            {/* Generate Button */}
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleGenerateBookmarklet}
-                disabled={!selectedProject}
-                className="min-w-[200px]"
-              >
-                Generate Bookmarklet
-              </Button>
-            </div>
+                {/* Generate Button */}
+                {projects.length > 0 && (
+                  <div className="flex justify-end">
+                    <Button 
+                      onClick={handleGenerateBookmarklet}
+                      disabled={!selectedProject || isGenerating}
+                      className="min-w-[200px]"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Generating...
+                        </>
+                      ) : (
+                        'Generate Bookmarklet'
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
             {/* Success Message */}
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+              <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-green-800">Bookmarklet Ready!</h3>
+              <h3 className="text-xl font-semibold mb-2 text-green-800 dark:text-green-200">
+                Bookmarklet Ready!
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Your secure bookmarklet has been generated for <strong>{selectedProject?.projectName}</strong>
               </p>
             </div>
 
+            {/* Instructions */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                📌 How to Use Your Bookmarklet
+              </h4>
+              <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                <p><strong>Step 1:</strong> Drag the button below to your browser's bookmarks bar</p>
+                <p><strong>Step 2:</strong> Visit any website with a form</p>
+                <p><strong>Step 3:</strong> Click the bookmarklet to auto-fill the form</p>
+              </div>
+            </div>
+            
             {/* Draggable Bookmarklet */}
             <div className="text-center space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">📌 How to Use Your Bookmarklet</h4>
-                <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
-                  <p><strong>Step 1:</strong> Drag the button below to your browser's bookmarks bar</p>
-                  <p><strong>Step 2:</strong> Visit any website with a form</p>
-                  <p><strong>Step 3:</strong> Click the bookmarklet to auto-fill the form</p>
-                </div>
-              </div>
-              
               <div 
                 className="inline-block bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-8 py-4 rounded-xl cursor-move select-none hover:from-primary/90 hover:to-primary/70 transition-all duration-200 text-lg font-semibold shadow-xl border-2 border-primary/20"
                 draggable={true}
                 role="button"
                 tabIndex={0}
-                onDragStart={(e) => {
-                  // Create a proper bookmark with title and icon
-                  const bookmarkTitle = `🚀 Fill Form - ${selectedProject?.projectName}`;
-                  
-                  e.dataTransfer.setData('text/uri-list', bookmarkletCode)
-                  e.dataTransfer.setData('text/plain', bookmarkletCode)
-                  e.dataTransfer.setData('text/html', `<a href="${bookmarkletCode}" title="${bookmarkTitle}">${bookmarkTitle}</a>`)
-                  e.dataTransfer.effectAllowed = 'copy'
-                  e.dataTransfer.setDragImage(e.currentTarget, 0, 0)
-                }}
-                onDrag={(e) => {
-                  e.preventDefault()
-                }}
-                onDragEnd={(e) => {
-                  e.preventDefault()
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault()
-                  showToast({
-                    title: 'Copy Protected',
-                    description: 'This bookmarklet is secured and cannot be copied. Drag it to your bookmarks bar instead.',
-                    variant: 'destructive'
-                  })
-                }}
-                onCopy={(e) => {
-                  e.preventDefault()
-                  showToast({
-                    title: 'Copy Blocked',
-                    description: 'Bookmarklet copying is disabled for security.',
-                    variant: 'destructive'
-                  })
-                }}
-                onKeyDown={(e) => {
-                  // Block Ctrl+C, Ctrl+A, Ctrl+V, F12, etc.
-                  if (e.ctrlKey && (e.key === 'c' || e.key === 'a' || e.key === 'v' || e.key === 'u')) {
-                    e.preventDefault()
-                  }
-                  if (e.key === 'F12' || e.key === 'F2') {
-                    e.preventDefault()
-                  }
-                }}
+                onDragStart={handleDragStart}
+                onContextMenu={preventCopy}
+                onCopy={preventCopy}
                 style={{ 
                   userSelect: 'none', 
                   WebkitUserSelect: 'none',
@@ -439,7 +498,9 @@ javascript:(function(){
 
             {/* Security Notice */}
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">🔒 Secure & Tracked</h4>
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                🔒 Secure & Tracked
+              </h4>
               <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
                 <p>• This bookmarklet is secured with usage tracking and expires after 24 hours</p>
                 <p>• Copy protection prevents unauthorized sharing</p>
@@ -450,13 +511,13 @@ javascript:(function(){
               </div>
             </div>
 
-
             {/* Actions */}
             <div className="flex justify-center space-x-4">
               <Button 
                 variant="outline" 
-                onClick={() => window.open(link?.submissionUrl, '_blank')}
+                onClick={() => link?.submissionUrl && window.open(link.submissionUrl, '_blank')}
                 className="flex items-center space-x-2"
+                disabled={!link?.submissionUrl}
               >
                 <ExternalLink className="h-4 w-4" />
                 <span>Visit {link?.domain}</span>
