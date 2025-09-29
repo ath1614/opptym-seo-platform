@@ -1512,7 +1512,7 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
 }
 
 // Fallback function for keyword research when analysis fails
-function getFallbackKeywordAnalysis(url: string): KeywordResearchAnalysis {
+export function getFallbackKeywordAnalysis(url: string): KeywordResearchAnalysis {
   const fallbackKeywords = [
     { keyword: 'digital marketing', searchVolume: 8500, difficulty: 65, cpc: 2.45, competition: 'medium' as const },
     { keyword: 'seo optimization', searchVolume: 6200, difficulty: 58, cpc: 3.12, competition: 'high' as const },

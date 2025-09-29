@@ -16,7 +16,19 @@ export async function POST(
     }
 
     const { projectId } = await params
-    const { seedKeyword } = await request.json()
+    
+    // Handle optional request body
+    let seedKeyword: string | undefined
+    try {
+      const body = await request.text()
+      if (body.trim()) {
+        const jsonBody = JSON.parse(body)
+        seedKeyword = jsonBody.seedKeyword
+      }
+    } catch (error) {
+      // If no body or invalid JSON, seedKeyword remains undefined
+      console.log('No request body or invalid JSON, proceeding without seed keyword')
+    }
     
     await connectDB()
 
@@ -59,6 +71,7 @@ export async function POST(
        }
 
        // Run keyword research analysis
+       console.log(`🔍 Starting keyword research analysis for ${project.websiteURL}`)
        const analysisResult = await analyzeKeywordResearch(project.websiteURL)
        
        // Add seed keyword to results if provided
@@ -67,9 +80,9 @@ export async function POST(
          console.log(`📝 Added seed keyword: ${seedKeyword}`)
        }
        
-       console.log(`✅ Keyword research analysis completed successfully for ${project.websiteURL}`)
+       console.log(`✅ Keyword research analysis completed for ${project.websiteURL}`)
        
-       // Only save usage to database AFTER successful analysis
+       // Always save results to database (even if it's fallback data)
        const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
        const seoToolUsage = new SeoToolUsage({
          userId: session.user.id,
@@ -84,26 +97,75 @@ export async function POST(
        await seoToolUsage.save()
        console.log(`💾 Saved keyword research results to database`)
 
+       // Check if this is fallback data and adjust the response accordingly
+       const isFallbackData = analysisResult.recommendations?.some(rec => 
+         rec.includes('Unable to analyze website content') || rec.includes('fallback')
+       ) || false
+
        return NextResponse.json({
          success: true,
          data: analysisResult,
-         message: 'Keyword research analysis completed successfully'
+         message: isFallbackData 
+           ? 'Analysis completed with sample data. The website may be blocking automated requests or temporarily unavailable.'
+           : 'Keyword research analysis completed successfully',
+         isFallback: isFallbackData
        })
      } catch (analysisError) {
-       console.error('❌ Keyword research analysis failed:', analysisError)
+       console.error('❌ Keyword research analysis failed completely:', analysisError)
        
-       // Return a more user-friendly error response
-       const errorMessage = analysisError instanceof Error ? analysisError.message : 'Unknown analysis error'
-       
-       return NextResponse.json(
-         { 
-           error: 'Keyword research analysis failed',
-           message: 'Unable to analyze the website. This could be due to network issues or website accessibility problems.',
-           details: errorMessage,
-           success: false
-         },
-         { status: 500 }
-       )
+       // Even if analysis fails completely, try to provide fallback data
+       try {
+         const { getFallbackKeywordAnalysis } = await import('@/lib/seo-analysis')
+         const fallbackResult = getFallbackKeywordAnalysis(project.websiteURL)
+         
+         if (seedKeyword) {
+           fallbackResult.seedKeyword = seedKeyword
+         }
+         
+         console.log(`🔄 Using fallback keyword analysis data`)
+         
+         // Save fallback results
+         const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
+         const seoToolUsage = new SeoToolUsage({
+           userId: session.user.id,
+           projectId: projectId,
+           toolId: 'keyword-research',
+           toolName: 'Keyword Research',
+           url: project.websiteURL,
+           results: fallbackResult,
+           createdAt: new Date()
+         })
+
+         await seoToolUsage.save()
+         
+         return NextResponse.json({
+           success: true,
+           data: fallbackResult,
+           message: 'Analysis completed with sample data due to website accessibility issues. Please verify your website URL and try again later.',
+           isFallback: true,
+           warning: 'This analysis uses sample data because the website could not be accessed.'
+         })
+       } catch (fallbackError) {
+         console.error('❌ Even fallback analysis failed:', fallbackError)
+         
+         const errorMessage = analysisError instanceof Error ? analysisError.message : 'Unknown analysis error'
+         
+         return NextResponse.json(
+           { 
+             error: 'Keyword research analysis failed',
+             message: 'Unable to analyze the website or provide fallback data. Please check your website URL and try again.',
+             details: errorMessage,
+             success: false,
+             suggestions: [
+               'Verify that your website URL is correct and accessible',
+               'Check if your website is blocking automated requests',
+               'Try again in a few minutes as this might be a temporary issue',
+               'Contact support if the problem persists'
+             ]
+           },
+           { status: 500 }
+         )
+       }
      }
 
   } catch (error) {

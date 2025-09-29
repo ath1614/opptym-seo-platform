@@ -348,7 +348,8 @@ export default function KeywordResearcherPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({})
       })
 
       const data = await response.json()
