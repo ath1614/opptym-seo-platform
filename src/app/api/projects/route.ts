@@ -26,7 +26,7 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .select('-__v')
 
-    return NextResponse.json({ projects })
+    return NextResponse.json({ success: true, projects })
   } catch (error) {
     console.error('Get projects error:', error)
     return NextResponse.json(

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +29,9 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  
+  // Field references for scrolling to validation errors
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
   
   // Separate display values for comma-separated fields to allow natural typing
   const [displayValues, setDisplayValues] = useState({
@@ -334,136 +337,183 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       errors['address.pincode'] = 'Please enter a valid postal code (5-6 digits)'
     }
     
-    // SEO Metadata validations with SEO suggestions
-    if (formData.seoMetadata.metaTitle && formData.seoMetadata.metaTitle.length > 0) {
-      if (formData.seoMetadata.metaTitle.length < 30) {
-        errors['seoMetadata.metaTitle'] = 'Meta title should be at least 30 characters for better SEO'
-      } else if (formData.seoMetadata.metaTitle.length > 60) {
-        errors['seoMetadata.metaTitle'] = 'Meta title should not exceed 60 characters to avoid truncation in search results'
-      }
+    // SEO Metadata validations - now required
+    if (!formData.seoMetadata.metaTitle?.trim()) {
+      errors['seoMetadata.metaTitle'] = 'Meta title is required'
+    } else if (formData.seoMetadata.metaTitle.length < 30) {
+      errors['seoMetadata.metaTitle'] = 'Meta title should be at least 30 characters for better SEO'
+    } else if (formData.seoMetadata.metaTitle.length > 60) {
+      errors['seoMetadata.metaTitle'] = 'Meta title should not exceed 60 characters to avoid truncation in search results'
     }
     
-    if (formData.seoMetadata.metaDescription && formData.seoMetadata.metaDescription.length > 0) {
-      if (formData.seoMetadata.metaDescription.length < 120) {
-        errors['seoMetadata.metaDescription'] = 'Meta description should be at least 120 characters for better SEO'
-      } else if (formData.seoMetadata.metaDescription.length > 160) {
-        errors['seoMetadata.metaDescription'] = 'Meta description should not exceed 160 characters to avoid truncation'
-      }
+    if (!formData.seoMetadata.metaDescription?.trim()) {
+      errors['seoMetadata.metaDescription'] = 'Meta description is required'
+    } else if (formData.seoMetadata.metaDescription.length < 120) {
+      errors['seoMetadata.metaDescription'] = 'Meta description should be at least 120 characters for better SEO'
+    } else if (formData.seoMetadata.metaDescription.length > 160) {
+      errors['seoMetadata.metaDescription'] = 'Meta description should not exceed 160 characters to avoid truncation'
     }
     
-    // Article submission validations
-    if (formData.articleSubmission.articleTitle && formData.articleSubmission.articleTitle.length > 0) {
-      if (formData.articleSubmission.articleTitle.length < 10) {
-        errors['articleSubmission.articleTitle'] = 'Article title should be at least 10 characters'
-      } else if (formData.articleSubmission.articleTitle.length > 200) {
-        errors['articleSubmission.articleTitle'] = 'Article title cannot exceed 200 characters'
-      }
+    // Article submission validations - now required
+    if (!formData.articleSubmission.articleTitle?.trim()) {
+      errors['articleSubmission.articleTitle'] = 'Article title is required'
+    } else if (formData.articleSubmission.articleTitle.length < 10) {
+      errors['articleSubmission.articleTitle'] = 'Article title should be at least 10 characters'
+    } else if (formData.articleSubmission.articleTitle.length > 200) {
+      errors['articleSubmission.articleTitle'] = 'Article title cannot exceed 200 characters'
     }
     
-    if (formData.articleSubmission.articleContent && formData.articleSubmission.articleContent.length > 0) {
-      if (formData.articleSubmission.articleContent.length < 100) {
-        errors['articleSubmission.articleContent'] = 'Article content should be at least 100 characters'
-      } else if (formData.articleSubmission.articleContent.length > 5000) {
-        errors['articleSubmission.articleContent'] = 'Article content cannot exceed 5000 characters'
-      }
+    if (!formData.articleSubmission.articleContent?.trim()) {
+      errors['articleSubmission.articleContent'] = 'Article content is required'
+    } else if (formData.articleSubmission.articleContent.length < 100) {
+      errors['articleSubmission.articleContent'] = 'Article content should be at least 100 characters'
+    } else if (formData.articleSubmission.articleContent.length > 5000) {
+      errors['articleSubmission.articleContent'] = 'Article content cannot exceed 5000 characters'
     }
     
     if (formData.articleSubmission.authorBio && formData.articleSubmission.authorBio.length > 500) {
       errors['articleSubmission.authorBio'] = 'Author bio cannot exceed 500 characters'
     }
     
-    // WhatsApp validation
-    if (formData.whatsapp && formData.whatsapp.trim()) {
-      if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.whatsapp.replace(/[\s\-\(\)]/g, ''))) {
-        errors.whatsapp = 'Please enter a valid WhatsApp number (e.g., +1234567890)'
-      }
+    // WhatsApp validation - now required
+    if (!formData.whatsapp?.trim()) {
+      errors.whatsapp = 'WhatsApp number is required'
+    } else if (!/^[\+]?[1-9][\d]{0,15}$/.test(formData.whatsapp.replace(/[\s\-\(\)]/g, ''))) {
+      errors.whatsapp = 'Please enter a valid WhatsApp number (e.g., +1234567890)'
     }
     
-    // Target Audience validation
-    if (formData.targetAudience && formData.targetAudience.length > 500) {
+    // Target Audience validation - now required
+    if (!formData.targetAudience?.trim()) {
+      errors.targetAudience = 'Target audience is required'
+    } else if (formData.targetAudience.length > 500) {
       errors.targetAudience = 'Target audience description cannot exceed 500 characters'
     }
     
-    // Goals validation
-    if (formData.goals && formData.goals.length > 1000) {
+    // Goals validation - now required
+    if (!formData.goals?.trim()) {
+      errors.goals = 'Project goals are required'
+    } else if (formData.goals.length > 1000) {
       errors.goals = 'Goals description cannot exceed 1000 characters'
     }
     
-    // Notes validation
-    if (formData.notes && formData.notes.length > 2000) {
+    // Notes validation - now required
+    if (!formData.notes?.trim()) {
+      errors.notes = 'Notes are required'
+    } else if (formData.notes.length > 2000) {
       errors.notes = 'Notes cannot exceed 2000 characters'
     }
     
-    // Keywords validation
-    if (formData.keywords.length > 20) {
+    // Business Hours validation - now required
+    if (!formData.businessHours?.trim()) {
+      errors.businessHours = 'Business hours are required'
+    }
+    
+    // Established Year validation - now required
+    if (!formData.establishedYear?.toString().trim()) {
+      errors.establishedYear = 'Established year is required'
+    }
+    
+    // Logo Image URL validation - now required
+    if (!formData.logoImageURL?.trim()) {
+      errors.logoImageURL = 'Logo image URL is required'
+    } else if (!/^https?:\/\/.+/.test(formData.logoImageURL)) {
+      errors.logoImageURL = 'Please enter a valid URL starting with http:// or https://'
+    }
+    
+    // Building validation - now required
+    if (!formData.address.building?.trim()) {
+      errors['address.building'] = 'Building is required'
+    }
+    
+    // Address Line 3 validation - now required
+    if (!formData.address.addressLine3?.trim()) {
+      errors['address.addressLine3'] = 'Address line 3 is required'
+    }
+    
+    // Keywords validation - now required
+    if (formData.keywords.length === 0) {
+      errors.keywords = 'At least one keyword is required'
+    } else if (formData.keywords.length > 20) {
       errors.keywords = 'Maximum 20 keywords allowed'
     }
     
-    // Competitors validation
-    if (formData.competitors.length > 10) {
+    // Competitors validation - now required
+    if (formData.competitors.length === 0) {
+      errors.competitors = 'At least one competitor is required'
+    } else if (formData.competitors.length > 10) {
       errors.competitors = 'Maximum 10 competitors allowed'
     }
     
-    // SEO Keywords validation
-    if (formData.seoMetadata.keywords.length > 15) {
+    // SEO Keywords validation - now required
+    if (formData.seoMetadata.keywords.length === 0) {
+      errors['seoMetadata.keywords'] = 'At least one SEO keyword is required'
+    } else if (formData.seoMetadata.keywords.length > 15) {
       errors['seoMetadata.keywords'] = 'Maximum 15 SEO keywords allowed'
     }
     
-    if (formData.seoMetadata.targetKeywords.length > 10) {
+    if (formData.seoMetadata.targetKeywords.length === 0) {
+      errors['seoMetadata.targetKeywords'] = 'At least one target keyword is required'
+    } else if (formData.seoMetadata.targetKeywords.length > 10) {
       errors['seoMetadata.targetKeywords'] = 'Maximum 10 target keywords allowed'
     }
     
-    // Sitemap URL validation
-    if (formData.seoMetadata.sitemapURL && formData.seoMetadata.sitemapURL.trim()) {
-      if (!/^https?:\/\/.+/.test(formData.seoMetadata.sitemapURL)) {
-        errors['seoMetadata.sitemapURL'] = 'Sitemap URL must start with http:// or https://'
-      }
+    // Sitemap URL validation - now required
+    if (!formData.seoMetadata.sitemapURL?.trim()) {
+      errors['seoMetadata.sitemapURL'] = 'Sitemap URL is required'
+    } else if (!/^https?:\/\/.+/.test(formData.seoMetadata.sitemapURL)) {
+      errors['seoMetadata.sitemapURL'] = 'Sitemap URL must start with http:// or https://'
     }
     
-    // Robots URL validation
-    if (formData.seoMetadata.robotsURL && formData.seoMetadata.robotsURL.trim()) {
-      if (!/^https?:\/\/.+/.test(formData.seoMetadata.robotsURL)) {
-        errors['seoMetadata.robotsURL'] = 'Robots URL must start with http:// or https://'
-      }
+    // Robots URL validation - now required
+    if (!formData.seoMetadata.robotsURL?.trim()) {
+      errors['seoMetadata.robotsURL'] = 'Robots URL is required'
+    } else if (!/^https?:\/\/.+/.test(formData.seoMetadata.robotsURL)) {
+      errors['seoMetadata.robotsURL'] = 'Robots URL must start with http:// or https://'
     }
     
-    // Article Author Name validation
-    if (formData.articleSubmission.authorName && formData.articleSubmission.authorName.length > 100) {
+    // Article Author Name validation - now required
+    if (!formData.articleSubmission.authorName?.trim()) {
+      errors['articleSubmission.authorName'] = 'Author name is required'
+    } else if (formData.articleSubmission.authorName.length > 100) {
       errors['articleSubmission.authorName'] = 'Author name cannot exceed 100 characters'
     }
     
-    // Article Tags validation
-    if (formData.articleSubmission.tags.length > 10) {
+    // Article Tags validation - now required
+    if (formData.articleSubmission.tags.length === 0) {
+      errors['articleSubmission.tags'] = 'At least one article tag is required'
+    } else if (formData.articleSubmission.tags.length > 10) {
       errors['articleSubmission.tags'] = 'Maximum 10 article tags allowed'
     }
     
-    // Classified Product Name validation
-    if (formData.classified.productName && formData.classified.productName.length > 200) {
+    // Classified Product Name validation - now required
+    if (!formData.classified.productName?.trim()) {
+      errors['classified.productName'] = 'Product name is required'
+    } else if (formData.classified.productName.length > 200) {
       errors['classified.productName'] = 'Product name cannot exceed 200 characters'
     }
     
-    // Price validation
-    if (formData.classified.price && formData.classified.price.trim()) {
-      if (!/^\d+(\.\d{1,2})?$/.test(formData.classified.price)) {
-        errors['classified.price'] = 'Please enter a valid price (e.g., 99.99)'
-      }
+    // Price validation - now required
+    if (!formData.classified.price?.trim()) {
+      errors['classified.price'] = 'Price is required'
+    } else if (!/^\d+(\.\d{1,2})?$/.test(formData.classified.price)) {
+      errors['classified.price'] = 'Please enter a valid price (e.g., 99.99)'
     }
     
-    // Product Image URL validation
-    if (formData.classified.productImageURL && formData.classified.productImageURL.trim()) {
-      if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(formData.classified.productImageURL)) {
-        errors['classified.productImageURL'] = 'Please enter a valid image URL (jpg, jpeg, png, gif, webp)'
-      }
+    // Product Image URL validation - now required
+    if (!formData.classified.productImageURL?.trim()) {
+      errors['classified.productImageURL'] = 'Product image URL is required'
+    } else if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(formData.classified.productImageURL)) {
+      errors['classified.productImageURL'] = 'Please enter a valid image URL (jpg, jpeg, png, gif, webp)'
     }
     
-    // Social Media URL validations
+    // Social Media URL validations - now required
     const socialFields = ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube']
     socialFields.forEach(field => {
       const value = formData.social[field as keyof typeof formData.social]
-      if (value && value.trim()) {
-        if (!/^https?:\/\/.+/.test(value)) {
-          errors[`social.${field}`] = `${field.charAt(0).toUpperCase() + field.slice(1)} URL must start with http:// or https://`
-        }
+      if (!value?.trim()) {
+        errors[`social.${field}`] = `${field.charAt(0).toUpperCase() + field.slice(1)} URL is required`
+      } else if (!/^https?:\/\/.+/.test(value)) {
+        errors[`social.${field}`] = `${field.charAt(0).toUpperCase() + field.slice(1)} URL must start with http:// or https://`
       }
     })
     
@@ -733,12 +783,70 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
   }
 
+  // Helper function to scroll to first validation error field
+  const scrollToFirstError = (errors: Record<string, string>) => {
+    const errorFields = Object.keys(errors)
+    if (errorFields.length === 0) return
+
+    // Define field priority order for scrolling (most important fields first)
+    const fieldPriority = [
+      'projectName', 'title', 'websiteURL', 'email', 'category', 'companyName',
+      'phone', 'businessDescription', 'address.building', 'address.addressLine1',
+      'address.city', 'address.state', 'address.country', 'address.pincode',
+      'seoMetadata.metaTitle', 'seoMetadata.metaDescription', 'articleSubmission.articleTitle',
+      'articleSubmission.articleContent'
+    ]
+
+    // Find the first error field based on priority
+    let firstErrorField = errorFields[0]
+    for (const priorityField of fieldPriority) {
+      if (errorFields.includes(priorityField)) {
+        firstErrorField = priorityField
+        break
+      }
+    }
+
+    // Get the field element and scroll to it
+    const fieldElement = fieldRefs.current[firstErrorField]
+    if (fieldElement) {
+      // Add visual highlight to the field
+      fieldElement.classList.add('ring-2', 'ring-red-500', 'ring-offset-2')
+      
+      // Smooth scroll to the field with some offset for better visibility
+      fieldElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      })
+
+      // Focus the field if it's an input element
+      if (fieldElement instanceof HTMLInputElement || 
+          fieldElement instanceof HTMLTextAreaElement || 
+          fieldElement instanceof HTMLSelectElement) {
+        setTimeout(() => {
+          fieldElement.focus()
+        }, 500) // Delay to allow scroll to complete
+      }
+
+      // Remove highlight after a few seconds
+      setTimeout(() => {
+        fieldElement.classList.remove('ring-2', 'ring-red-500', 'ring-offset-2')
+      }, 3000)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Perform client-side validation first
     const validationResult = validateForm()
     if (!validationResult.isValid) {
+      // Set validation errors for visual indicators
+      setValidationErrors(validationResult.errors)
+      
+      // Scroll to first error field
+      scrollToFirstError(validationResult.errors)
+      
       const errorCount = Object.keys(validationResult.errors).length
       const errorFields = Object.keys(validationResult.errors)
       
@@ -1018,6 +1126,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="projectName">Project Name *</Label>
                     <Input
                       id="projectName"
+                      ref={(el) => { fieldRefs.current['projectName'] = el }}
                       value={formData.projectName}
                       onChange={(e) => handleInputChange('projectName', e.target.value)}
                       placeholder="Enter project name"
@@ -1035,6 +1144,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="title">Title *</Label>
                     <Input
                       id="title"
+                      ref={(el) => { fieldRefs.current['title'] = el }}
                       value={formData.title}
                       onChange={(e) => handleInputChange('title', e.target.value)}
                       placeholder="Enter title"
@@ -1054,6 +1164,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="websiteURL">Website URL *</Label>
                   <Input
                     id="websiteURL"
+                    ref={(el) => { fieldRefs.current['websiteURL'] = el }}
                     type="url"
                     value={formData.websiteURL}
                     onChange={(e) => handleInputChange('websiteURL', e.target.value)}
@@ -1074,6 +1185,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
+                      ref={(el) => { fieldRefs.current['email'] = el }}
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
@@ -1091,19 +1203,44 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
                     <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                      <SelectTrigger className={getFieldError('category') ? 'border-red-500' : ''}>
+                      <SelectTrigger 
+                        ref={(el) => { fieldRefs.current['category'] = el }}
+                        className={getFieldError('category') ? 'border-red-500' : ''}
+                      >
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="ecommerce">E-commerce</SelectItem>
-                        <SelectItem value="blog">Blog</SelectItem>
-                        <SelectItem value="portfolio">Portfolio</SelectItem>
-                        <SelectItem value="news">News</SelectItem>
-                        <SelectItem value="education">Education</SelectItem>
-                        <SelectItem value="healthcare">Healthcare</SelectItem>
-                        <SelectItem value="technology">Technology</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="business-industry">Business & Industry</SelectItem>
+                        <SelectItem value="technology-it">Technology & IT</SelectItem>
+                        <SelectItem value="ecommerce-retail">E-Commerce & Retail</SelectItem>
+                        <SelectItem value="marketing-advertising">Marketing & Advertising</SelectItem>
+                        <SelectItem value="finance-investment">Finance & Investment</SelectItem>
+                        <SelectItem value="health-fitness">Health & Fitness</SelectItem>
+                        <SelectItem value="education-training">Education & Training</SelectItem>
+                        <SelectItem value="home-lifestyle">Home & Lifestyle</SelectItem>
+                        <SelectItem value="startups-innovation">Startups & Innovation</SelectItem>
+                        <SelectItem value="travel-tourism">Travel & Tourism</SelectItem>
+                        <SelectItem value="food-beverages">Food & Beverages</SelectItem>
+                        <SelectItem value="automobile-transport">Automobile & Transport</SelectItem>
+                        <SelectItem value="real-estate">Real Estate</SelectItem>
+                        <SelectItem value="religion-spirituality">Religion & Spirituality</SelectItem>
+                        <SelectItem value="arts-entertainment">Arts & Entertainment</SelectItem>
+                        <SelectItem value="jobs-career">Jobs & Career</SelectItem>
+                        <SelectItem value="beauty-fashion">Beauty & Fashion</SelectItem>
+                        <SelectItem value="science-research">Science & Research</SelectItem>
+                        <SelectItem value="environment-sustainability">Environment & Sustainability</SelectItem>
+                        <SelectItem value="government-politics">Government & Politics</SelectItem>
+                        <SelectItem value="telecommunication">Telecommunication</SelectItem>
+                        <SelectItem value="legal-law">Legal & Law</SelectItem>
+                        <SelectItem value="events-conferences">Events & Conferences</SelectItem>
+                        <SelectItem value="nonprofits-ngos">Nonprofits & NGOs</SelectItem>
+                        <SelectItem value="pets-animals">Pets & Animals</SelectItem>
+                        <SelectItem value="parenting-family">Parenting & Family</SelectItem>
+                        <SelectItem value="personal-blogs-hobbies">Personal Blogs & Hobbies</SelectItem>
+                        <SelectItem value="sports-fitness">Sports & Fitness</SelectItem>
+                        <SelectItem value="health">Health</SelectItem>
+                        <SelectItem value="media-news">Media & News</SelectItem>
+                        <SelectItem value="miscellaneous-general">Miscellaneous / General</SelectItem>
                       </SelectContent>
                     </Select>
                     {getFieldError('category') && (
@@ -1120,6 +1257,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="companyName">Company Name *</Label>
                     <Input
                       id="companyName"
+                      ref={(el) => { fieldRefs.current['companyName'] = el }}
                       value={formData.companyName}
                       onChange={(e) => handleInputChange('companyName', e.target.value)}
                       placeholder="Enter company name"
@@ -1137,6 +1275,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="phone">Phone *</Label>
                     <Input
                       id="phone"
+                      ref={(el) => { fieldRefs.current['phone'] = el }}
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
                       placeholder="+1 (555) 123-4567"
@@ -1166,6 +1305,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="businessDescription">Business Description *</Label>
                   <Textarea
                     id="businessDescription"
+                    ref={(el) => { fieldRefs.current['businessDescription'] = el }}
                     value={formData.businessDescription || formData.description}
                     onChange={(e) => handleInputChange('businessDescription', e.target.value)}
                     placeholder="Describe your business..."
@@ -1267,6 +1407,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="building">Building</Label>
                   <Input
                     id="building"
+                    ref={(el) => { fieldRefs.current['address.building'] = el }}
                     value={formData.address.building}
                     onChange={(e) => handleInputChange('address.building', e.target.value)}
                     placeholder="Building name or number"
@@ -1277,6 +1418,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="addressLine1">Address Line 1 *</Label>
                   <Input
                     id="addressLine1"
+                    ref={(el) => { fieldRefs.current['address.addressLine1'] = el }}
                     value={formData.address.addressLine1}
                     onChange={(e) => handleInputChange('address.addressLine1', e.target.value)}
                     placeholder="Street address"
@@ -1316,6 +1458,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="district">District *</Label>
                     <Input
                       id="district"
+                      ref={(el) => { fieldRefs.current['address.district'] = el }}
                       value={formData.address.district}
                       onChange={(e) => handleInputChange('address.district', e.target.value)}
                       placeholder="District"
@@ -1333,6 +1476,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="city">City *</Label>
                     <Input
                       id="city"
+                      ref={(el) => { fieldRefs.current['address.city'] = el }}
                       value={formData.address.city}
                       onChange={(e) => handleInputChange('address.city', e.target.value)}
                       placeholder="City"
@@ -1353,6 +1497,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="state">State *</Label>
                     <Input
                       id="state"
+                      ref={(el) => { fieldRefs.current['address.state'] = el }}
                       value={formData.address.state}
                       onChange={(e) => handleInputChange('address.state', e.target.value)}
                       placeholder="State"
@@ -1370,6 +1515,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     <Label htmlFor="country">Country *</Label>
                     <Input
                       id="country"
+                      ref={(el) => { fieldRefs.current['address.country'] = el }}
                       value={formData.address.country}
                       onChange={(e) => handleInputChange('address.country', e.target.value)}
                       placeholder="Country"
@@ -1389,6 +1535,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                   <Label htmlFor="pincode">Pincode *</Label>
                   <Input
                     id="pincode"
+                    ref={(el) => { fieldRefs.current['address.pincode'] = el }}
                     value={formData.address.pincode}
                     onChange={(e) => handleInputChange('address.pincode', e.target.value)}
                     placeholder="Postal code"

@@ -143,15 +143,60 @@ export function ProjectManagement() {
     if (!category) {
       return 'bg-muted text-muted-foreground'
     }
-    const colors = [
-      'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
-      'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300',
-      'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-300',
-      'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300',
-      'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300'
-    ]
-    const index = category.length % colors.length
-    return colors[index]
+    
+    switch (category) {
+      case 'Business & Industry': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300'
+      case 'Technology & IT': return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300'
+      case 'E-Commerce & Retail': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+      case 'Marketing & Advertising': return 'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-300'
+      case 'Finance & Investment': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+      case 'Health & Fitness': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+      case 'Education & Training': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300'
+      case 'Home & Lifestyle': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300'
+      case 'Startups & Innovation': return 'bg-violet-100 text-violet-800 dark:bg-violet-900/20 dark:text-violet-300'
+      case 'Travel & Tourism': return 'bg-teal-100 text-teal-800 dark:bg-teal-900/20 dark:text-teal-300'
+      case 'Food & Beverages': return 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
+      case 'Automobile & Transport': return 'bg-slate-100 text-slate-800 dark:bg-slate-900/20 dark:text-slate-300'
+      case 'Real Estate': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
+      case 'Religion & Spirituality': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+      case 'Arts & Entertainment': return 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/20 dark:text-fuchsia-300'
+      case 'Jobs & Career': return 'bg-lime-100 text-lime-800 dark:bg-lime-900/20 dark:text-lime-300'
+      case 'Beauty & Fashion': return 'bg-rose-100 text-rose-800 dark:bg-rose-900/20 dark:text-rose-300'
+      case 'Science & Research': return 'bg-sky-100 text-sky-800 dark:bg-sky-900/20 dark:text-sky-300'
+      case 'Environment & Sustainability': return 'bg-green-200 text-green-900 dark:bg-green-800/20 dark:text-green-200'
+      case 'Government & Politics': return 'bg-gray-200 text-gray-900 dark:bg-gray-800/20 dark:text-gray-200'
+      case 'Telecommunication': return 'bg-blue-200 text-blue-900 dark:bg-blue-800/20 dark:text-blue-200'
+      case 'Legal & Law': return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-900/20 dark:text-neutral-300'
+      case 'Events & Conferences': return 'bg-purple-200 text-purple-900 dark:bg-purple-800/20 dark:text-purple-200'
+      case 'Nonprofits & NGOs': return 'bg-teal-200 text-teal-900 dark:bg-teal-800/20 dark:text-teal-200'
+      case 'Pets & Animals': return 'bg-orange-200 text-orange-900 dark:bg-orange-800/20 dark:text-orange-200'
+      case 'Parenting & Family': return 'bg-pink-200 text-pink-900 dark:bg-pink-800/20 dark:text-pink-200'
+      case 'Personal Blogs & Hobbies': return 'bg-indigo-200 text-indigo-900 dark:bg-indigo-800/20 dark:text-indigo-200'
+      case 'Sports & Fitness': return 'bg-red-200 text-red-900 dark:bg-red-800/20 dark:text-red-200'
+      case 'Health': return 'bg-emerald-200 text-emerald-900 dark:bg-emerald-800/20 dark:text-emerald-200'
+      case 'Media & News': return 'bg-slate-200 text-slate-900 dark:bg-slate-800/20 dark:text-slate-200'
+      case 'Miscellaneous / General': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+      // Legacy categories for backward compatibility
+      case 'business': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300'
+      case 'ecommerce': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+      case 'blog': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+      case 'portfolio': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300'
+      case 'news': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+      case 'education': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300'
+      case 'healthcare': return 'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-300'
+      case 'technology': return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300'
+      default: 
+        // Fallback to hash-based color for unknown categories
+        const colors = [
+          'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300',
+          'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300',
+          'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-300',
+          'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300',
+          'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300'
+        ]
+        const index = category.length % colors.length
+        return colors[index]
+    }
   }
 
   return (

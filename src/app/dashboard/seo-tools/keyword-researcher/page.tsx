@@ -45,7 +45,7 @@ interface AnalysisData {
     impact: string
     solution: string
     priority: 'high' | 'medium' | 'low'
-    affectedKeywords: number
+    affectedKeywords: number | string
   }>
   tips: Array<{
     category: string
@@ -104,67 +104,102 @@ export default function KeywordResearcherPage() {
   const generateEnhancedAnalysis = (basicData: {
     score?: number
     recommendations?: Array<{ category: string; priority: string; title: string; description: string; impact: string }>
+    primaryKeywords?: Array<{ keyword: string; searchVolume: number; difficulty: number; cpc: number; competition: string }>
+    relatedKeywords?: Array<{ keyword: string; searchVolume: number; difficulty: number; relevance: number }>
+    longTailKeywords?: Array<{ keyword: string; searchVolume: number; difficulty: number }>
   }) => {
     const score = basicData.score || 0
+    const primaryKeywords = basicData.primaryKeywords || []
+    const relatedKeywords = basicData.relatedKeywords || []
+    const longTailKeywords = basicData.longTailKeywords || []
     
-    // Generate enhanced keyword metrics
+    // Calculate real keyword metrics from actual data
+    const totalKeywords = primaryKeywords.length + relatedKeywords.length + longTailKeywords.length
+    const highVolumeKeywords = primaryKeywords.filter(k => k.searchVolume > 1000).length
+    const lowCompetitionKeywords = primaryKeywords.filter(k => k.difficulty < 30).length
+    const brandedKeywords = primaryKeywords.filter(k => k.keyword.toLowerCase().includes('brand') || k.keyword.toLowerCase().includes('company')).length
+    
     const keywordMetrics = {
-      totalKeywords: Math.floor(Math.random() * 500) + 100,
-      highVolumeKeywords: Math.floor(Math.random() * 50) + 10,
-      lowCompetitionKeywords: Math.floor(Math.random() * 80) + 20,
-      longTailKeywords: Math.floor(Math.random() * 200) + 50,
-      brandedKeywords: Math.floor(Math.random() * 30) + 5,
+      totalKeywords,
+      highVolumeKeywords,
+      lowCompetitionKeywords,
+      longTailKeywords: longTailKeywords.length,
+      brandedKeywords,
       opportunityScore: score
     }
 
-    // Generate issues based on analysis
+    // Generate issues based on actual keyword analysis
     const issues = []
     
-    if (keywordMetrics.highVolumeKeywords < 20) {
+    // Check for high-volume keyword opportunities
+    if (highVolumeKeywords < 3 && primaryKeywords.length > 0) {
+      const highVolumeKeywordsList = primaryKeywords.filter(k => k.searchVolume > 1000)
+      const lowVolumeKeywordsList = primaryKeywords.filter(k => k.searchVolume <= 1000)
       issues.push({
         type: 'warning' as const,
         title: 'Limited High-Volume Keywords',
-        description: `Only ${keywordMetrics.highVolumeKeywords} high-volume keywords found`,
+        description: `Only ${highVolumeKeywordsList.length} out of ${primaryKeywords.length} primary keywords have high search volume (>1000)`,
         impact: 'Missing opportunities for high-traffic keywords that could drive significant organic traffic',
-        solution: 'Research and target more high-volume keywords in your niche using keyword research tools',
+        solution: 'Research and target more high-volume keywords in your niche. Focus on keywords with 1000+ monthly searches.',
         priority: 'high' as const,
-        affectedKeywords: keywordMetrics.highVolumeKeywords
+        affectedKeywords: `Low volume keywords: ${lowVolumeKeywordsList.map(k => `"${k.keyword}" (${k.searchVolume})`).join(', ')}`
       })
     }
 
-    if (keywordMetrics.longTailKeywords < keywordMetrics.totalKeywords * 0.6) {
+    // Check for keyword difficulty balance
+    const highDifficultyKeywordsList = primaryKeywords.filter(k => k.difficulty > 70)
+    if (highDifficultyKeywordsList.length > primaryKeywords.length * 0.7 && primaryKeywords.length > 0) {
+      issues.push({
+        type: 'error' as const,
+        title: 'Too Many High-Difficulty Keywords',
+        description: `${highDifficultyKeywordsList.length} out of ${primaryKeywords.length} keywords have high difficulty (>70)`,
+        impact: 'High-difficulty keywords are harder to rank for and may require significant resources',
+        solution: 'Balance your keyword portfolio with easier-to-rank keywords (difficulty <50) for quicker wins',
+        priority: 'high' as const,
+        affectedKeywords: `High difficulty keywords: ${highDifficultyKeywordsList.map(k => `"${k.keyword}" (${k.difficulty})`).join(', ')}`
+      })
+    }
+
+    // Check for long-tail keyword opportunities
+    if (longTailKeywords.length < totalKeywords * 0.4 && totalKeywords > 0) {
+      const longTailKeywordNames = longTailKeywords.map(k => `"${k.keyword}"`).join(', ')
       issues.push({
         type: 'info' as const,
-        title: 'Low Long-Tail Keyword Ratio',
-        description: 'Long-tail keywords represent less than 60% of your keyword portfolio',
+        title: 'Low Long-Tail Keyword Coverage',
+        description: `Long-tail keywords represent only ${Math.round((longTailKeywords.length / totalKeywords) * 100)}% of your keyword portfolio`,
         impact: 'Long-tail keywords often have higher conversion rates and lower competition',
-        solution: 'Focus on creating content around specific, longer keyword phrases',
+        solution: 'Focus on creating content around specific, longer keyword phrases (3+ words)',
         priority: 'medium' as const,
-        affectedKeywords: keywordMetrics.longTailKeywords
+        affectedKeywords: longTailKeywords.length > 0 ? `Current long-tail keywords: ${longTailKeywordNames}` : 'No long-tail keywords found'
       })
     }
 
-    if (keywordMetrics.lowCompetitionKeywords < 30) {
+    // Check for low-competition opportunities
+    if (lowCompetitionKeywords < primaryKeywords.length * 0.3 && primaryKeywords.length > 0) {
+      const lowCompetitionKeywordsList = primaryKeywords.filter(k => k.difficulty < 30)
+      const highCompetitionKeywordsList = primaryKeywords.filter(k => k.difficulty >= 30)
       issues.push({
         type: 'warning' as const,
         title: 'Few Low-Competition Opportunities',
-        description: `Only ${keywordMetrics.lowCompetitionKeywords} low-competition keywords identified`,
+        description: `Only ${lowCompetitionKeywordsList.length} out of ${primaryKeywords.length} keywords have low competition (difficulty <30)`,
         impact: 'Missing easy-to-rank opportunities that could provide quick SEO wins',
         solution: 'Use keyword difficulty tools to find easier-to-rank keywords in your niche',
         priority: 'medium' as const,
-        affectedKeywords: keywordMetrics.lowCompetitionKeywords
+        affectedKeywords: `High competition keywords: ${highCompetitionKeywordsList.map(k => `"${k.keyword}" (${k.difficulty})`).join(', ')}`
       })
     }
 
-    if (keywordMetrics.brandedKeywords < 10) {
+    // Check for keyword diversity
+    if (relatedKeywords.length < primaryKeywords.length * 0.5 && primaryKeywords.length > 0) {
+      const relatedKeywordNames = relatedKeywords.map(k => `"${k.keyword}"`).join(', ')
       issues.push({
         type: 'info' as const,
-        title: 'Limited Branded Keywords',
-        description: 'Few branded keywords found in your strategy',
-        impact: 'Branded keywords help protect your brand presence and capture brand-aware traffic',
-        solution: 'Include variations of your brand name and branded product terms',
+        title: 'Limited Keyword Diversity',
+        description: `Only ${relatedKeywords.length} related keywords found for ${primaryKeywords.length} primary keywords`,
+        impact: 'Limited keyword diversity may restrict your content reach and topical authority',
+        solution: 'Expand your keyword research to include more related and semantic keywords',
         priority: 'low' as const,
-        affectedKeywords: keywordMetrics.brandedKeywords
+        affectedKeywords: relatedKeywords.length > 0 ? `Related keywords: ${relatedKeywordNames}` : 'No related keywords found'
       })
     }
 
@@ -368,7 +403,10 @@ export default function KeywordResearcherPage() {
             title: rec,
             description: rec,
             impact: 'medium'
-          }))
+          })),
+          primaryKeywords: basicData.primaryKeywords,
+          relatedKeywords: basicData.relatedKeywords,
+          longTailKeywords: basicData.longTailKeywords
         })
         
         const transformedData = {
