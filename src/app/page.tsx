@@ -579,152 +579,152 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="bg-white rounded-2xl p-8 shadow-xl border border-gray-200"
+            className="bg-background rounded-2xl p-8 shadow-xl border border-border"
           >
             <div className="text-center mb-8">
               <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
                 🏆 Why Choose Opptym AI SEO
               </Badge>
-              <h3 className="text-2xl font-bold text-gray-900">
+              <h3 className="text-2xl font-bold text-foreground">
                 Opptym AI SEO vs. Other Platforms
               </h3>
-              <p className="text-gray-600 mt-2">See how we compare to the competition</p>
+              <p className="text-muted-foreground mt-2">See how we compare to the competition</p>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-4 px-4 font-semibold text-gray-800">Features</th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-800">Other SEO Tools</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-4 px-4 font-semibold text-foreground">Features</th>
+                    <th className="text-center py-4 px-4 font-semibold text-foreground">Other SEO Tools</th>
                     <th className="text-center py-4 px-4 font-semibold text-primary bg-primary/5 rounded-lg">Opptym AI SEO</th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-800">Enterprise Solutions</th>
+                    <th className="text-center py-4 px-4 font-semibold text-foreground">Enterprise Solutions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   <tr>
-                    <td className="py-4 px-4 font-medium text-gray-700">SEO Tools Available</td>
+                    <td className="py-4 px-4 font-medium text-foreground">SEO Tools Available</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">1-2 tools</span>
+                        <span className="text-muted-foreground">1-2 tools</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600 font-medium">14+ tools</span>
+                        <span className="text-muted-foreground font-medium">14+ tools</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600">10+ tools</span>
+                        <span className="text-muted-foreground">10+ tools</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-medium text-gray-700">AI-Powered Analysis</td>
+                    <td className="py-4 px-4 font-medium text-foreground">AI-Powered Analysis</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">Basic</span>
+                        <span className="text-muted-foreground">Basic</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600 font-medium">Advanced AI</span>
+                        <span className="text-muted-foreground font-medium">Advanced AI</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600">Advanced AI</span>
+                        <span className="text-muted-foreground">Advanced AI</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-medium text-gray-700">Monthly Pricing</td>
+                    <td className="py-4 px-4 font-medium text-foreground">Monthly Pricing</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">$50-200</span>
+                        <span className="text-muted-foreground">$50-200</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600 font-medium">₹999-8999</span>
+                        <span className="text-muted-foreground font-medium">₹999-8999</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">$1000+</span>
+                        <span className="text-muted-foreground">$1000+</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-medium text-gray-700">Directory Submissions</td>
+                    <td className="py-4 px-4 font-medium text-foreground">Directory Submissions</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">Not included</span>
+                        <span className="text-muted-foreground">Not included</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600 font-medium">Smart Bookmarklet</span>
+                        <span className="text-muted-foreground font-medium">Smart Bookmarklet</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600">Manual process</span>
+                        <span className="text-muted-foreground">Manual process</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-medium text-gray-700">Setup Complexity</td>
+                    <td className="py-4 px-4 font-medium text-foreground">Setup Complexity</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600">Easy</span>
+                        <span className="text-muted-foreground">Easy</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600 font-medium">Very Easy</span>
+                        <span className="text-muted-foreground font-medium">Very Easy</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">Complex</span>
+                        <span className="text-muted-foreground">Complex</span>
                       </div>
                     </td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-4 font-medium text-gray-700">Customer Support</td>
+                    <td className="py-4 px-4 font-medium text-foreground">Customer Support</td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                        <span className="text-gray-600">Email only</span>
+                        <span className="text-muted-foreground">Email only</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center bg-primary/5">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600 font-medium">Priority Support</span>
+                        <span className="text-muted-foreground font-medium">Priority Support</span>
                       </div>
                     </td>
                     <td className="py-4 px-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-gray-600">Dedicated Manager</span>
+                        <span className="text-muted-foreground">Dedicated Manager</span>
                       </div>
                     </td>
                   </tr>
@@ -734,8 +734,8 @@ export default function Home() {
             
             <div className="mt-8 text-center">
               <div className="bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-lg p-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-2">Why Opptym AI SEO is the Best Choice</h4>
-                <p className="text-gray-600 mb-4">
+                <h4 className="text-lg font-semibold text-foreground mb-2">Why Opptym AI SEO is the Best Choice</h4>
+                <p className="text-muted-foreground mb-4">
                   Get enterprise-level features at a fraction of the cost, with the simplicity of basic tools.
                 </p>
                 <Link href="/dashboard/pricing">
