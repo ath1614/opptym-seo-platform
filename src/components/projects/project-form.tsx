@@ -182,7 +182,9 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         targetAudience: (initialData as any).targetAudience || '',
         competitors: (initialData as any).competitors || [],
         goals: (initialData as any).goals || '',
-        notes: (initialData as any).notes || ''
+        notes: (initialData as any).notes || '',
+        // Convert establishedYear to string for form input
+        establishedYear: (initialData as any).establishedYear ? String((initialData as any).establishedYear) : ''
       }
       setFormData(mergedData as any)
       setCustomFields((initialData as any).customFields || [])
@@ -409,7 +411,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
     
     // Established Year validation - now required
-    if (!formData.establishedYear?.toString().trim()) {
+    if (!formData.establishedYear || !String(formData.establishedYear).trim()) {
       errors.establishedYear = 'Established year is required'
     }
     
@@ -523,8 +525,8 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
     
     // Established Year validation
-    if (formData.establishedYear && formData.establishedYear.trim()) {
-      const year = parseInt(formData.establishedYear)
+    if (formData.establishedYear && String(formData.establishedYear).trim()) {
+      const year = parseInt(String(formData.establishedYear))
       const currentYear = new Date().getFullYear()
       if (isNaN(year) || year < 1800 || year > currentYear) {
         errors.establishedYear = `Please enter a valid year between 1800 and ${currentYear}`
@@ -966,6 +968,10 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         } else if (response.status === 400 && data.validationErrors) {
           // Handle server-side validation errors
           setValidationErrors(data.validationErrors)
+          
+          // Scroll to first error field for server-side validation errors
+          scrollToFirstError(data.validationErrors)
+          
           const errorFields = Object.keys(data.validationErrors)
           const errorCount = data.errorCount || errorFields.length
           
@@ -1210,37 +1216,37 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="business-industry">Business & Industry</SelectItem>
-                        <SelectItem value="technology-it">Technology & IT</SelectItem>
-                        <SelectItem value="ecommerce-retail">E-Commerce & Retail</SelectItem>
-                        <SelectItem value="marketing-advertising">Marketing & Advertising</SelectItem>
-                        <SelectItem value="finance-investment">Finance & Investment</SelectItem>
-                        <SelectItem value="health-fitness">Health & Fitness</SelectItem>
-                        <SelectItem value="education-training">Education & Training</SelectItem>
-                        <SelectItem value="home-lifestyle">Home & Lifestyle</SelectItem>
-                        <SelectItem value="startups-innovation">Startups & Innovation</SelectItem>
-                        <SelectItem value="travel-tourism">Travel & Tourism</SelectItem>
-                        <SelectItem value="food-beverages">Food & Beverages</SelectItem>
-                        <SelectItem value="automobile-transport">Automobile & Transport</SelectItem>
-                        <SelectItem value="real-estate">Real Estate</SelectItem>
-                        <SelectItem value="religion-spirituality">Religion & Spirituality</SelectItem>
-                        <SelectItem value="arts-entertainment">Arts & Entertainment</SelectItem>
-                        <SelectItem value="jobs-career">Jobs & Career</SelectItem>
-                        <SelectItem value="beauty-fashion">Beauty & Fashion</SelectItem>
-                        <SelectItem value="science-research">Science & Research</SelectItem>
-                        <SelectItem value="environment-sustainability">Environment & Sustainability</SelectItem>
-                        <SelectItem value="government-politics">Government & Politics</SelectItem>
-                        <SelectItem value="telecommunication">Telecommunication</SelectItem>
-                        <SelectItem value="legal-law">Legal & Law</SelectItem>
-                        <SelectItem value="events-conferences">Events & Conferences</SelectItem>
-                        <SelectItem value="nonprofits-ngos">Nonprofits & NGOs</SelectItem>
-                        <SelectItem value="pets-animals">Pets & Animals</SelectItem>
-                        <SelectItem value="parenting-family">Parenting & Family</SelectItem>
-                        <SelectItem value="personal-blogs-hobbies">Personal Blogs & Hobbies</SelectItem>
-                        <SelectItem value="sports-fitness">Sports & Fitness</SelectItem>
-                        <SelectItem value="health">Health</SelectItem>
-                        <SelectItem value="media-news">Media & News</SelectItem>
-                        <SelectItem value="miscellaneous-general">Miscellaneous / General</SelectItem>
+                        <SelectItem value="Business & Industry">Business & Industry</SelectItem>
+                        <SelectItem value="Technology & IT">Technology & IT</SelectItem>
+                        <SelectItem value="E-Commerce & Retail">E-Commerce & Retail</SelectItem>
+                        <SelectItem value="Marketing & Advertising">Marketing & Advertising</SelectItem>
+                        <SelectItem value="Finance & Investment">Finance & Investment</SelectItem>
+                        <SelectItem value="Health & Fitness">Health & Fitness</SelectItem>
+                        <SelectItem value="Education & Training">Education & Training</SelectItem>
+                        <SelectItem value="Home & Lifestyle">Home & Lifestyle</SelectItem>
+                        <SelectItem value="Startups & Innovation">Startups & Innovation</SelectItem>
+                        <SelectItem value="Travel & Tourism">Travel & Tourism</SelectItem>
+                        <SelectItem value="Food & Beverages">Food & Beverages</SelectItem>
+                        <SelectItem value="Automobile & Transport">Automobile & Transport</SelectItem>
+                        <SelectItem value="Real Estate">Real Estate</SelectItem>
+                        <SelectItem value="Religion & Spirituality">Religion & Spirituality</SelectItem>
+                        <SelectItem value="Arts & Entertainment">Arts & Entertainment</SelectItem>
+                        <SelectItem value="Jobs & Career">Jobs & Career</SelectItem>
+                        <SelectItem value="Beauty & Fashion">Beauty & Fashion</SelectItem>
+                        <SelectItem value="Science & Research">Science & Research</SelectItem>
+                        <SelectItem value="Environment & Sustainability">Environment & Sustainability</SelectItem>
+                        <SelectItem value="Government & Politics">Government & Politics</SelectItem>
+                        <SelectItem value="Telecommunication">Telecommunication</SelectItem>
+                        <SelectItem value="Legal & Law">Legal & Law</SelectItem>
+                        <SelectItem value="Events & Conferences">Events & Conferences</SelectItem>
+                        <SelectItem value="Nonprofits & NGOs">Nonprofits & NGOs</SelectItem>
+                        <SelectItem value="Pets & Animals">Pets & Animals</SelectItem>
+                        <SelectItem value="Parenting & Family">Parenting & Family</SelectItem>
+                        <SelectItem value="Personal Blogs & Hobbies">Personal Blogs & Hobbies</SelectItem>
+                        <SelectItem value="Sports & Fitness">Sports & Fitness</SelectItem>
+                        <SelectItem value="Health">Health</SelectItem>
+                        <SelectItem value="Media & News">Media & News</SelectItem>
+                        <SelectItem value="Miscellaneous / General">Miscellaneous / General</SelectItem>
                       </SelectContent>
                     </Select>
                     {getFieldError('category') && (
