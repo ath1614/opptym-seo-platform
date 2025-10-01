@@ -108,29 +108,10 @@ export async function GET(request: NextRequest) {
 
     // Store token data for script generation
     const maxUsage = tokenData.maxUsage
-    const currentUsage = tokenData.usageCount + 1
+    const currentUsage = tokenData.usageCount
     const remainingUsage = maxUsage - currentUsage
 
-    // Increment token usage BEFORE generating the script
-    const usageIncremented = incrementTokenUsage(token)
-    console.log('Token usage incremented:', { 
-      token: token.substring(0, 10) + '...', 
-      success: usageIncremented,
-      newUsageCount: currentUsage,
-      maxUsage: maxUsage
-    })
-    
-    if (!usageIncremented) {
-      console.log('Failed to increment token usage')
-      return new NextResponse('Failed to increment token usage', { 
-        status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
+    // Do not increment usage on script load; usage should only increase on successful submission
 
     // Validate ObjectId format BEFORE any database operations
     const mongoose = await import('mongoose')
@@ -186,34 +167,20 @@ export async function GET(request: NextRequest) {
 
     // Generate secure bookmarklet script with embedded data
     const projectData = {
-      projectName: (project.projectName || '').replace(/['"\\]/g, ''),
-      title: (project.title || '').replace(/['"\\]/g, ''),
-      websiteURL: (project.websiteURL || '').replace(/['"\\]/g, ''),
-      email: (project.email || '').replace(/['"\\]/g, ''),
-      companyName: (project.companyName || '').replace(/['"\\]/g, ''),
-      phone: (project.phone || '').replace(/['"\\]/g, ''),
-      whatsapp: (project.whatsapp || '').replace(/['"\\]/g, ''),
-      businessDescription: (project.businessDescription || '').replace(/['"\\]/g, ''),
-      category: (project.category || '').replace(/['"\\]/g, ''),
-      address: project.address || {},
-      seoMetadata: project.seoMetadata || {},
-      social: project.social || {},
-      articleSubmission: project.articleSubmission || {},
-      classified: project.classified || {},
-      businessHours: (project.businessHours || '').replace(/['"\\]/g, ''),
-      establishedYear: (project.establishedYear || '').replace(/['"\\]/g, ''),
-      logoImageURL: (project.logoImageURL || '').replace(/['"\\]/g, '')
+      projectName: project.projectName || '',
+      title: project.title || '',
+      websiteURL: project.websiteURL || '',
+      email: project.email || '',
+      companyName: project.companyName || '',
+      phone: project.phone || '',
+      whatsapp: project.whatsapp || '',
+      businessDescription: project.businessDescription || '',
+      category: project.category || '',
+      address: project.address || {}
     };
     
     const linkData = {
-      requiredFields: (link.requiredFields || []).map((field: any) => ({
-        name: (field.name || '').replace(/['"\\]/g, ''),
-        type: field.type || 'text',
-        required: field.required || false,
-        placeholder: (field.placeholder || '').replace(/['"\\]/g, ''),
-        options: field.options || [],
-        selector: (field.selector || '').replace(/['"\\]/g, '')
-      }))
+      requiredFields: link.requiredFields || []
     };
 
     // Get the base URL for API calls
@@ -222,15 +189,6 @@ export async function GET(request: NextRequest) {
     const script = `
 (function(){
   try {
-    // Set bookmarklet icon and title
-    document.title = 'Opptym Bookmarklet - ' + document.title;
-    
-    // Add favicon for bookmarklet
-    var favicon = document.querySelector('link[rel="icon"]') || document.createElement('link');
-    favicon.rel = 'icon';
-    favicon.href = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23007bff"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>';
-    document.head.appendChild(favicon);
-    
     // Embedded project data
     var projectData = ${JSON.stringify(projectData)};
     var usageInfo = {
@@ -250,13 +208,10 @@ export async function GET(request: NextRequest) {
     
     // Debug info
     console.log('Bookmarklet loaded for project:', projectData.projectName);
-    console.log('Usage info:', usageInfo);
-    console.log('Token:', token.substring(0, 10) + '...');
-    console.log('Project ID:', projectId);
-    console.log('Link ID:', linkId);
     
     // Toast notification system
-    function showToast(message, type = 'success') {
+    function showToast(message, type) {
+      if (typeof type === 'undefined' || type === null) { type = 'success'; }
       // Remove existing toast if any
       const existingToast = document.getElementById('bookmarklet-toast');
       if (existingToast) {
@@ -325,79 +280,44 @@ export async function GET(request: NextRequest) {
   
   // Fill form fields based on link requirements
   var filledCount = 0;
-  var filledFields = [];
   
   // First try to fill fields based on required fields
-  if (linkData.requiredFields && linkData.requiredFields.length > 0) {
-    linkData.requiredFields.forEach(function(field) {
-      if (!field.name) return;
-      
-      var selectors = [
-        'input[name="' + field.name + '"]',
-        'textarea[name="' + field.name + '"]',
-        'select[name="' + field.name + '"]',
-        'input[id="' + field.name + '"]',
-        'textarea[id="' + field.name + '"]',
-        'select[id="' + field.name + '"]'
-      ];
-      
-      var element = null;
-      for (var i = 0; i < selectors.length; i++) {
-        element = document.querySelector(selectors[i]);
-        if (element) break;
+  linkData.requiredFields.forEach(function(field) {
+    var element = document.querySelector('input[name="' + field.name + '"], textarea[name="' + field.name + '"], select[name="' + field.name + '"]');
+    if (element) {
+      var value = getFieldValue(field.name, projectData);
+      if (value) {
+        element.value = value;
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+        filledCount++;
       }
-      
-      if (element) {
-        var value = getFieldValue(field.name, projectData);
-        if (value && value.trim() !== '') {
-          element.value = value;
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new Event('change', { bubbles: true }));
-          filledCount++;
-          filledFields.push(field.name + ': ' + value);
-        }
-      }
-    });
-  }
+    }
+  });
   
-    // If no fields were filled, try common field patterns with enhanced matching
+    // If no fields were filled, try common field patterns
     if (filledCount === 0) {
       var commonFields = [
-        { pattern: /^title$/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName },
+        { pattern: /^title$/i, value: projectData.title || projectData.projectName },
         { pattern: /^name$/i, value: projectData.projectName },
-        { pattern: /url|website|link|site/i, value: projectData.websiteURL },
-        { pattern: /email|e-mail/i, value: projectData.email },
-        { pattern: /company|business|organization/i, value: projectData.companyName || projectData.projectName },
-        { pattern: /phone|contact|telephone|mobile/i, value: projectData.phone },
-        { pattern: /whatsapp|whats/i, value: projectData.whatsapp },
-        { pattern: /description|about|summary/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription },
-        { pattern: /category|type|industry/i, value: projectData.category },
-        { pattern: /keyword|tag/i, value: ((projectData.seoMetadata && projectData.seoMetadata.keywords) || []).concat((projectData.seoMetadata && projectData.seoMetadata.targetKeywords) || []).join(', ') },
-        { pattern: /meta.*title/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName },
-        { pattern: /meta.*description/i, value: (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription },
-        { pattern: /address|location/i, value: [projectData.address && projectData.address.addressLine1, projectData.address && projectData.address.city, projectData.address && projectData.address.state, projectData.address && projectData.address.country].filter(Boolean).join(', ') },
-        { pattern: /city|town/i, value: (projectData.address && projectData.address.city) || '' },
-        { pattern: /state|province/i, value: (projectData.address && projectData.address.state) || '' },
-        { pattern: /country|nation/i, value: (projectData.address && projectData.address.country) || '' },
-        { pattern: /pin|zip|postal/i, value: (projectData.address && projectData.address.pincode) || '' },
-        { pattern: /facebook|fb/i, value: (projectData.social && projectData.social.facebook) || '' },
-        { pattern: /twitter|x\.com/i, value: (projectData.social && projectData.social.twitter) || '' },
-        { pattern: /instagram|insta/i, value: (projectData.social && projectData.social.instagram) || '' },
-        { pattern: /linkedin|linked/i, value: (projectData.social && projectData.social.linkedin) || '' },
-        { pattern: /youtube|youtu/i, value: (projectData.social && projectData.social.youtube) || '' }
+        { pattern: /url|website/i, value: projectData.websiteURL },
+        { pattern: /email/i, value: projectData.email },
+        { pattern: /company|business/i, value: projectData.companyName },
+        { pattern: /phone|contact/i, value: projectData.phone },
+        { pattern: /description|about/i, value: projectData.businessDescription },
+        { pattern: /category/i, value: projectData.category }
       ];
     
-    var inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="url"], textarea, select');
+    var inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="url"], textarea');
     inputs.forEach(function(input) {
       var name = (input.name || input.id || input.placeholder || '').toLowerCase();
       if (name && !input.value) {
         for (var i = 0; i < commonFields.length; i++) {
-          if (commonFields[i].pattern.test(name) && commonFields[i].value && commonFields[i].value.trim() !== '') {
+          if (commonFields[i].pattern.test(name) && commonFields[i].value) {
             input.value = commonFields[i].value;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
             filledCount++;
-            filledFields.push(name + ': ' + commonFields[i].value);
             break;
           }
         }
@@ -413,26 +333,18 @@ export async function GET(request: NextRequest) {
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
           if (xhr.readyState === 4) {
-            console.log('API Response Status:', xhr.status);
-            console.log('API Response Text:', xhr.responseText);
-            
             if (xhr.status === 200) {
               var response = JSON.parse(xhr.responseText);
               var usageMessage = response.remainingUsage > 0 ? 
                 'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (Remaining: ' + response.remainingUsage + ')' :
                 'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (LIMIT REACHED - Generate new bookmarklet)';
               
-              var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions + '\\n\\nFilled fields: ' + filledFields.slice(0, 3).join(', ') + (filledFields.length > 3 ? '...' : '');
+              var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions;
               showToast(message, response.remainingUsage > 0 ? 'success' : 'warning');
             } else {
-              try {
-                var errorResponse = JSON.parse(xhr.responseText);
-                var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ ' + (errorResponse.error || 'Submission tracking failed') + '\\n\\nStatus: ' + xhr.status;
-                showToast(message, 'warning');
-              } catch (parseError) {
-                var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ Submission tracking failed\\n\\nStatus: ' + xhr.status + '\\nResponse: ' + xhr.responseText.substring(0, 100);
-                showToast(message, 'warning');
-              }
+              var errorResponse = JSON.parse(xhr.responseText);
+              var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ ' + (errorResponse.error || 'Submission tracking failed');
+              showToast(message, 'warning');
             }
           }
         };
@@ -442,233 +354,49 @@ export async function GET(request: NextRequest) {
           linkId: linkId,
           url: window.location.href,
           title: document.title || 'Untitled Page',
-          description: document.querySelector('meta[name="description"]')?.content || 'No description available'
+          description: (function(){ var el = document.querySelector('meta[name="description"]'); return (el && el.content) ? el.content : 'No description available'; })()
         }));
       } catch (error) {
         var message = '✅ Form filled with ' + filledCount + ' fields from project: ' + projectData.projectName + '\\n\\n⚠️ Submission tracking failed';
         showToast(message, 'warning');
       }
     } else {
-      // Even if no fields are filled, still record the submission attempt
-      try {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', apiBaseUrl + '/api/bookmarklet/submit', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            console.log('API Response Status (no fields):', xhr.status);
-            console.log('API Response Text (no fields):', xhr.responseText);
-            
-            if (xhr.status === 200) {
-              var response = JSON.parse(xhr.responseText);
-              var usageMessage = response.remainingUsage > 0 ? 
-                'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (Remaining: ' + response.remainingUsage + ')' :
-                'Usage: ' + response.usageCount + '/' + response.maxUsage + ' (LIMIT REACHED - Generate new bookmarklet)';
-              
-              var message = '⚠️ No form fields found to fill automatically.\\n\\n' + usageMessage + '\\n\\nTotal Submissions: ' + response.totalSubmissions + '\\n\\nPlease fill the form manually and submit.';
-              showToast(message, 'warning');
-            } else {
-              try {
-                var errorResponse = JSON.parse(xhr.responseText);
-                var message = '⚠️ No form fields found to fill automatically.\\n\\n❌ ' + (errorResponse.error || 'Submission tracking failed') + '\\n\\nStatus: ' + xhr.status + '\\n\\nPlease fill the form manually and submit.';
-                showToast(message, 'error');
-              } catch (parseError) {
-                var message = '⚠️ No form fields found to fill automatically.\\n\\n❌ Submission tracking failed\\n\\nStatus: ' + xhr.status + '\\nResponse: ' + xhr.responseText.substring(0, 100) + '\\n\\nPlease fill the form manually and submit.';
-                showToast(message, 'error');
-              }
-            }
-          }
-        };
-        xhr.send(JSON.stringify({
-          token: token,
-          projectId: projectId,
-          linkId: linkId,
-          url: window.location.href,
-          title: document.title || 'Untitled Page',
-          description: document.querySelector('meta[name="description"]')?.content || 'No description available'
-        }));
-      } catch (error) {
-        showToast('⚠️ No form fields found to fill automatically.\\n\\n❌ Submission tracking failed\\n\\nPlease fill the form manually and submit.', 'error');
-      }
+      showToast('❌ No matching form fields found. Please fill the form manually.', 'error');
     }
     
     function getFieldValue(fieldName, projectData) {
-      if (!fieldName || !projectData) return null;
-      
       var fieldNameLower = fieldName.toLowerCase();
       
-      // Enhanced field mapping with better accuracy
-      
-      // Title fields - prioritize meta title, then project title
-      if (fieldNameLower.includes('title') && !fieldNameLower.includes('page') && !fieldNameLower.includes('meta')) {
-        return (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName;
+      // More specific field mapping
+      if (fieldNameLower.includes('title') && !fieldNameLower.includes('page')) {
+        return projectData.title || projectData.projectName;
       }
-      
-      // Meta title specifically
-      if (fieldNameLower.includes('meta') && fieldNameLower.includes('title')) {
-        return (projectData.seoMetadata && projectData.seoMetadata.metaTitle) || projectData.title || projectData.projectName;
-      }
-      
-      // Meta description
-      if (fieldNameLower.includes('meta') && fieldNameLower.includes('description')) {
-        return (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription;
-      }
-      
-      // Keywords - handle both meta keywords and target keywords
-      if (fieldNameLower.includes('keyword')) {
-        var keywords = [];
-        if (projectData.seoMetadata && projectData.seoMetadata.keywords && projectData.seoMetadata.keywords.length > 0) {
-          keywords = keywords.concat(projectData.seoMetadata.keywords);
-        }
-        if (projectData.seoMetadata && projectData.seoMetadata.targetKeywords && projectData.seoMetadata.targetKeywords.length > 0) {
-          keywords = keywords.concat(projectData.seoMetadata.targetKeywords);
-        }
-        if (projectData.keywords && projectData.keywords.length > 0) {
-          keywords = keywords.concat(projectData.keywords);
-        }
-        return keywords.length > 0 ? keywords.join(', ') : '';
-      }
-      
-      // Description fields - prioritize meta description, then business description
-      if (fieldNameLower.includes('description') || fieldNameLower.includes('about') || fieldNameLower.includes('summary')) {
-        return (projectData.seoMetadata && projectData.seoMetadata.metaDescription) || projectData.businessDescription || projectData.description;
-      }
-      
-      // Name fields - be more specific
-      if (fieldNameLower.includes('name') && !fieldNameLower.includes('company') && !fieldNameLower.includes('business') && !fieldNameLower.includes('author')) {
+      if (fieldNameLower.includes('name') && !fieldNameLower.includes('company') && !fieldNameLower.includes('business')) {
         return projectData.projectName;
       }
-      
-      // Company/Business name
-      if (fieldNameLower.includes('company') || fieldNameLower.includes('business') || fieldNameLower.includes('organization')) {
-        return projectData.companyName || projectData.projectName;
-      }
-      
-      // URL/Website fields
-      if (fieldNameLower.includes('url') || fieldNameLower.includes('website') || fieldNameLower.includes('link') || fieldNameLower.includes('site')) {
+      if (fieldNameLower.includes('url') || fieldNameLower.includes('website') || fieldNameLower.includes('link')) {
         return projectData.websiteURL;
       }
-      
-      // Email fields
-      if (fieldNameLower.includes('email') || fieldNameLower.includes('e-mail')) {
+      if (fieldNameLower.includes('email')) {
         return projectData.email;
       }
-      
-      // Phone/Contact fields
-      if (fieldNameLower.includes('phone') || fieldNameLower.includes('contact') || fieldNameLower.includes('telephone') || fieldNameLower.includes('mobile')) {
+      if (fieldNameLower.includes('company') || fieldNameLower.includes('business')) {
+        return projectData.companyName;
+      }
+      if (fieldNameLower.includes('phone') || fieldNameLower.includes('contact')) {
         return projectData.phone;
       }
-      
-      // WhatsApp specifically
-      if (fieldNameLower.includes('whatsapp') || fieldNameLower.includes('whats')) {
+      if (fieldNameLower.includes('whatsapp')) {
         return projectData.whatsapp;
       }
-      
-      // Category fields
-      if (fieldNameLower.includes('category') || fieldNameLower.includes('type') || fieldNameLower.includes('industry')) {
+      if (fieldNameLower.includes('description') || fieldNameLower.includes('about')) {
+        return projectData.businessDescription;
+      }
+      if (fieldNameLower.includes('category')) {
         return projectData.category;
       }
-      
-      // Address fields
-      if (fieldNameLower.includes('address') || fieldNameLower.includes('location')) {
-        var addressParts = [];
-        if (projectData.address && projectData.address.addressLine1) addressParts.push(projectData.address.addressLine1);
-        if (projectData.address && projectData.address.addressLine2) addressParts.push(projectData.address.addressLine2);
-        if (projectData.address && projectData.address.city) addressParts.push(projectData.address.city);
-        if (projectData.address && projectData.address.state) addressParts.push(projectData.address.state);
-        if (projectData.address && projectData.address.country) addressParts.push(projectData.address.country);
-        if (projectData.address && projectData.address.pincode) addressParts.push(projectData.address.pincode);
-        return addressParts.join(', ');
-      }
-      
-      // City specifically
-      if (fieldNameLower.includes('city') || fieldNameLower.includes('town')) {
-        return (projectData.address && projectData.address.city) || '';
-      }
-      
-      // State specifically
-      if (fieldNameLower.includes('state') || fieldNameLower.includes('province')) {
-        return (projectData.address && projectData.address.state) || '';
-      }
-      
-      // Country specifically
-      if (fieldNameLower.includes('country') || fieldNameLower.includes('nation')) {
-        return (projectData.address && projectData.address.country) || '';
-      }
-      
-      // Pincode/ZIP
-      if (fieldNameLower.includes('pin') || fieldNameLower.includes('zip') || fieldNameLower.includes('postal')) {
-        return (projectData.address && projectData.address.pincode) || '';
-      }
-      
-      // Social media fields
-      if (fieldNameLower.includes('facebook') || fieldNameLower.includes('fb')) {
-        return (projectData.social && projectData.social.facebook) || '';
-      }
-      if (fieldNameLower.includes('twitter') || fieldNameLower.includes('x.com')) {
-        return (projectData.social && projectData.social.twitter) || '';
-      }
-      if (fieldNameLower.includes('instagram') || fieldNameLower.includes('insta')) {
-        return (projectData.social && projectData.social.instagram) || '';
-      }
-      if (fieldNameLower.includes('linkedin') || fieldNameLower.includes('linked')) {
-        return (projectData.social && projectData.social.linkedin) || '';
-      }
-      if (fieldNameLower.includes('youtube') || fieldNameLower.includes('youtu')) {
-        return (projectData.social && projectData.social.youtube) || '';
-      }
-      
-      // Article submission fields
-      if (fieldNameLower.includes('article') && fieldNameLower.includes('title')) {
-        return (projectData.articleSubmission && projectData.articleSubmission.articleTitle) || projectData.title || projectData.projectName;
-      }
-      if (fieldNameLower.includes('article') && fieldNameLower.includes('content')) {
-        return (projectData.articleSubmission && projectData.articleSubmission.articleContent) || projectData.businessDescription;
-      }
-      if (fieldNameLower.includes('author') && fieldNameLower.includes('name')) {
-        return (projectData.articleSubmission && projectData.articleSubmission.authorName) || projectData.companyName;
-      }
-      if (fieldNameLower.includes('author') && fieldNameLower.includes('bio')) {
-        return (projectData.articleSubmission && projectData.articleSubmission.authorBio) || projectData.businessDescription;
-      }
-      if (fieldNameLower.includes('tag') && !fieldNameLower.includes('meta')) {
-        var tags = [];
-        if (projectData.articleSubmission && projectData.articleSubmission.tags && projectData.articleSubmission.tags.length > 0) {
-          tags = tags.concat(projectData.articleSubmission.tags);
-        }
-        if (projectData.seoMetadata && projectData.seoMetadata.keywords && projectData.seoMetadata.keywords.length > 0) {
-          tags = tags.concat(projectData.seoMetadata.keywords);
-        }
-        return tags.length > 0 ? tags.join(', ') : '';
-      }
-      
-      // Classified fields
-      if (fieldNameLower.includes('product') && fieldNameLower.includes('name')) {
-        return (projectData.classified && projectData.classified.productName) || projectData.projectName;
-      }
-      if (fieldNameLower.includes('price') || fieldNameLower.includes('cost')) {
-        return (projectData.classified && projectData.classified.price) || '';
-      }
-      if (fieldNameLower.includes('condition') || fieldNameLower.includes('status')) {
-        return (projectData.classified && projectData.classified.condition) || '';
-      }
-      if (fieldNameLower.includes('image') || fieldNameLower.includes('photo') || fieldNameLower.includes('picture')) {
-        return (projectData.classified && projectData.classified.productImageURL) || projectData.logoImageURL || '';
-      }
-      
-      // Business hours
-      if (fieldNameLower.includes('hour') || fieldNameLower.includes('time') || fieldNameLower.includes('schedule')) {
-        return projectData.businessHours || '';
-      }
-      
-      // Established year
-      if (fieldNameLower.includes('established') || fieldNameLower.includes('founded') || fieldNameLower.includes('year')) {
-        return projectData.establishedYear || '';
-      }
-      
-      // Logo/Image URL
-      if (fieldNameLower.includes('logo') || fieldNameLower.includes('brand')) {
-        return projectData.logoImageURL || '';
+      if (fieldNameLower.includes('address')) {
+        return projectData.address.street || projectData.address.city || '';
       }
       
       return null;

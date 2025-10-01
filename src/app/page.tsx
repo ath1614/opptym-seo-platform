@@ -382,100 +382,7 @@ export default function Home() {
       <LandingPricing />
 
       {/* Why Choose Us Section */}
-      <section id="why-choose-us" className="py-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-              🏆 Why Choose Opptym
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
-              Trusted by{" "}
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                10,000+ Businesses
-              </span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Join thousands of successful businesses that trust Opptym AI SEO Platform 
-              to boost their search rankings and drive organic traffic growth.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Zap,
-                title: "Lightning Fast",
-                description: "Get results in seconds with our optimized infrastructure and real-time processing.",
-                stat: "99.9% Uptime"
-              },
-              {
-                icon: Shield,
-                title: "Enterprise Security",
-                description: "Your data is protected with bank-level encryption and SOC 2 compliance.",
-                stat: "SOC 2 Certified"
-              },
-              {
-                icon: Users,
-                title: "Expert Support",
-                description: "Get help from our team of SEO experts available 24/7 via chat, email, and phone.",
-                stat: "24/7 Support"
-              },
-              {
-                icon: BarChart3,
-                title: "Proven Results",
-                description: "Our users see an average 150% increase in organic traffic within 6 months.",
-                stat: "150% Avg. Growth"
-              },
-              {
-                icon: Settings,
-                title: "Easy Integration",
-                description: "Connect with your existing tools via our powerful API and integrations.",
-                stat: "50+ Integrations"
-              },
-              {
-                icon: Award,
-                title: "Industry Leader",
-                description: "Recognized as the #1 SEO platform by leading industry publications.",
-                stat: "#1 Rated Platform"
-              }
-            ].map((benefit, index) => (
-              <motion.div
-                key={benefit.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                      <benefit.icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <CardTitle className="text-xl">{benefit.title}</CardTitle>
-                    <Badge variant="secondary" className="w-fit">
-                      {benefit.stat}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base leading-relaxed">
-                      {benefit.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us Section */}
-      <section id="why-choose-us" className="py-24 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <section id="why-choose-us" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -548,22 +455,22 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm cursor-pointer group">
+                <Card className="h-full hover:shadow-xl transition-all duration-300 border border-border bg-card backdrop-blur-sm cursor-pointer group">
                   <CardHeader>
                     <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <advantage.icon className="w-8 h-8 text-white" />
                     </div>
-                    <CardTitle className="text-xl text-gray-900">{advantage.title}</CardTitle>
+                    <CardTitle className="text-xl text-foreground">{advantage.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-base leading-relaxed mb-4 text-gray-600">
+                    <CardDescription className="text-base leading-relaxed mb-4 text-muted-foreground">
                       {advantage.description}
                     </CardDescription>
                     <div className="space-y-2">
                       {advantage.benefits.map((benefit, idx) => (
                         <div key={idx} className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                          <span className="text-sm text-gray-700">{benefit}</span>
+                          <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                          <span className="text-sm text-muted-foreground">{benefit}</span>
                         </div>
                       ))}
                     </div>
@@ -850,11 +757,11 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mt-12"
           >
-            <div className="bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-2xl p-8 border border-primary/20">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+            <div className="bg-card rounded-2xl p-8 border border-border">
+              <h3 className="text-2xl font-bold text-foreground mb-4">
                 Ready to Master SEO?
               </h3>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
                 Access our comprehensive knowledge base with expert guides, tutorials, and best practices to take your SEO skills to the next level.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -868,7 +775,7 @@ export default function Home() {
                 <Link href="/dashboard/pricing">
                   <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
                     <Rocket className="mr-2 h-5 w-5" />
-                    Start Free Trial
+                    Start Your Free Trial
                   </Button>
                 </Link>
               </div>
@@ -965,7 +872,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-primary/5 via-background to-blue-600/5">
+      <section className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -986,7 +893,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link href="/auth/register">
-                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90">
+                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-br from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90">
                   <Rocket className="mr-2 h-5 w-5" />
                   Start Your Free Trial
                 </Button>

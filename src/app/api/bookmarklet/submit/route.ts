@@ -7,6 +7,7 @@ import { validateToken, incrementTokenUsage } from '@/lib/bookmarklet-tokens'
 import { trackUsage } from '@/lib/limit-middleware'
 import { logActivity } from '@/lib/activity-logger'
 import mongoose from 'mongoose'
+import Project from '@/models/Project'
 
 export async function OPTIONS() {
   return new NextResponse(null, {
@@ -88,33 +89,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Increment usage count using shared function
-    const success = incrementTokenUsage(token)
-    if (!success) {
-      return NextResponse.json({ error: 'Token not found or expired' }, { 
-        status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
-    
-    // Get updated token data
-    const { bookmarkletTokens } = await import('@/lib/bookmarklet-tokens')
-    const updatedTokenData = bookmarkletTokens.get(token)
-    if (!updatedTokenData) {
-      return NextResponse.json({ error: 'Token expired after usage' }, { 
-        status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
-
     // Record the submission
     await connectDB()
     
@@ -133,6 +107,9 @@ export async function POST(request: NextRequest) {
         }
       })
     }
+
+    // Fetch project for backlink generation and metadata
+    const project = await Project.findById(projectId)
     
     // Track usage before creating submission
     console.log('Tracking submission usage for user:', tokenData.userId)
@@ -174,10 +151,7 @@ export async function POST(request: NextRequest) {
       status: 'success',
       submittedAt: new Date(),
       completedAt: new Date(),
-      notes: `Bookmarklet submission - Usage: ${updatedTokenData.usageCount}/${updatedTokenData.maxUsage}
-URL: ${url || 'N/A'}
-Title: ${title || 'N/A'}
-Description: ${description || 'N/A'}`
+      notes: `Bookmarklet submission\nURL: ${url || 'N/A'}\nTitle: ${title || 'N/A'}\nDescription: ${description || 'N/A'}`
     })
 
     console.log('Creating submission:', {
@@ -192,6 +166,33 @@ Description: ${description || 'N/A'}`
     
     await submission.save()
     console.log('Submission saved successfully:', submission._id)
+
+    // Increment usage AFTER successful submission save
+    const success = incrementTokenUsage(token)
+    if (!success) {
+      return NextResponse.json({ error: 'Token not found or expired' }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      })
+    }
+
+    // Get updated token data for response
+    const { bookmarkletTokens } = await import('@/lib/bookmarklet-tokens')
+    const updatedTokenData = bookmarkletTokens.get(token)
+    if (!updatedTokenData) {
+      return NextResponse.json({ error: 'Token expired after usage' }, { 
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      })
+    }
 
     // Get user for logging
     const user = await User.findById(tokenData.userId)
@@ -237,19 +238,19 @@ Description: ${description || 'N/A'}`
       const existingBacklink = await Backlink.findOne({
         userId: tokenData.userId,
         sourceUrl: link.url,
-        targetUrl: projectData.websiteUrl
+        targetUrl: project?.websiteURL
       })
 
-      if (!existingBacklink && projectData.websiteUrl) {
+      if (!existingBacklink && project?.websiteURL) {
         // Create a new backlink
         const newBacklink = new Backlink({
           userId: tokenData.userId,
           projectId: projectId,
           sourceUrl: link.url,
-          targetUrl: projectData.websiteUrl,
+          targetUrl: project.websiteURL,
           sourceDomain: new URL(link.url).hostname,
-          targetDomain: new URL(projectData.websiteUrl).hostname,
-          anchorText: projectData.projectName || 'Visit Website',
+          targetDomain: new URL(project.websiteURL).hostname,
+          anchorText: project.projectName || 'Visit Website',
           linkType: 'dofollow',
           linkPosition: 'content',
           domainAuthority: link.daScore || Math.floor(Math.random() * 30) + 20,
@@ -258,7 +259,7 @@ Description: ${description || 'N/A'}`
           status: 'active',
           discoveredAt: new Date(),
           lastCheckedAt: new Date(),
-          title: `Directory listing for ${projectData.projectName}`,
+          title: `Directory listing for ${project.projectName}`,
           description: `Submitted to ${link.name} directory`,
           isIndexed: true,
           isRedirect: false
@@ -285,13 +286,13 @@ Description: ${description || 'N/A'}`
     }
 
     return NextResponse.json({ 
-      success: true,
-      usageCount: updatedTokenData.usageCount,
-      maxUsage: updatedTokenData.maxUsage,
-      remainingUsage: updatedTokenData.maxUsage - updatedTokenData.usageCount,
+      success: true, 
+      usageCount: updatedTokenData!.usageCount,
+      maxUsage: updatedTokenData!.maxUsage,
+      remainingUsage: updatedTokenData!.maxUsage - updatedTokenData!.usageCount,
       totalSubmissions: totalSubmissions,
       planLimits: transformedPlanLimits,
-      submissionLimitReached: isLimitExceeded(user?.plan || 'free', 'submissions', totalSubmissions)
+      submissionLimitReached: isLimitExceededWithCustom(planLimits, 'submissions', totalSubmissions)
     }, {
       headers: {
         'Access-Control-Allow-Origin': '*',

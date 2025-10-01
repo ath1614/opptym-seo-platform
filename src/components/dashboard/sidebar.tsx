@@ -137,6 +137,22 @@ export function Sidebar({ className }: SidebarProps) {
           )
         })}
         
+        {/* Bottom Bookmarklet Tab */}
+        <div className="mt-6">
+          <Link
+            href="/dashboard/bookmarklet"
+            className={cn(
+              "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname === '/dashboard/bookmarklet'
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <LinkIcon className="h-5 w-5 flex-shrink-0" />
+            {!isCollapsed && <span>Bookmarklet</span>}
+          </Link>
+        </div>
+
         {/* Admin Panel Link */}
         {isAdmin && (
           <Link
@@ -166,3 +182,4 @@ export function Sidebar({ className }: SidebarProps) {
     </div>
   )
 }
+// Remove stray admin block outside component

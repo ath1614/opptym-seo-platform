@@ -192,7 +192,7 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
       }
 
       // Create secure bookmarklet code
-      const bookmarkletTitle = `Fill Form - ${project.projectName}`
+      const bookmarkletTitle = `🚀 Opptym Fill Form - ${project.projectName}`
       const secureBookmarkletCode = `javascript:(function(){
         try {
           var xhr = new XMLHttpRequest();
@@ -201,9 +201,11 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
             if (xhr.readyState === 4) {
               if (xhr.status === 200) {
                 try {
+                  console.log('Bookmarklet script preview:', xhr.responseText.slice(0, 500));
                   eval(xhr.responseText);
                 } catch (evalError) {
-                  alert('Error executing bookmarklet: ' + evalError.message);
+                  console.error('Bookmarklet eval error:', evalError);
+                  alert('Error executing bookmarklet: ' + (evalError && evalError.message ? evalError.message : String(evalError)));
                 }
               } else if (xhr.status === 429) {
                 alert('Usage limit reached. Please upgrade your plan to continue.');
@@ -216,7 +218,8 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
           };
           xhr.send();
         } catch (error) {
-          alert('Error: ' + error.message);
+          console.error('Bookmarklet request error:', error);
+          alert('Error: ' + (error && error.message ? error.message : String(error)));
         }
       })();`.replace(/\s+/g, ' ').trim()
 
@@ -290,13 +293,16 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
   // Handle drag start for bookmarklet
   const handleDragStart = (e: React.DragEvent) => {
     if (!bookmarkletCode || !selectedProject) return
-    
-    const bookmarkTitle = `🚀 Fill Form - ${selectedProject.projectName}`
-    
+    const bookmarkTitle = `🚀 Opptym Fill Form - ${selectedProject.projectName}`
     e.dataTransfer.setData('text/uri-list', bookmarkletCode)
     e.dataTransfer.setData('text/plain', bookmarkletCode)
     e.dataTransfer.setData('text/html', `<a href="${bookmarkletCode}" title="${bookmarkTitle}">${bookmarkTitle}</a>`)
-    e.dataTransfer.effectAllowed = 'copy'
+    try {
+      // Firefox-specific: Provide URL and Title
+      e.dataTransfer.setData('text/x-moz-url', `${bookmarkletCode}\n${bookmarkTitle}`)
+    } catch (err) {
+      // no-op
+    }
   }
 
   // Prevent copy operations
@@ -468,7 +474,9 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
             
             {/* Draggable Bookmarklet */}
             <div className="text-center space-y-4">
-              <div 
+              <a
+                href={bookmarkletCode || '#'}
+                title={`🚀 Opptym Fill Form - ${selectedProject?.projectName || ''}`}
                 className="inline-block bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-8 py-4 rounded-xl cursor-move select-none hover:from-primary/90 hover:to-primary/70 transition-all duration-200 text-lg font-semibold shadow-xl border-2 border-primary/20"
                 draggable={true}
                 role="button"
@@ -476,6 +484,13 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
                 onDragStart={handleDragStart}
                 onContextMenu={preventCopy}
                 onCopy={preventCopy}
+                onClick={(e) => {
+                  e.preventDefault()
+                  showToast({
+                    title: 'Drag to Bookmarks',
+                    description: 'Drag this button to your bookmarks bar to install the bookmarklet.',
+                  })
+                }}
                 style={{ 
                   userSelect: 'none', 
                   WebkitUserSelect: 'none',
@@ -484,11 +499,11 @@ export function ProjectSelectorModal({ isOpen, onClose, link, onBookmarkletGener
                   WebkitTouchCallout: 'none'
                 }}
               >
-                🚀 Fill Form - {selectedProject?.projectName}
+                🚀 Opptym Fill Form - {selectedProject?.projectName}
                 <span className="block text-xs opacity-80 mt-1">
                   {bookmarkletData?.maxUsage || 0} use{(bookmarkletData?.maxUsage || 0) !== 1 ? 's' : ''} remaining
                 </span>
-              </div>
+              </a>
               
               <div className="text-sm text-muted-foreground space-y-1">
                 <p className="font-medium">💡 Drag this button to your browser's bookmarks bar</p>
