@@ -101,10 +101,42 @@ function generateReportHTML(reportData: {
   seoToolsUsage: Array<{
     toolName: string
     usageCount: number
-    lastUsed: string
-    results: Array<{
-      score: number
+    lastUsed: string | Date
+    results: Array<{ score: number } & {
+      url?: string
+      date?: Date | string
+      issues?: number
+      recommendations?: number
+      analysisResults?: {
+        score?: number | string
+        issues?: Array<string | number | Record<string, unknown>>
+        recommendations?: Array<string | number | Record<string, unknown>>
+        metaTags?: { title?: string; description?: string }
+        performance?: { score?: number | string }
+        mobileFriendliness?: { isMobileFriendly?: boolean }
+        brokenLinks?: number
+        totalLinks?: number
+        isMobileFriendly?: boolean
+      }
     }>
+    latestResult?: {
+      url?: string
+      date?: Date | string
+      score?: number
+      issues?: number
+      recommendations?: number
+      analysisResults?: {
+        score?: number | string
+        issues?: Array<string | number | Record<string, unknown>>
+        recommendations?: Array<string | number | Record<string, unknown>>
+        metaTags?: { title?: string; description?: string }
+        performance?: { score?: number | string }
+        mobileFriendliness?: { isMobileFriendly?: boolean }
+        brokenLinks?: number
+        totalLinks?: number
+        isMobileFriendly?: boolean
+      }
+    } | null
   }>
   submissionsData: Array<{
     date: string
@@ -121,8 +153,8 @@ function generateReportHTML(reportData: {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
   // Build per-tool latest details section
-  const toolDetailsHTML = (seoToolsUsage || []).map(tool => {
-    const latest = (tool as any).latestResult || (tool.results && tool.results[0]) || null
+  const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
+    const latest = tool.latestResult || (tool.results && tool.results[0]) || null
     const ar = latest?.analysisResults || {}
     const meta = ar.metaTags || {}
     const perf = ar.performance || {}
@@ -170,7 +202,7 @@ function generateReportHTML(reportData: {
           <div style="margin-top: 12px;">
             <strong>Key Issues:</strong>
             <ul>
-              ${ar.issues.slice(0,5).map((i: any) => `<li>• ${String(i)}</li>`).join('')}
+              ${ar.issues.slice(0,5).map((i: unknown) => `<li>• ${String(i)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
@@ -178,7 +210,7 @@ function generateReportHTML(reportData: {
           <div style="margin-top: 12px;">
             <strong>Recommendations:</strong>
             <ul>
-              ${ar.recommendations.slice(0,5).map((r: any) => `<li>• ${String(r)}</li>`).join('')}
+              ${ar.recommendations.slice(0,5).map((r: unknown) => `<li>• ${String(r)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}

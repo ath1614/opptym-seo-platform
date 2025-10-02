@@ -37,11 +37,24 @@ interface SEOIssue {
 
 interface SEOIssuesAnalysisProps {
   analysisData: {
-    metaTags: any
-    altText: any
-    brokenLinks: any
-    pageSpeed: any
-    recommendations: any[]
+    metaTags?: {
+      title: { status: string; recommendation?: string; content?: string }
+      description: { status: string; recommendation?: string; content?: string }
+      viewport: { status: string }
+      canonical: { status: string }
+    }
+    altText?: {
+      missingAlt: number
+      images?: Array<{ alt?: string; src?: string }>
+    }
+    brokenLinks?: {
+      broken: number
+      links?: Array<{ status?: number | string; url?: string }>
+    }
+    pageSpeed?: {
+      overallScore: number
+    }
+    recommendations?: Array<string>
   }
 }
 
@@ -153,7 +166,7 @@ export function SEOIssuesAnalysis({ analysisData }: SEOIssuesAnalysisProps) {
           fixEffort: 'medium',
           seoImpact: 'medium',
           affectedPages: 1,
-          examples: analysisData.altText.images?.filter((img: any) => !img.alt).map((img: any) => img.src).slice(0, 3)
+          examples: analysisData.altText.images?.filter((img: { alt?: string }) => !img.alt).map((img: { src?: string }) => img.src || '').slice(0, 3)
         })
       }
     }
@@ -172,7 +185,7 @@ export function SEOIssuesAnalysis({ analysisData }: SEOIssuesAnalysisProps) {
           fixEffort: 'medium',
           seoImpact: 'medium',
           affectedPages: 1,
-          examples: analysisData.brokenLinks.links?.filter((link: any) => link.status === 404).map((link: any) => link.url).slice(0, 3)
+          examples: analysisData.brokenLinks.links?.filter((link: { status?: number | string }) => link.status === 404).map((link: { url?: string }) => link.url || '').slice(0, 3)
         })
       }
     }

@@ -78,10 +78,10 @@ interface ReportData {
     toolId: string
     toolName: string
     usageCount: number
-    lastUsed: string
+    lastUsed: string | Date
     results: Array<{
       url: string
-      date: string
+      date: string | Date
       score: number
       issues: number
       recommendations: number
@@ -124,8 +124,8 @@ interface ReportData {
             total?: number
           }
           score?: number
-          issues?: string[]
-          recommendations?: string[]
+          issues?: unknown[]
+          recommendations?: unknown[]
           brokenLinks?: number
           totalLinks?: number
           workingLinks?: number

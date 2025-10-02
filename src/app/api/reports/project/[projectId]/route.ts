@@ -16,6 +16,43 @@ import {
   analyzeBacklinks
 } from '@/lib/seo-analysis'
 
+// Local types to avoid implicit any
+interface DetailedAnalysisResults {
+  score?: number | string
+  issues?: Array<unknown>
+  recommendations?: Array<unknown>
+  metaTags?: { title?: string; description?: string }
+  performance?: { score?: number | string }
+  mobileFriendliness?: { isMobileFriendly?: boolean }
+  brokenLinks?: number
+  totalLinks?: number
+  isMobileFriendly?: boolean
+}
+
+interface ToolResult {
+  url?: string
+  date: Date | string
+  score: number
+  issues: number
+  recommendations: number
+  analysisResults: DetailedAnalysisResults
+}
+
+interface ToolUsageAccumulator {
+  toolId: string
+  toolName: string
+  usageCount: number
+  lastUsed: Date
+  results: ToolResult[]
+  latestResult: ToolResult | null
+}
+
+function toTime(value: Date | string | number | null | undefined): number {
+  if (value instanceof Date) return value.getTime()
+  if (typeof value === 'string' || typeof value === 'number') return new Date(value).getTime()
+  return 0
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
@@ -66,7 +103,7 @@ export async function GET(
     }).sort({ submittedAt: -1 })
     
     // Process real SEO tool usage data
-    const seoToolsUsageMap = new Map()
+    const seoToolsUsageMap = new Map<string, ToolUsageAccumulator>()
     
     seoToolUsages.forEach(usage => {
       const key = usage.toolId
@@ -75,26 +112,26 @@ export async function GET(
           toolId: usage.toolId,
           toolName: usage.toolName,
           usageCount: 0,
-          lastUsed: usage.createdAt || new Date(),
+          lastUsed: usage.createdAt instanceof Date ? usage.createdAt : new Date(usage.createdAt || Date.now()),
           results: [],
-          latestResult: null as any
+          latestResult: null
         })
       }
       
       const toolData = seoToolsUsageMap.get(key)
       toolData.usageCount++
-      if (usage.createdAt && usage.createdAt > toolData.lastUsed) {
-        toolData.lastUsed = usage.createdAt
+      if (usage.createdAt && toTime(usage.createdAt) > toolData.lastUsed.getTime()) {
+        toolData.lastUsed = usage.createdAt instanceof Date ? usage.createdAt : new Date(usage.createdAt)
       }
       // Extract real data from analysisResults
-      const analysisResults = usage.analysisResults || {} as Record<string, unknown> // Use Record type for stored analysis results
-      const score = analysisResults.score || 0
+      const analysisResults: DetailedAnalysisResults = (usage.analysisResults || {}) as DetailedAnalysisResults
+      const score = (typeof analysisResults.score === 'number' ? analysisResults.score : parseInt(String(analysisResults.score || 0))) || 0
       const issues = Array.isArray(analysisResults.issues) ? analysisResults.issues.length : 0
       const recommendations = Array.isArray(analysisResults.recommendations) ? analysisResults.recommendations.length : 0
       
-      const resultEntry = {
+      const resultEntry: ToolResult = {
         url: usage.url,
-        date: usage.createdAt || new Date(),
+        date: usage.createdAt instanceof Date ? usage.createdAt : new Date(usage.createdAt || Date.now()),
         score: score,
         issues: issues,
         recommendations: recommendations,
@@ -107,10 +144,8 @@ export async function GET(
       if (!toolData.latestResult) {
         toolData.latestResult = resultEntry
       } else {
-        const currentLatest = toolData.latestResult.date instanceof Date 
-          ? toolData.latestResult.date.getTime() 
-          : new Date(toolData.latestResult.date as any).getTime()
-        const candidate = (resultEntry.date instanceof Date ? resultEntry.date : new Date(resultEntry.date as any)).getTime()
+        const currentLatest = toTime(toolData.latestResult.date)
+        const candidate = toTime(resultEntry.date)
         if (candidate > currentLatest) {
           toolData.latestResult = resultEntry
         }
@@ -119,11 +154,7 @@ export async function GET(
     
     const seoToolsUsage = Array.from(seoToolsUsageMap.values()).map(tool => {
       // Ensure lastUsed is the latest date and normalize types
-      const sorted = [...tool.results].sort((a, b) => {
-        const ta = (a.date instanceof Date ? a.date : new Date(a.date as any)).getTime()
-        const tb = (b.date instanceof Date ? b.date : new Date(b.date as any)).getTime()
-        return tb - ta
-      })
+      const sorted = [...tool.results].sort((a, b) => toTime(b.date) - toTime(a.date))
       const latest = tool.latestResult || sorted[0] || null
       return {
         toolId: tool.toolId,

@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!(session as any)?.user?.id) {
+    const userId = typeof session?.user?.id === 'string' ? session.user.id : undefined
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Check if user can generate reports
-    const canGenerate = await trackUsage((session as any).user.id, 'reports', 1)
+    const canGenerate = await trackUsage(userId, 'reports', 1)
     
     if (!canGenerate) {
       return NextResponse.json(
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     // Verify project belongs to user
     const project = await Project.findOne({ 
       _id: projectId, 
-      userId: (session as any).user.id 
+      userId: userId 
     })
 
     if (!project) {
@@ -188,10 +189,42 @@ function generateReportHTML(reportData: {
   seoToolsUsage: Array<{
     toolName: string
     usageCount: number
-    lastUsed: string
-    results: Array<{
-      score: number
+    lastUsed: string | Date
+    results: Array<{ score: number } & {
+      url?: string
+      date?: Date | string
+      issues?: number
+      recommendations?: number
+      analysisResults?: {
+        score?: number | string
+        issues?: Array<unknown>
+        recommendations?: Array<unknown>
+        metaTags?: { title?: string; description?: string }
+        performance?: { score?: number | string }
+        mobileFriendliness?: { isMobileFriendly?: boolean }
+        brokenLinks?: number
+        totalLinks?: number
+        isMobileFriendly?: boolean
+      }
     }>
+    latestResult?: {
+      url?: string
+      date?: Date | string
+      score?: number
+      issues?: number
+      recommendations?: number
+      analysisResults?: {
+        score?: number | string
+        issues?: Array<unknown>
+        recommendations?: Array<unknown>
+        metaTags?: { title?: string; description?: string }
+        performance?: { score?: number | string }
+        mobileFriendliness?: { isMobileFriendly?: boolean }
+        brokenLinks?: number
+        totalLinks?: number
+        isMobileFriendly?: boolean
+      }
+    } | null
   }>
   submissionsData: Array<{
     date: string
@@ -208,7 +241,7 @@ function generateReportHTML(reportData: {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
   // Build per-tool latest details section using latestResult when available
-  const toolDetailsHTML = (seoToolsUsage || []).map((tool: any) => {
+  const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
     const latest = tool.latestResult || (tool.results && tool.results[0]) || null
     const ar = latest?.analysisResults || {}
     const meta = ar.metaTags || {}
@@ -240,7 +273,7 @@ function generateReportHTML(reportData: {
           <div style="margin-top: 8px;">
             <strong>Key Issues:</strong>
             <ul>
-              ${issues.slice(0,5).map((i: any) => `<li>• ${String(i)}</li>`).join('')}
+              ${issues.slice(0,5).map((i: unknown) => `<li>• ${String(i)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
@@ -248,7 +281,7 @@ function generateReportHTML(reportData: {
           <div style="margin-top: 8px;">
             <strong>Recommendations:</strong>
             <ul>
-              ${recommendations.slice(0,5).map((r: any) => `<li>• ${String(r)}</li>`).join('')}
+              ${recommendations.slice(0,5).map((r: unknown) => `<li>• ${String(r)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
