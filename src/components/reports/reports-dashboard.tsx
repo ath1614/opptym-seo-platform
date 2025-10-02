@@ -127,6 +127,7 @@ interface ReportData {
           issues?: Array<string | { message?: string; description?: string; severity?: string; category?: string; type?: string }>
           recommendations?: Array<string | { message?: string; title?: string; description?: string; priority?: string; impact?: string }>
           brokenLinks?: number
+          totalBrokenLinks?: number
           totalLinks?: number
           workingLinks?: number
           totalWords?: number
@@ -750,7 +751,7 @@ export function ReportsDashboard() {
                                           const perf = (ar?.performance || {}) as { score?: unknown }
                                           const mobile = (ar?.mobileFriendliness || {}) as { isMobileFriendly?: unknown }
                                           const isMobileFriendly = (typeof ar?.isMobileFriendly === 'boolean') ? ar.isMobileFriendly : (typeof mobile.isMobileFriendly === 'boolean' ? mobile.isMobileFriendly : undefined)
-                                          const brokenLinks = typeof ar?.brokenLinks === 'number' ? ar.brokenLinks : (typeof (ar as any)?.totalBrokenLinks === 'number' ? (ar as any).totalBrokenLinks : undefined)
+                                          const brokenLinks = typeof ar?.brokenLinks === 'number' ? ar.brokenLinks : (typeof ar?.totalBrokenLinks === 'number' ? ar.totalBrokenLinks : undefined)
                                           const perfScore = typeof perf.score === 'number' ? perf.score : (typeof perf.score === 'string' ? Number(perf.score) : undefined)
 
                                           const positives: string[] = []
