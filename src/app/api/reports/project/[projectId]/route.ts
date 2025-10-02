@@ -107,18 +107,21 @@ export async function GET(
     
     seoToolUsages.forEach(usage => {
       const key = usage.toolId
-      if (!seoToolsUsageMap.has(key)) {
-        seoToolsUsageMap.set(key, {
+      const toolData: ToolUsageAccumulator = (() => {
+        const existing = seoToolsUsageMap.get(key)
+        if (existing) return existing
+        const init: ToolUsageAccumulator = {
           toolId: usage.toolId,
           toolName: usage.toolName,
           usageCount: 0,
           lastUsed: usage.createdAt instanceof Date ? usage.createdAt : new Date(usage.createdAt || Date.now()),
           results: [],
           latestResult: null
-        })
-      }
-      
-      const toolData = seoToolsUsageMap.get(key)
+        }
+        seoToolsUsageMap.set(key, init)
+        return init
+      })()
+
       toolData.usageCount++
       if (usage.createdAt && toTime(usage.createdAt) > toolData.lastUsed.getTime()) {
         toolData.lastUsed = usage.createdAt instanceof Date ? usage.createdAt : new Date(usage.createdAt)

@@ -168,6 +168,16 @@ function generateReportHTML(reportData: {
     const issuesCount = Array.isArray(ar.issues) ? ar.issues.length : (latest?.issues ?? 0)
     const recsCount = Array.isArray(ar.recommendations) ? ar.recommendations.length : (latest?.recommendations ?? 0)
     const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
+    const perfScore = perf?.score !== undefined ? Number(perf.score as number | string) : undefined
+    const positives: string[] = []
+    if (typeof meta?.title === 'string' && meta.title.trim()) positives.push('Title tag present')
+    if (typeof meta?.description === 'string' && meta.description.trim()) positives.push('Meta description present')
+    if (isMobileFriendly === true) positives.push('Page is mobile-friendly')
+    if (typeof perfScore === 'number' && !Number.isNaN(perfScore) && perfScore >= 80) positives.push('Strong performance score (80+)')
+    if (typeof brokenLinks === 'number') {
+      if (brokenLinks === 0) positives.push('No broken links detected')
+      else if (brokenLinks <= 2) positives.push('Low broken links count')
+    }
     
     return `
       <div class="section">
@@ -200,6 +210,14 @@ function generateReportHTML(reportData: {
             <div class="value">${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
           </div>
         </div>
+        ${positives.length ? `
+          <div style="margin-top: 12px;">
+            <strong>Positive Highlights:</strong>
+            <ul>
+              ${positives.slice(0,5).map((p) => `<li>• ${p}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
         ${Array.isArray(ar.issues) && ar.issues.length ? `
           <div style="margin-top: 12px;">
             <strong>Key Issues:</strong>

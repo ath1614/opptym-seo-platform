@@ -257,6 +257,17 @@ function generateReportHTML(reportData: {
     const recommendations = Array.isArray(ar.recommendations) ? ar.recommendations : []
     const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
 
+    const perfScore = perf?.score !== undefined ? Number(perf.score as number | string) : undefined
+    const positives: string[] = []
+    if (typeof meta?.title === 'string' && meta.title.trim()) positives.push('Title tag present')
+    if (typeof meta?.description === 'string' && meta.description.trim()) positives.push('Meta description present')
+    if (isMobileFriendly === true) positives.push('Page is mobile-friendly')
+    if (typeof perfScore === 'number' && !Number.isNaN(perfScore) && perfScore >= 80) positives.push('Strong performance score (80+)')
+    if (typeof brokenLinks === 'number') {
+      if (brokenLinks === 0) positives.push('No broken links detected')
+      else if (brokenLinks <= 2) positives.push('Low broken links count')
+    }
+
     return `
       <section style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:16px 0;">
         <h3 style="color:#1f2937;margin:0 0 8px 0;">🔧 ${tool.toolName} — Latest Result</h3>
@@ -271,6 +282,14 @@ function generateReportHTML(reportData: {
           <div><strong>Broken Links:</strong> ${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
           <div><strong>Page Speed:</strong> ${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
         </div>
+        ${positives.length ? `
+          <div style="margin-top: 8px;">
+            <strong>Positive Highlights:</strong>
+            <ul>
+              ${positives.slice(0,5).map((p) => `<li>• ${p}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
         ${issues.length ? `
           <div style="margin-top: 8px;">
             <strong>Key Issues:</strong>

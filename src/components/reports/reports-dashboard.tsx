@@ -743,6 +743,42 @@ export function ReportsDashboard() {
                                     {/* Detailed Analysis Results */}
                                     {result.analysisResults && (
                                       <div className="space-y-4">
+                                        {/* Positive Highlights */}
+                                        {(() => {
+                                          const ar = result.analysisResults as ReportData['seoToolsUsage'][number]['results'][number]['analysisResults']
+                                          const meta = (ar?.metaTags || {}) as { title?: unknown; description?: unknown }
+                                          const perf = (ar?.performance || {}) as { score?: unknown }
+                                          const mobile = (ar?.mobileFriendliness || {}) as { isMobileFriendly?: unknown }
+                                          const isMobileFriendly = (typeof ar?.isMobileFriendly === 'boolean') ? ar.isMobileFriendly : (typeof mobile.isMobileFriendly === 'boolean' ? mobile.isMobileFriendly : undefined)
+                                          const brokenLinks = typeof ar?.brokenLinks === 'number' ? ar.brokenLinks : (typeof (ar as any)?.totalBrokenLinks === 'number' ? (ar as any).totalBrokenLinks : undefined)
+                                          const perfScore = typeof perf.score === 'number' ? perf.score : (typeof perf.score === 'string' ? Number(perf.score) : undefined)
+
+                                          const positives: string[] = []
+                                          if (typeof meta.title === 'string' && meta.title.trim()) positives.push('Title tag present and detected')
+                                          if (typeof meta.description === 'string' && meta.description.trim()) positives.push('Meta description present and detected')
+                                          if (typeof perfScore === 'number' && perfScore >= 80) positives.push('Strong page performance score (80+).')
+                                          if (isMobileFriendly === true) positives.push('Page is mobile-friendly.')
+                                          if (typeof brokenLinks === 'number') {
+                                            if (brokenLinks === 0) positives.push('No broken links detected.')
+                                            else if (brokenLinks <= 2) positives.push('Low number of broken links.')
+                                          }
+
+                                          return positives.length ? (
+                                            <div>
+                                              <div className="flex items-center space-x-2 mb-3">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                <span className="font-medium text-sm">Positive Highlights ({positives.length})</span>
+                                              </div>
+                                              <div className="space-y-2">
+                                                {positives.map((p, i) => (
+                                                  <div key={`positive-${i}`} className="p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800 text-sm text-green-800 dark:text-green-200">
+                                                    • {p}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          ) : null
+                                        })()}
                                         {/* Enhanced Issues Section */}
                                         {result.analysisResults.issues && Array.isArray(result.analysisResults.issues) && result.analysisResults.issues.length > 0 && (
                                           <div>
