@@ -120,6 +120,72 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
+  // Build per-tool latest details section
+  const toolDetailsHTML = (seoToolsUsage || []).map(tool => {
+    const latest = (tool as any).latestResult || (tool.results && tool.results[0]) || null
+    const ar = latest?.analysisResults || {}
+    const meta = ar.metaTags || {}
+    const perf = ar.performance || {}
+    const mobile = ar.mobileFriendliness || {}
+    const brokenLinks = ar.brokenLinks ?? ar.totalBrokenLinks ?? 0
+    const totalLinks = ar.totalLinks ?? undefined
+    const isMobileFriendly = ar.isMobileFriendly ?? mobile.isMobileFriendly ?? undefined
+    const score = latest?.score ?? ar.score ?? undefined
+    const issuesCount = Array.isArray(ar.issues) ? ar.issues.length : (latest?.issues ?? 0)
+    const recsCount = Array.isArray(ar.recommendations) ? ar.recommendations.length : (latest?.recommendations ?? 0)
+    const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
+    
+    return `
+      <div class="section">
+        <h2>🔧 ${tool.toolName} — Latest Result</h2>
+        <div><strong>Last Used:</strong> ${lastUsedStr}</div>
+        ${score !== undefined ? `<div><strong>Score:</strong> ${Math.round(Number(score))}</div>` : ''}
+        <div style="margin: 12px 0;">
+          <div><strong>Issues Found:</strong> ${issuesCount}</div>
+          <div><strong>Recommendations:</strong> ${recsCount}</div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label">Meta Title</div>
+            <div class="value">${meta.title || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Meta Description</div>
+            <div class="value">${meta.description || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Mobile Friendly</div>
+            <div class="value">${isMobileFriendly === undefined ? '—' : (isMobileFriendly ? 'Yes' : 'No')}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Broken Links</div>
+            <div class="value">${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Page Speed</div>
+            <div class="value">${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+          </div>
+        </div>
+        ${Array.isArray(ar.issues) && ar.issues.length ? `
+          <div style="margin-top: 12px;">
+            <strong>Key Issues:</strong>
+            <ul>
+              ${ar.issues.slice(0,5).map((i: any) => `<li>• ${String(i)}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        ${Array.isArray(ar.recommendations) && ar.recommendations.length ? `
+          <div style="margin-top: 12px;">
+            <strong>Recommendations:</strong>
+            <ul>
+              ${ar.recommendations.slice(0,5).map((r: any) => `<li>• ${String(r)}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+      </div>
+    `
+  }).join('')
+  
   // Calculate additional metrics
   const totalFailedSubmissions = analytics.totalSubmissions - analytics.successfulSubmissions
   const averageScore = seoToolsUsage.length > 0 ? 
@@ -412,6 +478,8 @@ function generateReportHTML(reportData: {
           </div>
         </div>
       </div>
+
+      ${toolDetailsHTML}
 
       <div class="insights">
         <h3>🔍 Key Insights</h3>

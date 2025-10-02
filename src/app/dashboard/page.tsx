@@ -271,20 +271,15 @@ export default function DashboardPage() {
                      <HelpCircle className="h-4 w-4 mr-2" />
                      Tutorial
                    </Button>
-                   <Button 
-                     variant="outline" 
-                     size="sm" 
-                     onClick={handleRefresh}
-                     disabled={refreshing}
-                   >
-                     <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                     Refresh
-                   </Button>
-            {!isDataLoading && (
-              <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/30 rounded-lg px-3 py-2">
-                <span className="text-green-800 dark:text-green-200 text-sm font-medium">✅ Dashboard Loaded</span>
-              </div>
-            )}
+          <Button 
+             variant="outline" 
+             size="sm" 
+             onClick={handleRefresh}
+             disabled={refreshing}
+           >
+             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+             Refresh
+           </Button>
           </div>
         </div>
 

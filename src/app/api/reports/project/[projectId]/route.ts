@@ -76,7 +76,8 @@ export async function GET(
           toolName: usage.toolName,
           usageCount: 0,
           lastUsed: usage.createdAt || new Date(),
-          results: []
+          results: [],
+          latestResult: null as any
         })
       }
       
@@ -91,17 +92,48 @@ export async function GET(
       const issues = Array.isArray(analysisResults.issues) ? analysisResults.issues.length : 0
       const recommendations = Array.isArray(analysisResults.recommendations) ? analysisResults.recommendations.length : 0
       
-      toolData.results.push({
+      const resultEntry = {
         url: usage.url,
         date: usage.createdAt || new Date(),
         score: score,
         issues: issues,
         recommendations: recommendations,
         analysisResults: analysisResults // Include full analysis results for detailed display
-      })
+      }
+
+      toolData.results.push(resultEntry)
+
+      // Track latest result per tool by createdAt
+      if (!toolData.latestResult) {
+        toolData.latestResult = resultEntry
+      } else {
+        const currentLatest = toolData.latestResult.date instanceof Date 
+          ? toolData.latestResult.date.getTime() 
+          : new Date(toolData.latestResult.date as any).getTime()
+        const candidate = (resultEntry.date instanceof Date ? resultEntry.date : new Date(resultEntry.date as any)).getTime()
+        if (candidate > currentLatest) {
+          toolData.latestResult = resultEntry
+        }
+      }
     })
     
-    const seoToolsUsage = Array.from(seoToolsUsageMap.values())
+    const seoToolsUsage = Array.from(seoToolsUsageMap.values()).map(tool => {
+      // Ensure lastUsed is the latest date and normalize types
+      const sorted = [...tool.results].sort((a, b) => {
+        const ta = (a.date instanceof Date ? a.date : new Date(a.date as any)).getTime()
+        const tb = (b.date instanceof Date ? b.date : new Date(b.date as any)).getTime()
+        return tb - ta
+      })
+      const latest = tool.latestResult || sorted[0] || null
+      return {
+        toolId: tool.toolId,
+        toolName: tool.toolName,
+        usageCount: tool.usageCount,
+        lastUsed: tool.lastUsed,
+        results: tool.results,
+        latestResult: latest
+      }
+    })
     
     // Process real submission data
     const submissionsData = submissions.map(submission => ({

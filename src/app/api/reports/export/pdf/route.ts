@@ -207,6 +207,55 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
+  // Build per-tool latest details section using latestResult when available
+  const toolDetailsHTML = (seoToolsUsage || []).map((tool: any) => {
+    const latest = tool.latestResult || (tool.results && tool.results[0]) || null
+    const ar = latest?.analysisResults || {}
+    const meta = ar.metaTags || {}
+    const perf = ar.performance || {}
+    const mobile = ar.mobileFriendliness || {}
+    const brokenLinks = ar.brokenLinks ?? ar.totalBrokenLinks ?? 0
+    const totalLinks = ar.totalLinks ?? undefined
+    const isMobileFriendly = ar.isMobileFriendly ?? mobile.isMobileFriendly ?? undefined
+    const score = latest?.score ?? ar.score ?? undefined
+    const issues = Array.isArray(ar.issues) ? ar.issues : []
+    const recommendations = Array.isArray(ar.recommendations) ? ar.recommendations : []
+    const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
+
+    return `
+      <section style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:16px 0;">
+        <h3 style="color:#1f2937;margin:0 0 8px 0;">🔧 ${tool.toolName} — Latest Result</h3>
+        <div style="color:#6b7280;margin-bottom:8px;">Last Used: ${lastUsedStr}</div>
+        ${score !== undefined ? `<div><strong>Score:</strong> ${Math.round(Number(score))}</div>` : ''}
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px;">
+          <div><strong>Issues:</strong> ${issues.length}</div>
+          <div><strong>Recommendations:</strong> ${recommendations.length}</div>
+          <div><strong>Meta Title:</strong> ${meta.title || '—'}</div>
+          <div><strong>Meta Description:</strong> ${meta.description || '—'}</div>
+          <div><strong>Mobile Friendly:</strong> ${isMobileFriendly === undefined ? '—' : (isMobileFriendly ? 'Yes' : 'No')}</div>
+          <div><strong>Broken Links:</strong> ${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
+          <div><strong>Page Speed:</strong> ${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+        </div>
+        ${issues.length ? `
+          <div style="margin-top: 8px;">
+            <strong>Key Issues:</strong>
+            <ul>
+              ${issues.slice(0,5).map((i: any) => `<li>• ${String(i)}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        ${recommendations.length ? `
+          <div style="margin-top: 8px;">
+            <strong>Recommendations:</strong>
+            <ul>
+              ${recommendations.slice(0,5).map((r: any) => `<li>• ${String(r)}</li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+      </section>
+    `
+  }).join('')
+  
   return `
     <!DOCTYPE html>
     <html>
@@ -369,7 +418,12 @@ function generateReportHTML(reportData: {
               </tr>
             `).join('')}
           </tbody>
-        </table>
+      </table>
+      </div>
+
+      <div class="section">
+        <h2>Latest Tool Results</h2>
+        ${toolDetailsHTML || '<p>No recent results available.</p>'}
       </div>
 
       <div class="section">
