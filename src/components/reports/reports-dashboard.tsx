@@ -124,8 +124,8 @@ interface ReportData {
             total?: number
           }
           score?: number
-          issues?: unknown[]
-          recommendations?: unknown[]
+          issues?: Array<string | { message?: string; description?: string; severity?: string; category?: string; type?: string }>
+          recommendations?: Array<string | { message?: string; title?: string; description?: string; priority?: string; impact?: string }>
           brokenLinks?: number
           totalLinks?: number
           workingLinks?: number
@@ -1658,17 +1658,35 @@ export function ReportsDashboard() {
           </Card>
 
           {/* SEO Issues Analysis */}
-          {reportData.seoToolsUsage.length > 0 && (
-            <SEOIssuesAnalysis 
-              analysisData={{
-                metaTags: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.metaTags,
-                altText: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.altText,
-                brokenLinks: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.brokenLinks,
-                pageSpeed: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.pageSpeed,
-                recommendations: reportData.seoToolsUsage[0]?.results[0]?.analysisResults?.recommendations || []
-              }}
-            />
-          )}
+          {reportData.seoToolsUsage.length > 0 && (() => {
+            const ar = reportData.seoToolsUsage[0]?.results[0]?.analysisResults;
+            const metaTagsRaw = ar?.metaTags;
+            const performanceRaw = ar?.performance;
+            const altTextRaw = ar?.altText;
+            const brokenLinksRaw = ar?.brokenLinks;
+
+            const analysisInput = {
+              metaTags: metaTagsRaw ? {
+                title: { status: metaTagsRaw.title ? 'good' : 'error', content: metaTagsRaw.title },
+                description: { status: metaTagsRaw.description ? 'good' : 'error', content: metaTagsRaw.description },
+                viewport: { status: metaTagsRaw.viewport ? 'good' : 'error' },
+                canonical: { status: 'warning' }
+              } : undefined,
+              altText: altTextRaw ? {
+                missingAlt: (altTextRaw.imagesWithoutAlt ?? ((altTextRaw.totalImages ?? 0) - (altTextRaw.imagesWithAlt ?? 0))) ?? 0,
+                images: []
+              } : undefined,
+              brokenLinks: typeof brokenLinksRaw === 'number' ? { broken: brokenLinksRaw, links: [] } : undefined,
+              pageSpeed: (performanceRaw?.score ?? ar?.score) !== undefined ? { overallScore: Number(performanceRaw?.score ?? ar?.score ?? 0) } : undefined,
+              recommendations: Array.isArray(ar?.recommendations) ? (ar?.recommendations as Array<string | { message?: string; title?: string }>).map((r) => {
+                return typeof r === 'string' ? r : (r.message || r.title || '');
+              }) : []
+            };
+
+            return (
+              <SEOIssuesAnalysis analysisData={analysisInput} />
+            );
+          })()}
 
           {/* Comprehensive SEO Analysis */}
           {reportData.comprehensiveSeoAnalysis && (

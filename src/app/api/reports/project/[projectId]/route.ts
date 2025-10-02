@@ -185,35 +185,37 @@ export async function GET(
     let totalSeoAnalyses = 0
     
     seoToolUsages.forEach(usage => {
-      const analysisResults = usage.analysisResults || {} as Record<string, unknown>
+      const analysisResults: DetailedAnalysisResults = (usage.analysisResults || {}) as DetailedAnalysisResults
       totalSeoAnalyses++
-      
+
       // Deduct points for issues found
-      if (analysisResults.issues && Array.isArray(analysisResults.issues)) {
+      if (Array.isArray(analysisResults.issues)) {
         seoHealthScore -= Math.min(analysisResults.issues.length * 5, 20) // Max 20 points deduction per tool
       }
-      
+
       // Deduct points for low scores
       if (analysisResults.score !== undefined) {
-        const score = parseInt(analysisResults.score) || 0
-        if (score < 80) {
-          seoHealthScore -= (80 - score) * 0.5 // Deduct 0.5 points for each point below 80
+        const scoreVal = typeof analysisResults.score === 'number' 
+          ? analysisResults.score 
+          : parseInt(String(analysisResults.score)) || 0
+        if (scoreVal < 80) {
+          seoHealthScore -= (80 - scoreVal) * 0.5 // Deduct 0.5 points for each point below 80
         }
       }
-      
+
       // Deduct points for specific issues
-      if (analysisResults.brokenLinks > 0) {
+      if (typeof analysisResults.brokenLinks === 'number' && analysisResults.brokenLinks > 0) {
         seoHealthScore -= Math.min(analysisResults.brokenLinks * 2, 15) // Max 15 points for broken links
       }
-      
+
       if (analysisResults.isMobileFriendly === false) {
         seoHealthScore -= 10 // 10 points for not mobile friendly
       }
-      
+
       if (analysisResults.metaTags && !analysisResults.metaTags.title) {
         seoHealthScore -= 5 // 5 points for missing title
       }
-      
+
       if (analysisResults.metaTags && !analysisResults.metaTags.description) {
         seoHealthScore -= 5 // 5 points for missing description
       }

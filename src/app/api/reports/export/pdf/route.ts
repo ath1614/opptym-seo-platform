@@ -203,6 +203,7 @@ function generateReportHTML(reportData: {
         performance?: { score?: number | string }
         mobileFriendliness?: { isMobileFriendly?: boolean }
         brokenLinks?: number
+        totalBrokenLinks?: number
         totalLinks?: number
         isMobileFriendly?: boolean
       }
@@ -221,6 +222,7 @@ function generateReportHTML(reportData: {
         performance?: { score?: number | string }
         mobileFriendliness?: { isMobileFriendly?: boolean }
         brokenLinks?: number
+        totalBrokenLinks?: number
         totalLinks?: number
         isMobileFriendly?: boolean
       }

@@ -95,13 +95,13 @@ export function SEOIssuesAnalysis({ analysisData }: SEOIssuesAnalysisProps) {
           category: 'meta-tags',
           severity: analysisData.metaTags.title.status === 'error' ? 'critical' : 'high',
           title: 'Title Tag Issues',
-          description: analysisData.metaTags.title.recommendation,
+          description: analysisData.metaTags.title.recommendation || 'Title tag needs optimization based on best practices',
           impact: 'Affects search engine rankings and click-through rates',
           recommendation: 'Optimize title tag length and content for better SEO performance',
           fixEffort: 'easy',
           seoImpact: 'high',
           affectedPages: 1,
-          examples: [analysisData.metaTags.title.content]
+          examples: [analysisData.metaTags.title.content || '']
         })
       }
 
@@ -111,13 +111,13 @@ export function SEOIssuesAnalysis({ analysisData }: SEOIssuesAnalysisProps) {
           category: 'meta-tags',
           severity: analysisData.metaTags.description.status === 'error' ? 'critical' : 'high',
           title: 'Meta Description Issues',
-          description: analysisData.metaTags.description.recommendation,
+          description: analysisData.metaTags.description.recommendation || 'Meta description requires improvement based on recommended guidelines',
           impact: 'Affects search result snippets and click-through rates',
           recommendation: 'Write compelling meta descriptions within 120-160 characters',
           fixEffort: 'easy',
           seoImpact: 'high',
           affectedPages: 1,
-          examples: [analysisData.metaTags.description.content]
+          examples: [analysisData.metaTags.description.content || '']
         })
       }
 
