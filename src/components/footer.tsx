@@ -1,8 +1,14 @@
+"use client"
+
 import { Github, Twitter, Linkedin, Mail } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 export function Footer() {
+  const pathname = usePathname()
+  const isDashboard = pathname?.startsWith('/dashboard')
   return (
-    <footer className="border-t bg-background">
+    <footer className={cn("border-t bg-background", isDashboard ? "ml-64" : undefined)}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -42,6 +48,16 @@ export function Footer() {
               >
                 <Mail className="h-5 w-5" />
               </a>
+            </div>
+
+            {/* Contact Details */}
+            <div className="mt-6 space-y-2 text-sm text-muted-foreground max-w-md">
+              <p>
+                <span className="text-foreground font-semibold">Address:</span> Lakshmi Narsimha Colony, Road No.12, Dattatreya Nivas, Plot Number-591, Nagole, Hyderabad, Telangana, Bharath (India)
+              </p>
+              <p>
+                <span className="text-foreground font-semibold">Phone:</span> +1 (909) 348-8855
+              </p>
             </div>
           </div>
 

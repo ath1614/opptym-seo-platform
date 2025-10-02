@@ -342,7 +342,7 @@ export function DirectoryManagement() {
         showToast({
           title: 'Success',
           description: editingDirectory ? 'Directory updated successfully' : 'Directory created successfully',
-          variant: 'default'
+          variant: 'success'
         })
         setShowAddDialog(false)
         // Force refresh directories
@@ -409,7 +409,7 @@ export function DirectoryManagement() {
         showToast({
           title: 'Success',
           description: `Successfully imported ${data.imported} directories`,
-          variant: 'default'
+          variant: 'success'
         })
         fetchDirectories()
         setShowBulkImport(false)
@@ -513,7 +513,7 @@ export function DirectoryManagement() {
                 >
                   <option value="">All Locations</option>
                   {locations.map((location) => (
-                    <option key={location._id} value={location.name}>
+                    <option key={location._id} value={location.code}>
                       {location.flag} {location.name}
                     </option>
                   ))}
@@ -773,7 +773,7 @@ export function DirectoryManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map((location) => (
-                    <SelectItem key={location._id} value={location.name}>
+                    <SelectItem key={location._id} value={location.code}>
                       <div className="flex items-center space-x-2">
                         <span>{location.flag}</span>
                         <span>{location.name}</span>
@@ -890,7 +890,7 @@ export function DirectoryManagement() {
           <div className="bg-background p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Bulk Import Directories</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Upload a CSV file with columns: name, url, domain, classification, category, status, daScore, pageRank, priority, description
+              Upload a CSV file with columns: name, url, domain, category, status, daScore, pageRank, priority, description
             </p>
             <BulkImportForm 
               categories={categories}
@@ -970,11 +970,8 @@ function BulkImportForm({ categories, locations, onImport, onCancel }: BulkImpor
           </SelectTrigger>
           <SelectContent>
             {locations.map((loc) => (
-              <SelectItem key={loc._id} value={loc.name}>
-                <div className="flex items-center space-x-2">
-                  <span>{loc.flag}</span>
-                  <span>{loc.name}</span>
-                </div>
+              <SelectItem key={loc._id} value={loc.code}>
+                {loc.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -994,7 +991,7 @@ function BulkImportForm({ categories, locations, onImport, onCancel }: BulkImpor
           required
         />
         <p className="text-sm text-muted-foreground mt-1">
-          CSV format: name, url, domain, classification, category, status, daScore, pageRank, priority, description
+          CSV format: name, url, domain, category, status, daScore, pageRank, priority, description
         </p>
       </div>
 

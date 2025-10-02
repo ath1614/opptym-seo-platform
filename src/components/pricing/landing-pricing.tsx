@@ -202,7 +202,7 @@ export function LandingPricing() {
 
   if (error) {
     return (
-      <section id="pricing" className="py-24 bg-muted/30">
+      <section id="pricing" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-red-500 mb-4">{error}</p>
@@ -216,7 +216,7 @@ export function LandingPricing() {
   }
 
   return (
-    <section id="pricing" className="py-24 bg-muted/30">
+    <section id="pricing" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

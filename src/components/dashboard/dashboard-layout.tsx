@@ -10,12 +10,12 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
+    <div className="flex h-full min-h-0 bg-background">
+      {/* Fixed Sidebar */}
       <Sidebar />
       
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main content with left margin to account for fixed sidebar */}
+      <div className="flex-1 flex flex-col overflow-hidden ml-64">
         {/* Top navbar */}
         <DashboardNavbar />
         

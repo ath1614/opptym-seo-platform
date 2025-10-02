@@ -72,7 +72,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className={cn(
-      "flex h-full flex-col bg-card border-r transition-all duration-300",
+      "fixed left-0 top-0 z-40 flex h-screen flex-col bg-card border-r transition-all duration-300",
       isCollapsed ? "w-16" : "w-64",
       className
     )}>
@@ -117,7 +117,7 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (

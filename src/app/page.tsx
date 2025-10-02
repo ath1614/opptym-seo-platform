@@ -38,8 +38,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { LandingPricing } from "@/components/pricing/landing-pricing"
+import { useSession } from "next-auth/react"
 
 export default function Home() {
+  const { status } = useSession()
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -148,7 +150,7 @@ export default function Home() {
       </section>
 
       {/* Features Overview */}
-      <section id="features" className="py-24 bg-muted/30">
+      <section id="features" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -640,7 +642,7 @@ export default function Home() {
             </div>
             
             <div className="mt-8 text-center">
-              <div className="bg-gradient-to-r from-primary/10 to-blue-600/10 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-primary/10 to-blue-600/10 dark:from-primary/20 dark:to-blue-600/20 rounded-lg p-6 border border-border">
                 <h4 className="text-lg font-semibold text-foreground mb-2">Why Opptym AI SEO is the Best Choice</h4>
                 <p className="text-muted-foreground mb-4">
                   Get enterprise-level features at a fraction of the cost, with the simplicity of basic tools.
@@ -658,7 +660,7 @@ export default function Home() {
       </section>
 
       {/* Knowledge Base Section */}
-      <section id="knowledge-base" className="py-24 bg-muted/30">
+      <section id="knowledge-base" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -692,22 +694,10 @@ export default function Home() {
                 articles: "50+ Articles"
               },
               {
-                icon: TrendingUp,
-                title: "Advanced Strategies",
-                description: "Master advanced SEO techniques like technical SEO and link building.",
-                articles: "30+ Guides"
-              },
-              {
                 icon: Target,
                 title: "Case Studies",
                 description: "Real-world examples of successful SEO campaigns and their results.",
                 articles: "25+ Studies"
-              },
-              {
-                icon: Video,
-                title: "Video Tutorials",
-                description: "Step-by-step video guides for using our platform effectively.",
-                articles: "100+ Videos"
               },
               {
                 icon: FileText,
@@ -715,12 +705,7 @@ export default function Home() {
                 description: "Industry best practices and white-hat SEO techniques.",
                 articles: "40+ Guides"
               },
-              {
-                icon: Calendar,
-                title: "SEO News",
-                description: "Stay updated with the latest SEO news, algorithm updates, and trends.",
-                articles: "Daily Updates"
-              }
+              
             ].map((resource, index) => (
               <motion.div
                 key={resource.title}
@@ -898,10 +883,12 @@ export default function Home() {
                   Start Your Free Trial
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                <Headphones className="mr-2 h-5 w-5" />
-                Talk to Sales
-              </Button>
+              {status === 'authenticated' && (
+                <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                  <Headphones className="mr-2 h-5 w-5" />
+                  Talk to Sales
+                </Button>
+              )}
             </div>
             
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-muted-foreground">

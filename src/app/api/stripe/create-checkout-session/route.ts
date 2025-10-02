@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import Stripe from 'stripe'
+import connectDB from '@/lib/mongodb'
+import PricingPlan, { IPricingPlan } from '@/models/PricingPlan'
 
 // Initialize Stripe only when needed (not at module level)
 function getStripe() {
@@ -33,9 +35,11 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Creating Stripe checkout session...')
     
-    const session = await getServerSession(authOptions) as any
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.id
+    const customerEmail = session?.user?.email ?? undefined
     
-    if (!session?.user?.id) {
+    if (!userId) {
       console.log('Unauthorized: No session or user ID')
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -64,22 +68,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const pricing = planPricing[planId as keyof typeof planPricing]
-    if (!pricing) {
-      console.log('Invalid plan:', planId)
-      return NextResponse.json(
-        { error: 'Invalid plan' },
-        { status: 400 }
-      )
-    }
-
-    const amount = pricing[billingCycle as keyof typeof pricing]
-    if (!amount) {
+    if (billingCycle !== 'monthly' && billingCycle !== 'yearly') {
       console.log('Invalid billing cycle:', billingCycle)
       return NextResponse.json(
         { error: 'Invalid billing cycle' },
         { status: 400 }
       )
+    }
+
+    // Resolve amount and product info from built-in config or DB custom plan
+    let amount: number | null = null
+    let productName = ''
+    let productDescription = ''
+
+    const builtInPricing = planPricing[planId as keyof typeof planPricing]
+    if (builtInPricing) {
+      amount = builtInPricing[billingCycle as keyof typeof builtInPricing]
+      productName = `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan`
+      productDescription = `Opptym SEO Platform - ${productName}`
+    } else {
+      // Look up custom plan from DB by name (case-insensitive)
+      await connectDB()
+      const planDoc = await PricingPlan.findOne({ name: new RegExp(`^${planId}$`, 'i'), active: true }).lean<IPricingPlan>()
+      if (!planDoc) {
+        console.log('Invalid plan (not found in DB):', planId)
+        return NextResponse.json(
+          { error: 'Invalid plan' },
+          { status: 400 }
+        )
+      }
+      const monthlyPaise = Math.round((planDoc.price || 0) * 100)
+      const yearlyPaise = Math.round((planDoc.price || 0) * 12 * 0.9 * 100) // 10% discount on yearly
+      amount = billingCycle === 'yearly' ? yearlyPaise : monthlyPaise
+
+      if (!amount || amount <= 0) {
+        console.log('Invalid amount for plan:', { planId, planPrice: planDoc.price, computedAmount: amount })
+        return NextResponse.json(
+          { error: 'Plan price must be greater than 0' },
+          { status: 400 }
+        )
+      }
+
+      productName = `${planDoc.name} Plan`
+      productDescription = planDoc.description ? planDoc.description : `Opptym SEO Platform - ${productName}`
     }
 
     console.log('Plan pricing:', { planId, billingCycle, amount })
@@ -113,10 +144,7 @@ export async function POST(request: NextRequest) {
     const stripe = getStripe()
     console.log('Stripe initialized successfully')
 
-    // Create or get product
-    const productName = `${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan`
-    const productDescription = `Opptym SEO Platform - ${productName}`
-    
+    // Create or get product using resolved productName and productDescription
     let product: Stripe.Product
     try {
       // Try to find existing product first
@@ -149,7 +177,7 @@ export async function POST(request: NextRequest) {
     let price: Stripe.Price
     try {
       price = await stripe.prices.create({
-        unit_amount: amount,
+        unit_amount: amount!,
         currency: 'inr',
         recurring: {
           interval: interval as 'month' | 'year',
@@ -186,15 +214,15 @@ export async function POST(request: NextRequest) {
         ],
         success_url: `${process.env.NEXTAUTH_URL}/dashboard/pricing/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXTAUTH_URL}/dashboard/pricing?canceled=true`,
-        customer_email: (session.user as any).email || undefined,
+        customer_email: customerEmail,
         metadata: {
-          userId: (session.user as any).id,
+          userId: userId,
           planId: planId,
           billingCycle: billingCycle,
         },
         subscription_data: {
           metadata: {
-            userId: (session.user as any).id,
+            userId: userId,
             planId: planId,
             billingCycle: billingCycle,
           },

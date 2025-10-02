@@ -139,6 +139,7 @@ export function SEOTasksGrid() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [selectedLocation, setSelectedLocation] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [draftSearchTerm, setDraftSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [selectedLink, setSelectedLink] = useState<Link | null>(null)
@@ -307,7 +308,7 @@ export function SEOTasksGrid() {
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      fetchLinks(page, selectedCategory, searchTerm)
+      fetchLinks(page, selectedCategory, searchTerm, selectedLocation)
     }
   }
 
@@ -316,6 +317,7 @@ export function SEOTasksGrid() {
     fetchLinks(currentPage, selectedCategory, searchTerm, selectedLocation)
     fetchSubmissionStatus() // Also refresh submission status
     fetchUsageStats() // Refresh usage stats
+    fetchLocations() // Refresh available locations list so newly added directories appear
   }
 
   // Note: Category stats are now handled server-side with pagination
@@ -462,11 +464,14 @@ export function SEOTasksGrid() {
         <Input
           placeholder="Search links by name, description, or domain..."
           className="pl-9"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={draftSearchTerm}
+          onChange={(e) => setDraftSearchTerm(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault()
+              setSearchTerm(draftSearchTerm)
+              setCurrentPage(1)
+              fetchLinks(1, selectedCategory, draftSearchTerm, selectedLocation)
             }
           }}
         />
@@ -498,18 +503,19 @@ export function SEOTasksGrid() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredLinks.map((link) => {
             // Map classification to our category config
-            const classificationMap: Record<string, string> = {
-              'Directory Submission': 'directory',
-              'Article Submission': 'article',
-              'Press Release': 'press-release',
-              'BookMarking': 'bookmarking',
-              'Business Listing': 'business-listing',
-              'Classified': 'classified',
-              'More SEO': 'other'
+            const normalizedClassification = link.classification?.toLowerCase().replace(/\s|-/g, '')
+            const classificationMap: Record<string, keyof typeof categoryConfig> = {
+              directorysubmission: 'directory',
+              articlesubmission: 'article',
+              pressrelease: 'press-release',
+              bookmarking: 'bookmarking',
+              businesslisting: 'business-listing',
+              classified: 'classified',
+              moreseo: 'other',
             }
             
-            const categoryKey = classificationMap[link.classification] || 'other'
-            const config = categoryConfig[categoryKey as keyof typeof categoryConfig]
+            const categoryKey = classificationMap[normalizedClassification] || 'other'
+            const config = categoryConfig[categoryKey]
             const IconComponent = config.icon
             
             return (
@@ -551,7 +557,7 @@ export function SEOTasksGrid() {
                     <div className="flex items-center justify-between">
                       <div className="text-sm">
                         <span className="font-medium">Fields: </span>
-                        <Badge variant="outline">{link.requiredFields.length}</Badge>
+                        <Badge variant="outline">{Array.isArray(link.requiredFields) ? link.requiredFields.length : 0}</Badge>
                       </div>
                       <Button 
                         onClick={() => handleFillForm(link)}

@@ -104,22 +104,7 @@ const quickActions = [
   }
 ]
 
-const recentActions = [
-  {
-    title: 'Export Data',
-    description: 'Download your SEO data',
-    icon: Download,
-    href: '/dashboard/export',
-    color: 'bg-gray-500 hover:bg-gray-600'
-  },
-  {
-    title: 'Import URLs',
-    description: 'Bulk import URLs for analysis',
-    icon: Upload,
-    href: '/dashboard/import',
-    color: 'bg-teal-500 hover:bg-teal-600'
-  }
-]
+// Recent Actions section removed as per request
 
 export function QuickActions() {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
@@ -221,7 +206,7 @@ export function QuickActions() {
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-6">
       {/* Quick Actions */}
       <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-4">
@@ -268,47 +253,6 @@ export function QuickActions() {
               >
                 <div className="p-2.5 rounded-lg bg-gray-400 text-white flex-shrink-0">
                   <Lock className="w-4 h-4" />
-                </div>
-                <div className="text-left flex-1 min-w-0 overflow-hidden">
-                  <div className="font-semibold text-sm leading-tight mb-1 truncate">
-                    {action.title}
-                  </div>
-                  <div className="text-xs text-muted-foreground leading-relaxed overflow-hidden" style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical'
-                  }}>
-                    {action.description}
-                  </div>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Actions */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Recent Actions</CardTitle>
-          <CardDescription>
-            Continue where you left off
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentActions.map((action, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                className="w-full h-auto p-3 flex items-start space-x-3 justify-start hover:bg-muted hover:text-foreground transition-all duration-200 text-left"
-                onClick={() => {
-                  // Navigate to the action
-                  console.log(`Navigate to ${action.href}`)
-                }}
-              >
-                <div className={`p-2.5 rounded-lg ${action.color} text-white flex-shrink-0`}>
-                  <action.icon className="w-4 h-4" />
                 </div>
                 <div className="text-left flex-1 min-w-0 overflow-hidden">
                   <div className="font-semibold text-sm leading-tight mb-1 truncate">

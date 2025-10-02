@@ -274,9 +274,10 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-foreground">Visit Us</h3>
                     <p className="text-muted-foreground">
-                      123 Business District<br />
-                      Mumbai, Maharashtra 400001<br />
-                      India
+                      Lakshmi Narsimha Colony, Road No.12,<br />
+                      Dattatreya Nivas, Plot Number-591,<br />
+                      Nagole, Hyderabad, Telangana<br />
+                      Bharath (India)
                     </p>
                   </div>
                 </div>
