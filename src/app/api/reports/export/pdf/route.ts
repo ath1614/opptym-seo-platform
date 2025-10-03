@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Check if user can generate reports
     const canGenerate = await trackUsage(userId, 'reports', 1)
     
-    if (!canGenerate) {
+    if (!canGenerate || canGenerate.success === false) {
       return NextResponse.json(
         { 
           error: 'Reports limit exceeded',
