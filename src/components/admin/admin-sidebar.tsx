@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
@@ -72,6 +73,13 @@ const adminNavItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
+
+  // Initialize CSS var so admin layout can offset main content correctly
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.setProperty('--sidebar-width', '16rem')
+    }
+  }, [])
 
   return (
     <div className="w-64 bg-card border-r shadow-lg h-screen fixed left-0 top-16 overflow-y-auto hidden md:block">

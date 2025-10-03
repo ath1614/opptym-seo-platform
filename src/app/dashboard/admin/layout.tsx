@@ -25,7 +25,7 @@ export default async function AdminLayout({
       <AdminNavbar />
       <div className="flex">
         <AdminSidebar />
-        <main className="flex-1 p-4 md:p-6 ml-0 md:ml-64 mt-16">
+        <main className="flex-1 p-4 md:p-6 mt-16" style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}>
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
