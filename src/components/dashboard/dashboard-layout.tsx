@@ -15,7 +15,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Sidebar />
       
       {/* Main content with left margin to account for fixed sidebar */}
-      <div className="flex-1 flex flex-col overflow-hidden ml-64">
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ marginLeft: 'var(--sidebar-width, 16rem)' }}>
         {/* Top navbar */}
         <DashboardNavbar />
         
