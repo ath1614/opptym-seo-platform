@@ -557,16 +557,56 @@ function generateReportHTML(reportData: {
           </thead>
           <tbody>
             ${seoToolsUsage.length > 0 ? seoToolsUsage.map((tool) => {
-              const avgScore = tool.results.length > 0 ? 
-                Math.round(tool.results.reduce((sum, r) => sum + r.score, 0) / tool.results.length) : 0
-              const performance = avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : avgScore >= 40 ? 'Fair' : 'Poor'
+              const avgScoreRaw = tool.results.length > 0 
+                ? Math.round(tool.results.reduce((sum, r) => sum + r.score, 0) / tool.results.length) 
+                : null
+
+              const totals = tool.results.reduce(
+                (acc, r) => {
+                  const issuesCount = typeof r.issues === 'number'
+                    ? r.issues
+                    : Array.isArray(r.analysisResults?.issues)
+                      ? r.analysisResults!.issues!.length
+                      : 0
+                  const brokenCount = typeof r.analysisResults?.totalBrokenLinks === 'number'
+                    ? (r.analysisResults!.totalBrokenLinks as number)
+                    : typeof r.analysisResults?.brokenLinks === 'number'
+                      ? (r.analysisResults!.brokenLinks as number)
+                      : 0
+                  acc.issues += issuesCount
+                  acc.broken += brokenCount
+                  return acc
+                },
+                { issues: 0, broken: 0 }
+              )
+
+              let derivedScore: number | null = avgScoreRaw
+              // If no numeric score is available but there are no issues or broken links,
+              // treat performance as positive to avoid misleading "Poor" labels.
+              if (derivedScore === null) {
+                derivedScore = (totals.issues === 0 && totals.broken === 0) ? 85 : 40
+              }
+
+              const performance = derivedScore >= 80 
+                ? 'Excellent' 
+                : derivedScore >= 60 
+                  ? 'Good' 
+                  : derivedScore >= 40 
+                    ? 'Fair' 
+                    : 'Poor'
+              const statusClass = derivedScore >= 80 
+                ? 'success' 
+                : derivedScore >= 60 
+                  ? 'pending' 
+                  : 'rejected'
+
               return `
                 <tr>
                   <td><strong>${tool.toolName}</strong></td>
                   <td>${tool.usageCount}</td>
                   <td>${new Date(tool.lastUsed).toLocaleDateString()}</td>
-                  <td>${avgScore || 'N/A'}</td>
-                  <td><span class="status-${avgScore >= 80 ? 'success' : avgScore >= 60 ? 'pending' : 'rejected'}">${performance}</span></td>
+                  <td>${avgScoreRaw ?? 'N/A'}</td>
+                  <td><span class="status-${statusClass}">${performance}</span></td>
                 </tr>
               `
             }).join('') : '<tr><td colspan="5" style="text-align: center; color: #6b7280; font-style: italic;">No SEO tools used yet</td></tr>'}
