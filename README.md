@@ -37,6 +37,12 @@ src/
 └── utils/              # Utility functions
 ```
 
+### Root Directory Cleanup
+- `tests/` — manual test and verification scripts (run with `node tests/<script>.js`)
+- `scripts/` — utility scripts for seeding, debugging, and maintenance (run with `node scripts/<script>.js`)
+- `docs/` — markdown documentation and reports
+- Root now contains only configuration and documentation files for clarity.
+
 ## 🚀 Getting Started
 
 ### Prerequisites

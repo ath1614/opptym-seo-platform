@@ -15,6 +15,7 @@ import {
   analyzeTechnicalSEO,
   analyzeBacklinks
 } from '@/lib/seo-analysis'
+import { trackUsage } from '@/lib/limit-middleware'
 
 // Local types to avoid implicit any
 interface DetailedAnalysisResults {
@@ -87,6 +88,19 @@ export async function GET(
       )
     }
 
+    // Enforce and increment usage on report generation
+    const canGenerate = await trackUsage(session.user.id, 'reports', 1)
+    if (!canGenerate || canGenerate.success === false) {
+      return NextResponse.json(
+        { 
+          error: 'Reports limit exceeded',
+          limitType: 'reports',
+          message: 'You have reached your reports limit. Please upgrade your plan to continue.'
+        },
+        { status: 403 }
+      )
+    }
+
     // Get user data for plan information
     const user = await User.findById(userId).select('plan usage')
     
@@ -126,11 +140,27 @@ export async function GET(
       if (usage.createdAt && toTime(usage.createdAt) > toolData.lastUsed.getTime()) {
         toolData.lastUsed = usage.createdAt instanceof Date ? usage.createdAt : new Date(usage.createdAt)
       }
-      // Extract real data from analysisResults
-      const analysisResults: DetailedAnalysisResults = (usage.analysisResults || {}) as DetailedAnalysisResults
-      const score = (typeof analysisResults.score === 'number' ? analysisResults.score : parseInt(String(analysisResults.score || 0))) || 0
-      const issues = Array.isArray(analysisResults.issues) ? analysisResults.issues.length : 0
-      const recommendations = Array.isArray(analysisResults.recommendations) ? analysisResults.recommendations.length : 0
+      // Extract real data from stored results. Some routes store full analysis under `results`,
+      // others wrap it under `results.data`. Normalize to a unified `analysisResults`.
+      const rawResults = (usage as unknown as { results?: unknown }).results as Record<string, unknown> | undefined
+      const normalizedAnalysis = rawResults && typeof rawResults === 'object' && 'data' in rawResults
+        ? (rawResults.data as DetailedAnalysisResults)
+        : (rawResults as DetailedAnalysisResults)
+      const analysisResults: DetailedAnalysisResults = (normalizedAnalysis || {}) as DetailedAnalysisResults
+      const scoreSource = analysisResults.score ?? (rawResults && typeof rawResults === 'object' ? (rawResults as { score?: unknown }).score : undefined)
+      const score = typeof scoreSource === 'number' ? scoreSource : Number(scoreSource) || 0
+      const issues = Array.isArray(analysisResults.issues)
+        ? analysisResults.issues.length
+        : (rawResults && typeof rawResults === 'object' && Array.isArray((rawResults as { issues?: unknown }).issues))
+          ? ((rawResults as { issues?: unknown }).issues as unknown[]).length
+          : (rawResults && typeof rawResults === 'object' && typeof (rawResults as { issues?: unknown }).issues === 'number')
+            ? Number((rawResults as { issues?: unknown }).issues)
+            : 0
+      const recommendations = Array.isArray(analysisResults.recommendations)
+        ? analysisResults.recommendations.length
+        : (rawResults && typeof rawResults === 'object' && Array.isArray((rawResults as { recommendations?: unknown }).recommendations))
+          ? ((rawResults as { recommendations?: unknown }).recommendations as unknown[]).length
+          : 0
       
       const resultEntry: ToolResult = {
         url: usage.url,
@@ -138,7 +168,7 @@ export async function GET(
         score: score,
         issues: issues,
         recommendations: recommendations,
-        analysisResults: analysisResults // Include full analysis results for detailed display
+        analysisResults: analysisResults // Include normalized full analysis results for detailed display
       }
 
       toolData.results.push(resultEntry)
