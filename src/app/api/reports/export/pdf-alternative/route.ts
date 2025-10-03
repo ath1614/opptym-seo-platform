@@ -240,12 +240,21 @@ function generateReportHTML(reportData: {
   
   // Calculate additional metrics
   const totalFailedSubmissions = analytics.totalSubmissions - analytics.successfulSubmissions
-  const averageScore = seoToolsUsage.length > 0 ? 
-    Math.round(seoToolsUsage.reduce((sum, tool) => 
-      sum + (tool.results.length > 0 ? 
-        tool.results.reduce((toolSum, r) => toolSum + r.score, 0) / tool.results.length : 0
-      ), 0) / seoToolsUsage.length
-    ) : 0
+  // Compute average score across tools using only numeric scores; if none, treat as null
+  const averageScoreNumeric = seoToolsUsage.length > 0 ? (() => {
+    const toolAverages = seoToolsUsage.map((tool) => {
+      const numericScores = tool.results
+        .map((r) => Number((r as { score: number | string }).score))
+        .filter((s) => Number.isFinite(s))
+      if (numericScores.length === 0) return null
+      const avg = numericScores.reduce((a, b) => a + b, 0) / numericScores.length
+      return Math.round(avg)
+    }).filter((v) => v !== null) as number[]
+    if (toolAverages.length === 0) return null
+    return Math.round(toolAverages.reduce((a, b) => a + b, 0) / toolAverages.length)
+  })() : null
+  const averageScore = averageScoreNumeric
+  const averageScoreDisplay = averageScoreNumeric !== null ? averageScoreNumeric : 'N/A'
   
   const mostUsedTool = seoToolsUsage.length > 0 ? 
     seoToolsUsage.reduce((max, tool) => tool.usageCount > max.usageCount ? tool : max) : null
@@ -525,7 +534,7 @@ function generateReportHTML(reportData: {
             <div class="stat-label">Failed Submissions</div>
           </div>
           <div class="stat-card primary">
-            <div class="stat-value">${averageScore}</div>
+            <div class="stat-value">${averageScoreDisplay}</div>
             <div class="stat-label">Average SEO Score</div>
           </div>
         </div>
@@ -557,8 +566,11 @@ function generateReportHTML(reportData: {
           </thead>
           <tbody>
             ${seoToolsUsage.length > 0 ? seoToolsUsage.map((tool) => {
-              const avgScoreRaw = tool.results.length > 0 
-                ? Math.round(tool.results.reduce((sum, r) => sum + r.score, 0) / tool.results.length) 
+              const numericScores = tool.results
+                .map((r) => Number((r as { score: number | string }).score))
+                .filter((s) => Number.isFinite(s))
+              const avgScoreRaw = numericScores.length > 0 
+                ? Math.round(numericScores.reduce((sum, s) => sum + s, 0) / numericScores.length) 
                 : null
 
               const totals = tool.results.reduce(
@@ -599,12 +611,16 @@ function generateReportHTML(reportData: {
                 : derivedScore >= 60 
                   ? 'pending' 
                   : 'rejected'
+              const lastUsedDate = tool.lastUsed ? new Date(tool.lastUsed) : null
+              const lastUsedSafe = lastUsedDate && !isNaN(lastUsedDate.getTime())
+                ? lastUsedDate.toLocaleDateString()
+                : 'N/A'
 
               return `
                 <tr>
                   <td><strong>${tool.toolName}</strong></td>
                   <td>${tool.usageCount}</td>
-                  <td>${new Date(tool.lastUsed).toLocaleDateString()}</td>
+                  <td>${lastUsedSafe}</td>
                   <td>${avgScoreRaw ?? 'N/A'}</td>
                   <td><span class="status-${statusClass}">${performance}</span></td>
                 </tr>
@@ -671,7 +687,7 @@ function generateReportHTML(reportData: {
             ${analytics.successRate < 80 ? '<li><strong>Improve Submission Success Rate:</strong> Focus on quality submissions and directory selection</li>' : ''}
             ${seoToolsUsage.length < 3 ? '<li><strong>Expand SEO Tool Usage:</strong> Try more SEO tools to get comprehensive insights</li>' : ''}
             ${totalFailedSubmissions > 0 ? '<li><strong>Review Failed Submissions:</strong> Analyze why some submissions failed and improve process</li>' : ''}
-            ${averageScore < 70 ? '<li><strong>Improve SEO Scores:</strong> Work on website optimization based on tool recommendations</li>' : ''}
+            ${(averageScoreNumeric !== null && averageScoreNumeric < 70) ? '<li><strong>Improve SEO Scores:</strong> Work on website optimization based on tool recommendations</li>' : ''}
             <li><strong>Regular Monitoring:</strong> Continue tracking performance monthly for better insights</li>
             <li><strong>Diversify Strategy:</strong> Explore different directories and submission categories</li>
           </ul>

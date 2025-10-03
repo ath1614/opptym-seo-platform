@@ -463,14 +463,26 @@ function generateReportHTML(reportData: {
             </tr>
           </thead>
           <tbody>
-            ${seoToolsUsage.map((tool) => `
-              <tr>
-                <td>${tool.toolName}</td>
-                <td>${tool.usageCount}</td>
-                <td>${new Date(tool.lastUsed).toLocaleDateString()}</td>
-                <td>${tool.results.length > 0 ? Math.round(tool.results.reduce((sum: number, r) => sum + r.score, 0) / tool.results.length) : 'N/A'}</td>
-              </tr>
-            `).join('')}
+            ${seoToolsUsage.map((tool) => {
+              const lastUsedDate = tool.lastUsed ? new Date(tool.lastUsed) : null
+              const lastUsedSafe = lastUsedDate && !isNaN(lastUsedDate.getTime())
+                ? lastUsedDate.toLocaleDateString()
+                : 'N/A'
+              const numericScores = tool.results
+                .map((r) => Number((r as { score: number | string }).score))
+                .filter((s) => Number.isFinite(s))
+              const avgScore = numericScores.length > 0 
+                ? Math.round(numericScores.reduce((sum, s) => sum + s, 0) / numericScores.length)
+                : 'N/A'
+              return `
+                <tr>
+                  <td>${tool.toolName}</td>
+                  <td>${tool.usageCount}</td>
+                  <td>${lastUsedSafe}</td>
+                  <td>${avgScore}</td>
+                </tr>
+              `
+            }).join('')}
           </tbody>
       </table>
       </div>
