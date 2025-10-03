@@ -10,22 +10,22 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session } = useSession()
-  const firstName = (session?.user?.name || 'User').split(' ')[0]
+  const displayName = (session?.user?.name || 'User')
 
   // Simple typewriter effect for the welcome text
-  const fullText = `Welcome back, ${firstName}!`
+  const fullText = `Welcome, ${displayName}`
   const [typedText, setTypedText] = useState('')
 
   useEffect(() => {
     let i = 0
     setTypedText('')
     const interval = setInterval(() => {
-      setTypedText((prev) => prev + fullText.charAt(i))
+      setTypedText(fullText.slice(0, i + 1))
       i += 1
       if (i >= fullText.length) {
         clearInterval(interval)
       }
-    }, 40)
+    }, 120)
     return () => clearInterval(interval)
   }, [fullText])
 
