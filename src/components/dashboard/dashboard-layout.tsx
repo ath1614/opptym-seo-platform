@@ -39,7 +39,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-6">
           {/* Gradient Welcome Header */}
-          <div className="mb-6">
+          <div className="mb-8 pb-4 border-b border-border">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
               <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
                 {typedText}
