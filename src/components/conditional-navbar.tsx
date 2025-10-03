@@ -11,5 +11,6 @@ export function ConditionalNavbar() {
     return null
   }
   
-  return <Navbar />
+  const isHome = pathname === '/'
+  return <Navbar variant={isHome ? 'landing' : 'default'} />
 }

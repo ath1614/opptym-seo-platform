@@ -8,7 +8,13 @@ import { Moon, Sun, Menu, X, User, LogOut } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 
-export function Navbar() {
+type NavbarVariant = 'default' | 'landing'
+
+interface NavbarProps {
+  variant?: NavbarVariant
+}
+
+export function Navbar({ variant = 'default' }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const { status } = useSession()
@@ -21,10 +27,15 @@ export function Navbar() {
     await signOut({ callbackUrl: '/' })
   }
 
+  const isLanding = variant === 'landing'
+  const navClass = isLanding
+    ? "mx-auto mt-4 w-[min(95%,1100px)] rounded-full border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-sm"
+    : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className={navClass}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className={`flex justify-between items-center ${isLanding ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
           <div className="flex-shrink-0">
             <Logo width={60} height={60} />
@@ -112,7 +123,7 @@ export function Navbar() {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
+            <div className={`px-2 pt-2 pb-3 space-y-1 sm:px-3 ${isLanding ? 'border-t rounded-b-3xl' : 'border-t'}` }>
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
