@@ -144,18 +144,18 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className={cn("flex-1 space-y-2 overflow-y-auto", isCollapsed ? "p-2" : "p-4")}
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (
             <Link
               key={item.name}
               href={item.href}
+              title={item.name}
               className={cn(
-                "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                "rounded-lg text-sm font-medium transition-colors",
+                isCollapsed ? "flex items-center justify-center p-2" : "flex items-center space-x-3 px-3 py-2",
+                isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -168,8 +168,10 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="mt-6">
           <Link
             href="/dashboard/bookmarklet"
+            title="Bookmarklet"
             className={cn(
-              "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "rounded-lg text-sm font-medium transition-colors",
+              isCollapsed ? "flex items-center justify-center p-2" : "flex items-center space-x-3 px-3 py-2",
               pathname === '/dashboard/bookmarklet'
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -184,8 +186,10 @@ export function Sidebar({ className }: SidebarProps) {
         {isAdmin && (
           <Link
             href="/dashboard/admin"
+            title="Admin Panel"
             className={cn(
-              "flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "rounded-lg text-sm font-medium transition-colors",
+              isCollapsed ? "flex items-center justify-center p-2" : "flex items-center space-x-3 px-3 py-2",
               pathname.startsWith('/dashboard/admin')
                 ? "bg-red-100 text-red-700 border border-red-200"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
