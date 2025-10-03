@@ -460,6 +460,7 @@ function generateReportHTML(reportData: {
               <th>Usage Count</th>
               <th>Last Used</th>
               <th>Average Score</th>
+              <th>Performance</th>
             </tr>
           </thead>
           <tbody>
@@ -471,15 +472,54 @@ function generateReportHTML(reportData: {
               const numericScores = tool.results
                 .map((r) => Number((r as { score: number | string }).score))
                 .filter((s) => Number.isFinite(s))
-              const avgScore = numericScores.length > 0 
+              const avgScoreRaw = numericScores.length > 0 
                 ? Math.round(numericScores.reduce((sum, s) => sum + s, 0) / numericScores.length)
-                : 'N/A'
+                : null
+
+              // Derive performance label similarly to alternative exporter when score is missing
+              const totals = tool.results.reduce(
+                (acc, r) => {
+                  const issuesCount = typeof (r as any).issues === 'number'
+                    ? (r as any).issues
+                    : Array.isArray((r as any).analysisResults?.issues)
+                      ? ((r as any).analysisResults!.issues!.length)
+                      : 0
+                  const brokenCount = typeof (r as any).analysisResults?.totalBrokenLinks === 'number'
+                    ? ((r as any).analysisResults!.totalBrokenLinks as number)
+                    : typeof (r as any).analysisResults?.brokenLinks === 'number'
+                      ? ((r as any).analysisResults!.brokenLinks as number)
+                      : 0
+                  acc.issues += issuesCount
+                  acc.broken += brokenCount
+                  return acc
+                },
+                { issues: 0, broken: 0 }
+              )
+
+              let derivedScore: number | null = avgScoreRaw
+              if (derivedScore === null) {
+                derivedScore = (totals.issues === 0 && totals.broken === 0) ? 85 : 40
+              }
+
+              const performance = derivedScore >= 80 
+                ? 'Excellent' 
+                : derivedScore >= 60 
+                  ? 'Good' 
+                  : derivedScore >= 40 
+                    ? 'Fair' 
+                    : 'Poor'
+              const statusClass = derivedScore >= 80 
+                ? 'success' 
+                : derivedScore >= 60 
+                  ? 'pending' 
+                  : 'rejected'
               return `
                 <tr>
                   <td>${tool.toolName}</td>
                   <td>${tool.usageCount}</td>
                   <td>${lastUsedSafe}</td>
-                  <td>${avgScore}</td>
+                  <td>${avgScoreRaw ?? 'N/A'}</td>
+                  <td><span class="status-${statusClass}">${performance}</span></td>
                 </tr>
               `
             }).join('')}
