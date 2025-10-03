@@ -470,7 +470,7 @@ function generateReportHTML(reportData: {
                 ? lastUsedDate.toLocaleDateString()
                 : 'N/A'
               const numericScores = tool.results
-                .map((r) => Number((r as { score: number | string }).score))
+                .map((r) => Number(r.score))
                 .filter((s) => Number.isFinite(s))
               const avgScoreRaw = numericScores.length > 0 
                 ? Math.round(numericScores.reduce((sum, s) => sum + s, 0) / numericScores.length)
@@ -479,16 +479,21 @@ function generateReportHTML(reportData: {
               // Derive performance label similarly to alternative exporter when score is missing
               const totals = tool.results.reduce(
                 (acc, r) => {
-                  const issuesCount = typeof (r as any).issues === 'number'
-                    ? (r as any).issues
-                    : Array.isArray((r as any).analysisResults?.issues)
-                      ? ((r as any).analysisResults!.issues!.length)
-                      : 0
-                  const brokenCount = typeof (r as any).analysisResults?.totalBrokenLinks === 'number'
-                    ? ((r as any).analysisResults!.totalBrokenLinks as number)
-                    : typeof (r as any).analysisResults?.brokenLinks === 'number'
-                      ? ((r as any).analysisResults!.brokenLinks as number)
-                      : 0
+                  let issuesCount = 0
+                  if (typeof r.issues === 'number') {
+                    issuesCount = r.issues
+                  } else {
+                    const issuesArray = r.analysisResults?.issues
+                    if (Array.isArray(issuesArray)) issuesCount = issuesArray.length
+                  }
+
+                  let brokenCount = 0
+                  const ar = r.analysisResults
+                  if (ar) {
+                    if (typeof ar.totalBrokenLinks === 'number') brokenCount = ar.totalBrokenLinks
+                    else if (typeof ar.brokenLinks === 'number') brokenCount = ar.brokenLinks
+                  }
+
                   acc.issues += issuesCount
                   acc.broken += brokenCount
                   return acc
