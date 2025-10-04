@@ -421,27 +421,27 @@ export function PricingPlans() {
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Unlimited projects and submissions</span>
+                  <span>Flexible projects, submissions, and tool usage limits</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Custom SEO tools and integrations</span>
+                  <span>Custom reports and SEO dashboards</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>White-label solutions</span>
+                  <span>Assisted onboarding and account setup</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Dedicated account manager</span>
+                  <span>Priority support</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>24/7 priority support</span>
+                  <span>Early access to new features</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Custom development and training</span>
+                  <span>Consultation for tailored workflows</span>
                 </li>
               </ul>
             </div>
@@ -479,7 +479,7 @@ export function PricingPlans() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Do you offer refunds?</h3>
             <p className="text-muted-foreground">
-              We offer a 30-day money-back guarantee for all paid plans. Contact support for assistance.
+              Refunds are not guaranteed. Please contact support for assistance with billing issues.
             </p>
           </div>
           <div className="space-y-4">

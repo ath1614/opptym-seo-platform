@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     
     // Track usage before creating submission
     console.log('Tracking submission usage for user:', tokenData.userId)
-    const canSubmit = await trackUsage(tokenData.userId, 'submissions', 1)
+    const canSubmit = await trackUsage(tokenData.userId, 'submissions', 1, { projectId })
     console.log('Can submit result:', canSubmit)
     if (!canSubmit) {
       // Get current usage for better error message

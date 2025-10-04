@@ -49,7 +49,7 @@ export async function GET() {
         {
           name: 'Pro',
           price: 999,
-          features: ['140 SEO tools', '1 project', '150 submissions', 'Unlimited reports', 'Keyword researcher', 'Backlink scanner', 'Keyword tracker', 'Competitor analyzer', 'Technical SEO auditor', 'Advanced analytics', 'Priority support', 'Custom reports', 'API access'],
+          features: ['Everything in Free', '5 submissions per project per day', '4 SEO tools per day', 'Keyword researcher', 'Backlink scanner', 'Keyword tracker', 'Competitor analyzer', 'Technical SEO auditor', 'Advanced analytics', 'Priority support', 'Custom reports'],
           active: true,
           description: 'For growing businesses',
           maxProjects: 1,
@@ -61,7 +61,7 @@ export async function GET() {
         {
           name: 'Business',
           price: 3999,
-          features: ['Unlimited SEO tools', '5 projects', '1500 submissions', 'Unlimited reports', 'White-label reports', 'Team collaboration', 'Advanced competitor analysis', 'Custom integrations', 'Dedicated account manager', 'Priority processing', 'Custom branding', 'Advanced API limits'],
+          features: ['Everything in Pro', '10 submissions per project per day', 'Unlimited SEO tools per project', 'Advanced competitor analysis', 'Detailed reports', 'Priority support'],
           active: true,
           description: 'For established businesses',
           maxProjects: 5,
@@ -73,7 +73,7 @@ export async function GET() {
         {
           name: 'Enterprise',
           price: 8999,
-          features: ['Unlimited SEO tools', '10 projects', '6000 submissions', 'Unlimited reports', 'Custom development', 'On-premise deployment', 'Advanced security', 'Custom integrations', 'Dedicated infrastructure', '24/7 phone support', 'Custom training', 'SLA guarantees'],
+          features: ['Everything in Business', '20 submissions per project per day', 'Unlimited SEO tools', 'Priority support'],
           active: true,
           description: 'For large organizations',
           maxProjects: 10,

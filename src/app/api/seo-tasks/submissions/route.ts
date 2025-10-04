@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user can make a submission
-    const canSubmit = await trackUsage(session.user.id, 'submissions', 1)
+    const canSubmit = await trackUsage(session.user.id, 'submissions', 1, { projectId })
     
     if (!canSubmit) {
       return NextResponse.json(

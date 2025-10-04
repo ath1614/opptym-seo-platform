@@ -194,6 +194,17 @@ function generateReportHTML(reportData: {
         totalBrokenLinks?: number
         totalLinks?: number
         isMobileFriendly?: boolean
+        // keyword density
+        totalWords?: number
+        keywords?: Array<{
+          keyword?: string
+          term?: string
+          count?: number
+          frequency?: number
+          density?: number
+          percentage?: number
+          status?: string
+        }>
       }
     }>
     latestResult?: {
@@ -213,6 +224,17 @@ function generateReportHTML(reportData: {
         totalBrokenLinks?: number
         totalLinks?: number
         isMobileFriendly?: boolean
+        // keyword density
+        totalWords?: number
+        keywords?: Array<{
+          keyword?: string
+          term?: string
+          count?: number
+          frequency?: number
+          density?: number
+          percentage?: number
+          status?: string
+        }>
       }
     } | null
   }>
@@ -244,6 +266,18 @@ function generateReportHTML(reportData: {
     const issues = Array.isArray(ar.issues) ? ar.issues : []
     const recommendations = Array.isArray(ar.recommendations) ? ar.recommendations : []
     const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
+    type AnalysisKeyword = {
+      keyword?: string
+      term?: string
+      count?: number
+      frequency?: number
+      density?: number
+      percentage?: number
+      status?: string
+    }
+
+    const keywordItems: AnalysisKeyword[] = Array.isArray(ar?.keywords) ? ar.keywords as AnalysisKeyword[] : []
+    const totalWords = typeof ar?.totalWords === 'number' ? ar.totalWords : undefined
 
     const perfScore = perf?.score !== undefined ? Number(perf.score as number | string) : undefined
     const positives: string[] = []
@@ -292,6 +326,37 @@ function generateReportHTML(reportData: {
             <ul>
               ${recommendations.slice(0,5).map((r: unknown) => `<li>• ${String(r)}</li>`).join('')}
             </ul>
+          </div>
+        ` : ''}
+        ${keywordItems.length ? `
+          <div style="margin-top: 12px;">
+            <strong>Top Keywords${totalWords !== undefined ? ` (Total Words: ${totalWords})` : ''}:</strong>
+            <table class="table" style="margin-top:8px;">
+              <thead>
+                <tr>
+                  <th>Keyword</th>
+                  <th>Count</th>
+                  <th>Density (%)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${keywordItems.slice(0, 10).map((k: AnalysisKeyword) => {
+                  const keyword = k.keyword ?? k.term ?? ''
+                  const count = typeof k.count === 'number' ? k.count : (typeof k.frequency === 'number' ? k.frequency : 0)
+                  const density = typeof k.density === 'number' ? k.density : (typeof k.percentage === 'number' ? k.percentage : 0)
+                  const status = (k.status ?? '').toString()
+                  return `
+                    <tr>
+                      <td>${keyword}</td>
+                      <td>${count}</td>
+                      <td>${Number.isFinite(Number(density)) ? Number(density).toFixed(2) : '0.00'}</td>
+                      <td>${status || '—'}</td>
+                    </tr>
+                  `
+                }).join('')}
+              </tbody>
+            </table>
           </div>
         ` : ''}
       </section>
@@ -434,7 +499,7 @@ function generateReportHTML(reportData: {
           </div>
           <div class="stat-card">
             <div class="stat-value">${analytics.successRate}%</div>
-            <div class="stat-label">Success Rate</div>
+            <div class="stat-label">Overall SEO Health Score</div>
           </div>
         </div>
       </div>

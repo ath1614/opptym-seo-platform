@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Track usage before creating submission
-    const canSubmit = await trackUsage(session.user.id, 'submissions', 1)
+    const canSubmit = await trackUsage(session.user.id, 'submissions', 1, { projectId })
     if (!canSubmit) {
       // Get current usage for better error message
       const currentSubmissions = await Submission.countDocuments({ 

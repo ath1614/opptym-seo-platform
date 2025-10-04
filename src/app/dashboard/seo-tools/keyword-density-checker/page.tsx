@@ -40,6 +40,18 @@ interface AnalysisResult {
   score: number
 }
 
+// API keyword item shape from backend analysis results
+type ApiKeywordItem = {
+  keyword?: string
+  term?: string
+  count?: number
+  frequency?: number
+  density?: number
+  percentage?: number
+  status?: 'good' | 'warning' | 'error' | string
+  position?: number[]
+}
+
 export default function KeywordDensityCheckerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -98,18 +110,24 @@ export default function KeywordDensityCheckerPage() {
       if (response.ok) {
         console.log('Keyword Density Analysis Response:', data)
         // Transform the KeywordDensityAnalysis data to match the expected interface
+        const sourceKeywords: ApiKeywordItem[] = Array.isArray(data?.data?.keywords)
+          ? (data.data.keywords as ApiKeywordItem[])
+          : Array.isArray(data?.data?.keywordDensities)
+            ? (data.data.keywordDensities as ApiKeywordItem[])
+            : []
+
         const transformedData: AnalysisResult = {
-          url: data.data.url,
-          totalWords: data.data.totalWords,
-          keywordDensities: data.data.keywords.map((kw: { keyword: string; count: number; density: number; status: 'good' | 'warning' | 'error' }) => ({
-            keyword: kw.keyword,
-            count: kw.count,
-            density: kw.density,
-            status: kw.status,
-            position: [] // Position data not available from backend
+          url: data?.data?.url || '',
+          totalWords: typeof data?.data?.totalWords === 'number' ? data.data.totalWords : 0,
+          keywordDensities: sourceKeywords.map((kw: ApiKeywordItem) => ({
+            keyword: kw.keyword ?? kw.term ?? '',
+            count: typeof kw.count === 'number' ? kw.count : (typeof kw.frequency === 'number' ? kw.frequency : 0),
+            density: typeof kw.density === 'number' ? kw.density : (typeof kw.percentage === 'number' ? kw.percentage : 0),
+            status: (kw.status as 'good' | 'warning' | 'error') ?? 'good',
+            position: Array.isArray(kw.position) ? kw.position : [],
           })),
-          recommendations: data.data.recommendations,
-          score: data.data.score
+          recommendations: Array.isArray(data?.data?.recommendations) ? data.data.recommendations : [],
+          score: typeof data?.data?.score === 'number' ? data.data.score : 0,
         }
         setAnalysisResult(transformedData)
         showToast({

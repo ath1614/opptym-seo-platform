@@ -108,28 +108,28 @@ const categoryConfig = {
     description: 'Submit press releases to news sites'
   },
   bookmarking: {
-    name: 'Bookmarking',
+    name: 'Social Bookmarking',
     icon: Bookmark,
     color: 'bg-orange-100 text-orange-800',
-    description: 'Bookmark your content on social platforms'
+    description: 'Bookmark and share content on social platforms'
   },
   'business-listing': {
-    name: 'Business Listing',
+    name: 'Local Business Listing',
     icon: Building,
     color: 'bg-red-100 text-red-800',
-    description: 'List your business on local directories'
+    description: 'List your business on local directories (Local SEO)'
   },
   classified: {
-    name: 'Classified',
+    name: 'Classified Ads',
     icon: Tag,
     color: 'bg-yellow-100 text-yellow-800',
-    description: 'Post classified ads'
+    description: 'Post classified ads to increase reach'
   },
   other: {
-    name: 'More SEO',
+    name: 'Other Opportunities',
     icon: MoreHorizontal,
     color: 'bg-gray-100 text-gray-800',
-    description: 'Other SEO submission opportunities'
+    description: 'Additional SEO submission opportunities'
   }
 }
 
@@ -409,28 +409,79 @@ export function SEOTasksGrid() {
       )}
 
       {/* Category Filter */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedCategory === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedCategory('all')}
-        >
-          All (1,00,000+)
-        </Button>
-        {Object.entries(categoryConfig).map(([key, config]) => {
-          const IconComponent = config.icon
-          return (
-            <Button
-              key={key}
-              variant={selectedCategory === key ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory(key)}
-            >
-              <IconComponent className="h-4 w-4 mr-2" />
-              {config.name}
-            </Button>
-          )
-        })}
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Button
+            variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedCategory('all')}
+          >
+            All (1,00,000+)
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">Off‑Page Submissions</div>
+          <div className="flex flex-wrap gap-2">
+            {(['directory','article','press-release','bookmarking'] as const).map((key) => {
+              const config = categoryConfig[key]
+              const IconComponent = config.icon
+              return (
+                <Button
+                  key={key}
+                  variant={selectedCategory === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(key)}
+                >
+                  <IconComponent className="h-4 w-4 mr-2" />
+                  {config.name}
+                </Button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">Local SEO</div>
+          <div className="flex flex-wrap gap-2">
+            {(['business-listing'] as const).map((key) => {
+              const config = categoryConfig[key]
+              const IconComponent = config.icon
+              return (
+                <Button
+                  key={key}
+                  variant={selectedCategory === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(key)}
+                >
+                  <IconComponent className="h-4 w-4 mr-2" />
+                  {config.name}
+                </Button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-muted-foreground">Other Opportunities</div>
+          <div className="flex flex-wrap gap-2">
+            {(['classified','other'] as const).map((key) => {
+              const config = categoryConfig[key]
+              const IconComponent = config.icon
+              return (
+                <Button
+                  key={key}
+                  variant={selectedCategory === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(key)}
+                >
+                  <IconComponent className="h-4 w-4 mr-2" />
+                  {config.name}
+                </Button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Location Filter */}

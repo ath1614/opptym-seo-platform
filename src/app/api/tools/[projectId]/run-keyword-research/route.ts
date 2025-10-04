@@ -169,7 +169,7 @@ export async function POST(
      }
 
   } catch (error) {
-    console.error('Keyword researcher error:', error)
+    console.error('Keyword research error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -32,9 +32,16 @@ export async function GET(request: NextRequest) {
       reports: usageStats.limits.reports === -1 ? 'unlimited' : usageStats.limits.reports
     }
 
+    const transformedDailyLimits = usageStats.dailyLimits ? {
+      submissionsPerProjectPerDay: usageStats.dailyLimits.submissionsPerProjectPerDay === -1 ? 'unlimited' : usageStats.dailyLimits.submissionsPerProjectPerDay,
+      seoToolsPerDay: usageStats.dailyLimits.seoToolsPerDay === -1 ? 'unlimited' : usageStats.dailyLimits.seoToolsPerDay
+    } : undefined
+
     return NextResponse.json({
       ...usageStats,
-      limits: transformedLimits
+      limits: transformedLimits,
+      dailyLimits: transformedDailyLimits || usageStats.dailyLimits,
+      todayUsage: usageStats.todayUsage
     })
   } catch (error) {
     console.error('Usage stats error:', error)

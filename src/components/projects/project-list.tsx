@@ -244,6 +244,27 @@ export function ProjectList() {
           <p className="text-muted-foreground">
             Manage your SEO projects and track their performance
           </p>
+          {/* Disclaimer about project status logic */}
+          <div className="mt-3">
+            <div className="rounded-lg border bg-card text-card-foreground px-4 py-3">
+              <div className="grid grid-cols-[calc(var(--spacing)*4)_1fr] gap-x-3 items-start">
+                <svg className="size-4 translate-y-0.5 text-current" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10Z" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M12 8.5h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M11 12h1v6h-1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <div>
+                  <div className="font-medium tracking-tight">Project Status: Draft vs Active</div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    <span className="font-medium">Draft</span> projects are newly created and not actively used yet. 
+                    A project becomes <span className="font-medium">Active</span> once you start using it for submissions or SEO tools. 
+                    You will see these tags reflected here and in project details. 
+                    The status is set to <span className="font-medium">draft</span> by default on creation.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <Button 
           onClick={handleNewProject}

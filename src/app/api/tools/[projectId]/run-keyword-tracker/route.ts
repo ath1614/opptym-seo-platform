@@ -31,7 +31,7 @@ export async function POST(
     }
 
     // Track usage
-    const usageResult = await trackUsage(session.user.id, 'seoTools', 1)
+    const usageResult = await trackUsage(session.user.id, 'seoTools', 1, { projectId })
     if (!usageResult.success) {
       return NextResponse.json({ 
         error: usageResult.message,

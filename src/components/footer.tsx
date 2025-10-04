@@ -1,7 +1,8 @@
 "use client"
 
-import { Github, Twitter, Linkedin, Mail } from "lucide-react"
+import { Linkedin, Mail, Facebook, Instagram } from "lucide-react"
 import { usePathname } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export function Footer() {
@@ -21,28 +22,31 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <a
-                href="#"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
+                href="https://www.linkedin.com/company/opptym/"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="LinkedIn"
+                target="_blank" rel="noopener noreferrer"
               >
                 <Linkedin className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://www.facebook.com/Opptym"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Facebook"
+                target="_blank" rel="noopener noreferrer"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href="https://www.instagram.com/opptym_ai"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Instagram"
+                target="_blank" rel="noopener noreferrer"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="mailto:support@opptym.com"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Email"
               >
@@ -68,36 +72,44 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/#features"
                   className="text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   Features
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/#pricing"
                   className="text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   Pricing
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/docs"
                   className="text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   Documentation
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/seo-tips"
+                  className="text-muted-foreground hover:text-primary transition-colors text-sm"
+                >
+                  SEO Tips
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
                   className="text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   Support
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -109,28 +121,28 @@ export function Footer() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/privacy-policy"
                   className="text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/refund-policy"
+                  className="text-muted-foreground hover:text-primary transition-colors text-sm"
+                >
+                  Refund & Cancellation Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/terms-of-service"
                   className="text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   Terms of Service
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-muted-foreground hover:text-primary transition-colors text-sm"
-                >
-                  Cookie Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

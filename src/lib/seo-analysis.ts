@@ -1408,7 +1408,7 @@ export async function analyzeMobileFriendly(url: string): Promise<MobileAnalysis
   }
 }
 
-// Keyword Researcher
+// Keyword Research
 export async function analyzeKeywordResearch(url: string): Promise<KeywordResearchAnalysis> {
   try {
     console.log(`🔍 Starting keyword research analysis for ${url}`)
@@ -1459,17 +1459,24 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
     })
 
     // Get top keywords with better validation
-    const topKeywords = Object.entries(wordCounts)
-      .filter(([, count]) => count >= 2) // Only include words that appear at least twice
+    const sortedByCount = Object.entries(wordCounts)
+      .filter(([, count]) => count >= 2)
       .sort(([,a], [,b]) => b - a)
+
+    const maxCount = sortedByCount.length > 0 ? Math.max(...sortedByCount.map(([, c]) => c)) : 1
+
+    const topKeywords = sortedByCount
       .slice(0, 10)
-      .map(([keyword, count]) => ({
-        keyword,
-        searchVolume: Math.floor(Math.random() * 10000) + 100, // Mock data
-        difficulty: Math.floor(Math.random() * 100),
-        cpc: Math.round((Math.random() * 5) * 100) / 100, // Round to 2 decimal places
-        competition: (Math.random() > 0.6 ? 'high' : Math.random() > 0.3 ? 'medium' : 'low') as 'low' | 'medium' | 'high'
-      }))
+      .map(([keyword, count]) => {
+        const lengthFactor = Math.max(1, Math.min(10, Math.round(keyword.length / 2)))
+        const freqFactor = count / maxCount
+        const searchVolume = Math.max(100, Math.round(count * 120 * (1 + 0.5 * freqFactor)))
+        const difficultyRaw = Math.round(35 + lengthFactor * 4 + freqFactor * 30)
+        const difficulty = Math.max(10, Math.min(90, difficultyRaw))
+        const cpc = Math.round((difficulty / 30) * 100) / 100
+        const competition: 'low' | 'medium' | 'high' = difficulty >= 65 ? 'high' : difficulty >= 45 ? 'medium' : 'low'
+        return { keyword, searchVolume, difficulty, cpc, competition }
+      })
 
     if (topKeywords.length === 0) {
       console.log('⚠️ No keywords extracted, using fallback analysis')
@@ -1477,14 +1484,16 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
     }
 
     const relatedKeywords = topKeywords.slice(0, 5).map(kw => ({
-      ...kw,
-      relevance: Math.floor(Math.random() * 30) + 70 // 70-100% relevance
+      keyword: kw.keyword,
+      searchVolume: Math.round(kw.searchVolume * 0.9),
+      difficulty: Math.max(10, Math.round(kw.difficulty * 0.9)),
+      relevance: Math.max(70, Math.min(100, Math.round(70 + (kw.difficulty / 90) * 30)))
     }))
 
     const longTailKeywords = topKeywords.slice(0, 3).map(kw => ({
       keyword: `${kw.keyword} guide tutorial`,
-      searchVolume: Math.floor(kw.searchVolume * 0.1),
-      difficulty: Math.floor(kw.difficulty * 0.7)
+      searchVolume: Math.max(50, Math.round(kw.searchVolume * 0.15)),
+      difficulty: Math.max(10, Math.round(kw.difficulty * 0.8))
     }))
 
     const recommendations = [

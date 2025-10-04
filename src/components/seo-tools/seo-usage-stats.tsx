@@ -31,6 +31,14 @@ interface UsageStats {
     name: string
     count: number
   }[]
+  dailyLimits?: {
+    seoToolsPerDay: number | 'unlimited'
+    submissionsPerProjectPerDay?: number | 'unlimited'
+  }
+  todayUsage?: {
+    seoTools: number
+    submissions?: number
+  }
 }
 
 export function SEOUsageStats() {
@@ -92,6 +100,9 @@ export function SEOUsageStats() {
     ? 'Unlimited' 
     : (stats.limits.seoTools as number) - stats.usage.seoTools
 
+  const dailyLimit = stats.dailyLimits?.seoToolsPerDay ?? undefined
+  const dailyUsed = stats.todayUsage?.seoTools ?? 0
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* SEO Tools Usage */}
@@ -110,6 +121,15 @@ export function SEOUsageStats() {
               <Progress value={usagePercentage} className="h-2" />
             </div>
           )}
+          <div className="mt-3 text-xs text-muted-foreground">
+            Today: <span className="font-medium">{dailyUsed}</span>
+            {dailyLimit !== undefined && (
+              <>
+                {' '}of{' '}
+                <span className="font-medium">{dailyLimit === 'unlimited' ? '∞' : dailyLimit}</span>
+              </>
+            )} runs
+          </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
             <div>
               <div className="font-medium">{stats.usage.dailyAverage}</div>

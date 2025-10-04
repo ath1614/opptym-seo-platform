@@ -77,6 +77,43 @@ export async function POST(request: NextRequest) {
     // Generate real analysis results
     console.log(`Starting analysis for tool: ${toolId}, URL: ${url}`)
     const analysisResults = await getRealAnalysisForTool(toolId, url)
+    
+    // Safely extract common summary metrics across different tool result shapes (no implicit any)
+    const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+    const extractScore = (result: unknown): number => {
+      if (result && typeof result === 'object') {
+        const obj = result as Record<string, unknown>
+        const candidates = [obj['score'], obj['overallScore'], obj['performanceScore']]
+        for (const val of candidates) {
+          if (isNumber(val)) return val
+        }
+      }
+      return 0
+    }
+    const extractIssuesCount = (result: unknown): number => {
+      if (result && typeof result === 'object') {
+        const obj = result as Record<string, unknown>
+        const issues = obj['issues']
+        const errors = obj['errors']
+        const issuesFound = obj['issuesFound']
+        if (Array.isArray(issues)) return issues.length
+        if (Array.isArray(errors)) return errors.length
+        if (isNumber(issuesFound)) return issuesFound
+      }
+      return 0
+    }
+    const extractRecommendationsCount = (result: unknown): number => {
+      if (result && typeof result === 'object') {
+        const obj = result as Record<string, unknown>
+        const recommendations = obj['recommendations']
+        const suggestions = obj['suggestions']
+        const recommendationList = obj['recommendationList']
+        if (Array.isArray(recommendations)) return recommendations.length
+        if (Array.isArray(suggestions)) return suggestions.length
+        if (Array.isArray(recommendationList)) return recommendationList.length
+      }
+      return 0
+    }
     console.log(`Analysis completed for tool: ${toolId}`)
     
     // Save usage to database
@@ -90,9 +127,9 @@ export async function POST(request: NextRequest) {
       toolName: toolName,
       url: url,
       results: {
-        score: analysisResults.score || analysisResults.overallScore || 0,
-        issues: analysisResults.issues?.length || 0,
-        recommendations: analysisResults.recommendations?.length || 0,
+        score: extractScore(analysisResults),
+        issues: extractIssuesCount(analysisResults),
+        recommendations: extractRecommendationsCount(analysisResults),
         data: analysisResults
       }
     })
@@ -113,8 +150,8 @@ export async function POST(request: NextRequest) {
           toolName: toolName,
           url: url,
           projectId: projectId || null,
-          score: analysisResults.score || analysisResults.overallScore || 0,
-          issuesFound: analysisResults.issues?.length || 0
+          score: extractScore(analysisResults),
+          issuesFound: extractIssuesCount(analysisResults)
         }
       },
       ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
@@ -130,18 +167,15 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('SEO tool analysis error:', error)
+    // Provide contextual details safely without relying on out-of-scope variables
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      toolId,
-      url
+      stack: error instanceof Error ? error.stack : undefined
     })
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        toolId,
-        url
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     )
@@ -153,7 +187,7 @@ function getToolName(toolId: string): string {
     'meta-tag-analyzer': 'Meta Tag Analyzer',
     'keyword-density-checker': 'Keyword Density Checker',
     'page-speed-analyzer': 'Page Speed Analyzer',
-    'keyword-researcher': 'Keyword Researcher',
+    'keyword-researcher': 'Keyword Research',
     'broken-link-scanner': 'Broken Link Scanner',
     'sitemap-robots-checker': 'Sitemap & Robots Checker',
     'backlink-scanner': 'Backlink Scanner',

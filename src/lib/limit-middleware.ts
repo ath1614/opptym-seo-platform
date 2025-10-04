@@ -3,7 +3,7 @@ import connectDB from './mongodb'
 import User from '@/models/User'
 import Project from '@/models/Project'
 import Submission from '@/models/Submission'
-import { isLimitExceeded, getPlanLimits, getPlanLimitsWithCustom, isLimitExceededWithCustom } from './subscription-limits'
+import { isLimitExceeded, getPlanLimits, getPlanLimitsWithCustom, isLimitExceededWithCustom, getDailyLimitsWithCustom } from './subscription-limits'
 import mongoose from 'mongoose'
 
 interface LimitCheckOptions {
@@ -95,10 +95,20 @@ export function createLimitMiddleware(options: LimitCheckOptions) {
 }
 
 // Usage tracking functions
+function getTodayRange() {
+  const now = new Date()
+  const start = new Date(now)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(now)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
 export async function trackUsage(
   userId: string,
   limitType: 'projects' | 'submissions' | 'seoTools' | 'backlinks' | 'reports',
-  increment: number = 1
+  increment: number = 1,
+  context?: { projectId?: string }
 ): Promise<{ success: boolean; message?: string; currentUsage?: number; limit?: number }> {
   try {
     console.log(`Tracking usage: ${limitType} +${increment} for user ${userId}`)
@@ -112,6 +122,7 @@ export async function trackUsage(
 
     const plan = user.plan || 'free'
     console.log(`User plan: ${plan}`)
+    const dailyLimits = await getDailyLimitsWithCustom(plan, user.role)
     
     // Get actual current usage from database instead of cached counter
     let actualCurrentUsage = 0
@@ -123,11 +134,49 @@ export async function trackUsage(
         userId: new mongoose.Types.ObjectId(userId),
         status: 'success'
       })
+      // Additional per-day, per-project check
+      const { start, end } = getTodayRange()
+      if (dailyLimits.submissionsPerProjectPerDay !== -1 && context?.projectId) {
+        const todayProjectSubmissions = await Submission.countDocuments({
+          userId: new mongoose.Types.ObjectId(userId),
+          projectId: new mongoose.Types.ObjectId(context.projectId),
+          status: 'success',
+          submittedAt: { $gte: start, $lte: end }
+        })
+        const projected = todayProjectSubmissions + increment
+        if (projected > dailyLimits.submissionsPerProjectPerDay) {
+          console.log(`❌ Daily per-project submissions limit exceeded: ${projected} > ${dailyLimits.submissionsPerProjectPerDay}`)
+          return {
+            success: false,
+            message: `Daily submissions per project limit exceeded`,
+            currentUsage: projected,
+            limit: dailyLimits.submissionsPerProjectPerDay
+          }
+        }
+      }
     } else if (limitType === 'seoTools') {
       const SeoToolUsage = (await import('@/models/SeoToolUsage')).default
       actualCurrentUsage = await SeoToolUsage.countDocuments({ 
         userId: new mongoose.Types.ObjectId(userId)
       })
+      // Additional per-day check (per user)
+      const { start, end } = getTodayRange()
+      if (dailyLimits.seoToolsPerDay !== -1) {
+        const todaySeoTools = await SeoToolUsage.countDocuments({
+          userId: new mongoose.Types.ObjectId(userId),
+          createdAt: { $gte: start, $lte: end }
+        })
+        const projected = todaySeoTools + increment
+        if (projected > dailyLimits.seoToolsPerDay) {
+          console.log(`❌ Daily SEO tools limit exceeded: ${projected} > ${dailyLimits.seoToolsPerDay}`)
+          return {
+            success: false,
+            message: `Daily SEO tools limit exceeded`,
+            currentUsage: projected,
+            limit: dailyLimits.seoToolsPerDay
+          }
+        }
+      }
     } else if (limitType === 'backlinks') {
       const Backlink = (await import('@/models/Backlink')).default
       actualCurrentUsage = await Backlink.countDocuments({ 
@@ -172,6 +221,19 @@ export async function trackUsage(
     user.usage[limitType] = newUsage
     await user.save()
     console.log(`Usage updated successfully: ${limitType} = ${newUsage}`)
+    // Auto-activate project on first usage
+    if (context?.projectId && (limitType === 'submissions' || limitType === 'seoTools')) {
+      try {
+        const project = await Project.findById(context.projectId)
+        if (project && project.status === 'draft') {
+          project.status = 'active'
+          await project.save()
+          console.log(`Project ${context.projectId} set to active due to usage`)
+        }
+      } catch (e) {
+        console.warn('Failed to auto-activate project:', e)
+      }
+    }
     
     return { success: true }
   } catch (error) {
@@ -245,10 +307,31 @@ export async function getUsageStats(userId: string) {
     }
     console.log(`Real usage (with actual counts):`, realUsage)
 
+    // Daily limits and today's usage
+    const dailyLimits = await getDailyLimitsWithCustom(plan, user.role)
+    const { start, end } = getTodayRange()
+    // Count today's submissions (successful) across all projects
+    const todaySubmissions = await Submission.countDocuments({
+      userId: new mongoose.Types.ObjectId(userId),
+      status: 'success',
+      submittedAt: { $gte: start, $lte: end }
+    })
+    // Count today's SEO tool runs
+    const SeoToolUsageToday = (await import('@/models/SeoToolUsage')).default
+    const todaySeoTools = await SeoToolUsageToday.countDocuments({
+      userId: new mongoose.Types.ObjectId(userId),
+      createdAt: { $gte: start, $lte: end }
+    })
+
     const result = {
       plan,
       limits,
       usage: realUsage,
+      dailyLimits,
+      todayUsage: {
+        submissions: todaySubmissions,
+        seoTools: todaySeoTools
+      },
       isAtLimit: {
         projects: isLimitExceededWithCustom(limits, 'projects', realUsage.projects),
         submissions: isLimitExceededWithCustom(limits, 'submissions', realUsage.submissions),

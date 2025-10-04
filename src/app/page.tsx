@@ -79,8 +79,8 @@ export default function Home() {
       />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none -z-10"></div>
+        <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -115,10 +115,6 @@ export default function Home() {
                   Start Free Trial
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                <Video className="mr-2 h-5 w-5" />
-                Watch Demo
-              </Button>
             </motion.div>
 
             {/* Trust Indicators */}
@@ -317,38 +313,32 @@ export default function Home() {
               {
                 icon: Database,
                 title: "Directory Submission",
-                description: "Submit your business to 1 Lakh+ high-quality directories automatically.",
-                count: "1 Lakh+ Directories"
+                description: "Submit your business to a curated list of high-quality directories automatically."
               },
               {
                 icon: FileText,
                 title: "Article Submission",
-                description: "Publish articles to top article directories and content platforms.",
-                count: "1 Lakh+ Platforms"
+                description: "Publish articles to top article directories and content platforms."
               },
               {
                 icon: Megaphone,
                 title: "Press Release",
-                description: "Distribute press releases to major news outlets and PR networks.",
-                count: "1 Lakh+ Outlets"
+                description: "Distribute press releases to major news outlets and PR networks."
               },
               {
                 icon: Bookmark,
                 title: "Social Bookmarking",
-                description: "Bookmark your content on popular social bookmarking sites.",
-                count: "1 Lakh+ Sites"
+                description: "Bookmark your content on popular social bookmarking sites."
               },
               {
                 icon: Building,
                 title: "Business Listing",
-                description: "List your business on Google My Business and other local directories.",
-                count: "1 Lakh+ Platforms"
+                description: "List your business on Google My Business and other local directories."
               },
               {
                 icon: ShoppingCart,
                 title: "Classified Ads",
-                description: "Post classified ads on high-traffic classified websites.",
-                count: "1 Lakh+ Sites"
+                description: "Post classified ads on high-traffic classified websites."
               }
             ].map((task, index) => (
               <motion.div
@@ -364,9 +354,6 @@ export default function Home() {
                       <task.icon className="w-6 h-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl">{task.title}</CardTitle>
-                    <Badge variant="secondary" className="w-fit">
-                      {task.count}
-                    </Badge>
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-base leading-relaxed">
@@ -381,7 +368,9 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <LandingPricing />
+      <section id="pricing">
+        <LandingPricing />
+      </section>
 
       {/* Why Choose Us Section */}
       <section id="why-choose-us" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
@@ -647,7 +636,7 @@ export default function Home() {
                 <p className="text-muted-foreground mb-4">
                   Get enterprise-level features at a fraction of the cost, with the simplicity of basic tools.
                 </p>
-                <Link href="/dashboard/pricing">
+                <Link href="/auth/register">
                   <Button className="bg-primary hover:bg-primary/90 text-white">
                     Start Your Free Trial
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -691,19 +680,16 @@ export default function Home() {
                 icon: BookOpen,
                 title: "SEO Fundamentals",
                 description: "Learn the basics of SEO, from keyword research to on-page optimization.",
-                articles: "50+ Articles"
               },
               {
                 icon: Target,
                 title: "Case Studies",
                 description: "Real-world examples of successful SEO campaigns and their results.",
-                articles: "25+ Studies"
               },
               {
                 icon: FileText,
                 title: "Best Practices",
                 description: "Industry best practices and white-hat SEO techniques.",
-                articles: "40+ Guides"
               },
               
             ].map((resource, index) => (
@@ -720,9 +706,6 @@ export default function Home() {
                       <resource.icon className="w-6 h-6 text-primary" />
                     </div>
                     <CardTitle className="text-xl">{resource.title}</CardTitle>
-                    <Badge variant="secondary" className="w-fit">
-                      {resource.articles}
-                    </Badge>
                   </CardHeader>
                   <CardContent>
                     <CardDescription className="text-base leading-relaxed">
@@ -757,7 +740,7 @@ export default function Home() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/dashboard/pricing">
+                <Link href="/auth/register">
                   <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white">
                     <Rocket className="mr-2 h-5 w-5" />
                     Start Your Free Trial
@@ -894,19 +877,11 @@ export default function Home() {
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>14-day free trial</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>No credit card required</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>Cancel anytime</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>30-day money-back guarantee</span>
               </div>
             </div>
           </motion.div>

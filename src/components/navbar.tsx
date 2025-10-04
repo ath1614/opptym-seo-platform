@@ -29,7 +29,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
 
   const isLanding = variant === 'landing'
   const navClass = isLanding
-    ? "mx-auto mt-4 w-[min(95%,1100px)] rounded-full border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-sm"
+    ? "mx-auto mt-6 w-[min(95%,1100px)] rounded-full border-2 border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md"
     : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 
   return (
@@ -123,7 +123,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden">
-            <div className={`px-2 pt-2 pb-3 space-y-1 sm:px-3 ${isLanding ? 'border-t rounded-b-3xl' : 'border-t'}` }>
+            <div className={`px-2 pt-2 pb-3 space-y-1 sm:px-3 ${isLanding ? 'border-t-2 border-border rounded-b-3xl' : 'border-t'}` }>
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
