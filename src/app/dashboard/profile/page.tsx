@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SettingsNav } from '@/components/dashboard/settings-nav'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -38,6 +37,7 @@ export default function ProfilePage() {
   const { data: session, update } = useSession()
   const router = useRouter()
   const { showToast } = useToast()
+  const userWithId = session?.user as ExtendedUser | undefined
   
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -54,7 +54,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (session?.user?.id) {
+      if (userWithId?.id) {
         try {
           const response = await fetch('/api/user/profile')
           if (response.ok) {
@@ -72,7 +72,7 @@ export default function ProfilePage() {
             })
           } else {
             // Fallback to session data
-            const userData = session.user as ExtendedUser
+            const userData = userWithId as ExtendedUser
             setUser(userData)
             setFormData({
               name: userData.name || '',
@@ -85,9 +85,9 @@ export default function ProfilePage() {
             })
           }
         } catch (error) {
-          console.error('Failed to fetch user data:', error)
+          // silently handle user data fetch error
           // Fallback to session data
-          const userData = session.user as ExtendedUser
+          const userData = userWithId as ExtendedUser
           setUser(userData)
           setFormData({
             name: userData.name || '',
@@ -103,7 +103,7 @@ export default function ProfilePage() {
     }
 
     fetchUserData()
-  }, [session])
+  }, [userWithId])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -187,14 +187,14 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <DashboardLayout>
+<>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-muted-foreground">Loading profile...</p>
           </div>
         </div>
-      </DashboardLayout>
+</>
     )
   }
 
@@ -205,7 +205,7 @@ export default function ProfilePage() {
     .toUpperCase() || 'U'
 
   return (
-    <DashboardLayout>
+<>
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-4">
@@ -445,6 +445,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+</>
   )
 }

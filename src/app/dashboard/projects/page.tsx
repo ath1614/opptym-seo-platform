@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { ProjectList } from '@/components/projects/project-list'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -36,13 +35,12 @@ export default function ProjectsPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={() => setShowTips((v) => !v)}>
-            {showTips ? 'Hide SEO Tips' : 'Show SEO Tips'}
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Button variant="outline" onClick={() => setShowTips((v) => !v)}>
+          {showTips ? 'Hide SEO Tips' : 'Show SEO Tips'}
+        </Button>
+      </div>
 
         {showTips && (
           <Card className="border-dashed">
@@ -72,6 +70,5 @@ export default function ProjectsPage() {
 
         <ProjectList />
       </div>
-    </DashboardLayout>
   )
 }

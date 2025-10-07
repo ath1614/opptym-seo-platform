@@ -202,7 +202,7 @@ export function CompetitorAnalyzer() {
       let response
       
       if (useManualUrl) {
-        // Use the legacy API for manual URL analysis
+        // Use the generic tools API for manual URL analysis and associate with selected project when available
         response = await fetch('/api/seo-tools', {
           method: 'POST',
           headers: {
@@ -210,7 +210,8 @@ export function CompetitorAnalyzer() {
           },
           body: JSON.stringify({
             toolId: 'competitor-analyzer',
-            url: manualUrl
+            url: manualUrl,
+            projectId: selectedProject || null
           })
         })
       } else {

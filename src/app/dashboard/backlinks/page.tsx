@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -80,14 +79,14 @@ export default function BacklinksPage() {
 
   if (status === 'loading') {
     return (
-      <DashboardLayout>
+<>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
             <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
-      </DashboardLayout>
+</>
     )
   }
 
@@ -121,7 +120,7 @@ export default function BacklinksPage() {
         })
       }
     } catch (error) {
-      console.error('Failed to load backlinks:', error)
+      // silently handle backlinks fetch error
       showToast({
         title: 'Error',
         description: 'Failed to load backlinks',
@@ -201,7 +200,7 @@ export default function BacklinksPage() {
   }
 
   return (
-    <DashboardLayout>
+<>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -462,6 +461,6 @@ export default function BacklinksPage() {
         </AlertDescription>
       </Alert>
       </div>
-    </DashboardLayout>
+</>
   )
 }

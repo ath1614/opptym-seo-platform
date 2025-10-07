@@ -2,8 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
+import { useEffect, useState, useCallback } from 'react'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { CurrentPlanCard } from '@/components/dashboard/current-plan-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
@@ -73,39 +72,11 @@ export default function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false)
   const { showOnboarding, hideOnboarding, markOnboardingAsSeen, showOnboardingAgain } = useOnboarding()
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login')
-    }
-  }, [status, router])
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      // Set loading to false immediately to prevent infinite loading
-      setLoading(false)
-      
-      // Try to fetch data in background
-      fetchData()
-    }
-  }, [status])
-
-  // Add periodic refresh for submission counter
-  useEffect(() => {
-    if (status === 'authenticated') {
-      const interval = setInterval(() => {
-        fetchData(true) // Refresh data every 10 seconds for real-time updates
-      }, 10000)
-
-      return () => clearInterval(interval)
-    }
-  }, [status])
-
-  const fetchData = async (isRefresh = false) => {
+  const fetchData = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
         setRefreshing(true)
       }
-      console.log('Fetching dashboard data...')
       
       // Fetch both usage stats and analytics in parallel
       const [usageResponse, analyticsResponse] = await Promise.all([
@@ -113,16 +84,11 @@ export default function DashboardPage() {
         fetch('/api/dashboard/analytics', { credentials: 'include' })
       ])
 
-      console.log('Usage response status:', usageResponse.status)
-      console.log('Analytics response status:', analyticsResponse.status)
-
       if (usageResponse.ok) {
         const usageData = await usageResponse.json()
-        console.log('Usage data:', usageData)
         setUsageStats(usageData)
       } else {
         const errorText = await usageResponse.text()
-        console.error('Failed to fetch usage stats:', errorText)
         // Set default usage stats if API fails
         setUsageStats({
           plan: 'free',
@@ -134,11 +100,9 @@ export default function DashboardPage() {
 
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json()
-        console.log('Analytics data:', analyticsData)
         setAnalytics(analyticsData)
       } else {
         const errorText = await analyticsResponse.text()
-        console.error('Failed to fetch analytics:', errorText)
         // Set default analytics if API fails
         setAnalytics({
           projects: 0,
@@ -152,7 +116,6 @@ export default function DashboardPage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
       // Set default data if all fails
       setUsageStats({
         plan: 'free',
@@ -171,13 +134,41 @@ export default function DashboardPage() {
         completedProjects: 0
       })
     } finally {
-      console.log('Setting loading to false')
       setLoading(false)
       if (isRefresh) {
         setRefreshing(false)
       }
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      // Set loading to false immediately to prevent infinite loading
+      setLoading(false)
+      
+      // Try to fetch data in background
+      fetchData()
+    }
+  }, [status, fetchData])
+
+  // Add periodic refresh for submission counter
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const interval = setInterval(() => {
+        fetchData(true) // Refresh data every 10 seconds for real-time updates
+      }, 10000)
+
+      return () => clearInterval(interval)
+    }
+  }, [status, fetchData])
+
+  
 
   const handleRefresh = () => {
     fetchData(true)
@@ -244,9 +235,9 @@ export default function DashboardPage() {
   const isDataLoading = !usageStats && !analytics
 
   return (
-    <DashboardLayout>
-      {/* Onboarding Tutorial */}
-      <OnboardingTutorial 
+    <>
+    {/* Onboarding Tutorial */}
+    <OnboardingTutorial 
         isOpen={showOnboarding}
         onClose={() => {
           hideOnboarding()
@@ -360,6 +351,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 import { Sidebar } from './sidebar'
 
@@ -12,22 +12,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session } = useSession()
   const displayName = (session?.user?.name || 'User')
 
-  // Simple typewriter effect for the welcome text
   const fullText = `Welcome, ${displayName}`
-  const [typedText, setTypedText] = useState('')
-
-  useEffect(() => {
-    let i = 0
-    setTypedText('')
-    const interval = setInterval(() => {
-      setTypedText(fullText.slice(0, i + 1))
-      i += 1
-      if (i >= fullText.length) {
-        clearInterval(interval)
-      }
-    }, 120)
-    return () => clearInterval(interval)
-  }, [fullText])
 
   return (
     <div className="flex h-full min-h-0 bg-background">
@@ -42,7 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="mb-8 pb-4 border-b border-border">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
               <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                {typedText}
+                {fullText}
               </span>
             </h1>
           </div>

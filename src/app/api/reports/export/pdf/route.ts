@@ -167,6 +167,24 @@ function generateReportHTML(reportData: {
     _id?: string
     category?: string
     status?: string
+    companyName?: string
+    email?: string
+    phone?: string
+    whatsapp?: string
+    establishedYear?: string | number
+    keywords?: string[]
+    businessDescription?: string
+    address?: {
+      building?: string
+      addressLine1?: string
+      addressLine2?: string
+      addressLine3?: string
+      district?: string
+      city?: string
+      state?: string
+      country?: string
+      pincode?: string
+    }
   }
   analytics: {
     totalSeoToolsUsed: number
@@ -480,6 +498,62 @@ function generateReportHTML(reportData: {
         <h1>SEO Performance Report</h1>
         <p>${project.projectName || project._id || 'Project'} - Generated on ${new Date().toLocaleDateString()}</p>
         <p>Website: ${project.websiteURL || 'No website URL'}</p>
+      </div>
+
+      <div class="section">
+        <h2>Project Details</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Company</div>
+            <div class="stat-value">${project.companyName || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Email</div>
+            <div class="stat-value">${project.email || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Phone</div>
+            <div class="stat-value">${project.phone || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Established</div>
+            <div class="stat-value">${project.establishedYear || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Keywords</div>
+            <div class="stat-value">${Array.isArray(project.keywords) && project.keywords.length ? project.keywords.join(', ') : '—'}</div>
+          </div>
+        </div>
+        <div class="table" style="margin-top:12px;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${[
+                  project.address?.building,
+                  project.address?.addressLine1,
+                  project.address?.addressLine2,
+                  project.address?.addressLine3,
+                  project.address?.district,
+                  project.address?.city,
+                  project.address?.state,
+                  project.address?.country,
+                  project.address?.pincode
+                ].filter(Boolean).join(', ') || '—'}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        ${project.businessDescription ? `
+          <div style="margin-top:12px;">
+            <div style="color:#6b7280;font-size:14px;">Business Description</div>
+            <div>${project.businessDescription}</div>
+          </div>
+        ` : ''}
       </div>
 
       <div class="section">

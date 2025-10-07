@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { ProjectDetail } from '@/components/projects/project-detail'
 
 interface ProjectDetailPageProps {
@@ -47,8 +46,6 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   }
 
   return (
-    <DashboardLayout>
-      <ProjectDetail projectId={projectId} />
-    </DashboardLayout>
+    <ProjectDetail projectId={projectId} />
   )
 }

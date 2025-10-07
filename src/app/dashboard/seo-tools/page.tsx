@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolsGrid } from '@/components/seo-tools/seo-tools-grid'
 import { SEOUsageStats } from '@/components/seo-tools/seo-usage-stats'
 
@@ -33,15 +32,14 @@ export default function SEOToolsPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">SEO Tools</h1>
-          <p className="text-muted-foreground">
-            Analyze and optimize your website with our comprehensive SEO toolkit
-          </p>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">SEO Tools</h1>
+        <p className="text-muted-foreground">
+          Analyze and optimize your website with our comprehensive SEO toolkit
+        </p>
+      </div>
 
         {/* Usage Statistics Section */}
         <div className="space-y-4">
@@ -68,6 +66,5 @@ export default function SEOToolsPage() {
           <SEOToolsGrid />
         </div>
       </div>
-    </DashboardLayout>
   )
 }

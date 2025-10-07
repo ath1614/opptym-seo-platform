@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOToolLayout } from '@/components/seo-tools/seo-tool-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -50,7 +49,7 @@ export default function PageSpeedAnalyzerPage() {
         setProjects(data.projects || [])
       }
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      // silently handle project fetch error
     }
   }
 
@@ -83,7 +82,6 @@ export default function PageSpeedAnalyzerPage() {
         })
       }
     } catch (error) {
-      console.error('Analysis error:', error)
       showToast({
         title: 'Analysis Failed',
         description: 'An error occurred during analysis',
@@ -137,7 +135,7 @@ export default function PageSpeedAnalyzerPage() {
 
 
   return (
-    <DashboardLayout>
+<>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -351,6 +349,6 @@ export default function PageSpeedAnalyzerPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+</>
   )
 }

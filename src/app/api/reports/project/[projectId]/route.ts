@@ -213,12 +213,17 @@ export async function GET(
     const successfulSubmissions = submissionsData.filter(s => s.status === 'success').length
     const submissionSuccessRate = totalSubmissions > 0 ? (successfulSubmissions / totalSubmissions) * 100 : 0
     
-    // Calculate SEO Health Score based on actual SEO tool results
+    // Calculate SEO Health Score using normalized analysis results from stored usage
     let seoHealthScore = 100 // Start with perfect score
     let totalSeoAnalyses = 0
-    
+
     seoToolUsages.forEach(usage => {
-      const analysisResults: DetailedAnalysisResults = (usage.analysisResults || {}) as DetailedAnalysisResults
+      // Normalize the stored results shape: some routes store full analysis under `results`, others under `results.data`
+      const rawResults = (usage as unknown as { results?: unknown }).results as Record<string, unknown> | undefined
+      const normalizedAnalysis = rawResults && typeof rawResults === 'object' && 'data' in rawResults
+        ? (rawResults.data as DetailedAnalysisResults)
+        : (rawResults as DetailedAnalysisResults)
+      const analysisResults: DetailedAnalysisResults = (normalizedAnalysis || {}) as DetailedAnalysisResults
       totalSeoAnalyses++
 
       // Deduct points for issues found
@@ -228,8 +233,8 @@ export async function GET(
 
       // Deduct points for low scores
       if (analysisResults.score !== undefined) {
-        const scoreVal = typeof analysisResults.score === 'number' 
-          ? analysisResults.score 
+        const scoreVal = typeof analysisResults.score === 'number'
+          ? analysisResults.score
           : parseInt(String(analysisResults.score)) || 0
         if (scoreVal < 80) {
           seoHealthScore -= (80 - scoreVal) * 0.5 // Deduct 0.5 points for each point below 80

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -111,7 +110,7 @@ export default function SchemaValidatorPage() {
         setProjects(data.projects || [])
       }
     } catch (error) {
-      console.error('Failed to fetch projects:', error)
+      // silently handle project fetch error
     }
   }
 
@@ -238,7 +237,6 @@ export default function SchemaValidatorPage() {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('Schema Validator Analysis Response:', data)
         const enhancedData = generateEnhancedAnalysis(data.data)
         setAnalysisData(enhancedData)
         showToast({
@@ -370,7 +368,7 @@ export default function SchemaValidatorPage() {
   }
 
   return (
-    <DashboardLayout>
+<>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -698,6 +696,6 @@ export default function SchemaValidatorPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+</>
   )
 }

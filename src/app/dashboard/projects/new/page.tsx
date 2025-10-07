@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { ProjectForm } from '@/components/projects/project-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -62,7 +61,7 @@ export default function NewProjectPage() {
         setUsageStats(data)
       }
     } catch (error) {
-      console.error('Error fetching usage stats:', error)
+      // silently handle usage stats fetch error
     } finally {
       setIsLoading(false)
     }
@@ -94,7 +93,7 @@ export default function NewProjectPage() {
   // Check if user has reached project limit
   if (usageStats?.isAtLimit.projects) {
     return (
-      <DashboardLayout>
+<>
         <div className="max-w-2xl mx-auto p-6">
           <div className="flex items-center space-x-4 mb-6">
             <Button
@@ -142,13 +141,13 @@ export default function NewProjectPage() {
             </CardContent>
           </Card>
         </div>
-      </DashboardLayout>
+</>
     )
   }
 
   return (
-    <DashboardLayout>
+<>
       <ProjectForm />
-    </DashboardLayout>
+</>
   )
 }

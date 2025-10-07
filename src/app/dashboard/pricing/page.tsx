@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { PricingPlans } from '@/components/pricing/pricing-plans'
 
 export default function PricingPage() {
@@ -28,8 +27,6 @@ export default function PricingPage() {
   }
 
   return (
-    <DashboardLayout>
-      <PricingPlans />
-    </DashboardLayout>
+    <PricingPlans />
   )
 }

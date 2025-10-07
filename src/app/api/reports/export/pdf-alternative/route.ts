@@ -79,6 +79,24 @@ function generateReportHTML(reportData: {
     _id?: string
     category?: string
     status?: string
+    companyName?: string
+    email?: string
+    phone?: string
+    whatsapp?: string
+    establishedYear?: string | number
+    keywords?: string[]
+    businessDescription?: string
+    address?: {
+      building?: string
+      addressLine1?: string
+      addressLine2?: string
+      addressLine3?: string
+      district?: string
+      city?: string
+      state?: string
+      country?: string
+      pincode?: string
+    }
   }
   analytics: {
     totalSeoToolsUsed: number
@@ -139,8 +157,16 @@ function generateReportHTML(reportData: {
     submissions: number
     seoTools: number
   }>
+  comprehensiveSeoAnalysis?: {
+    metaTags?: { title?: string; description?: string }
+    performance?: { score?: number | string; [key: string]: unknown }
+    mobileFriendliness?: { isMobileFriendly?: boolean; [key: string]: unknown }
+    technicalSEO?: { issues?: Array<unknown>; [key: string]: unknown }
+    backlinks?: { count?: number; total?: number; [key: string]: unknown } | Array<unknown>
+    competitors?: Array<{ name?: string; score?: number; [key: string]: unknown }> | Record<string, unknown>
+  } | null
 }) {
-  const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
+  const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend, comprehensiveSeoAnalysis } = reportData
   
   // Build per-tool latest details section
   const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
@@ -155,8 +181,27 @@ function generateReportHTML(reportData: {
     const score = latest?.score ?? ar.score ?? undefined
     const issuesCount = Array.isArray(ar.issues) ? ar.issues.length : (latest?.issues ?? 0)
     const recsCount = Array.isArray(ar.recommendations) ? ar.recommendations.length : (latest?.recommendations ?? 0)
-    const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
     const perfScore = perf?.score !== undefined ? Number(perf.score as number | string) : undefined
+    // Derive lightweight issues/recommendations if arrays are missing, so PDF always shows details
+    const derivedIssues: string[] = (() => {
+      const out: string[] = []
+      if (typeof perfScore === 'number' && perfScore < 80) out.push(`Performance score is ${Math.round(perfScore)} (below 80)`) 
+      if (typeof meta?.title !== 'string' || !meta.title.trim()) out.push('Missing or empty meta title')
+      if (typeof meta?.description !== 'string' || !meta.description.trim()) out.push('Missing or empty meta description')
+      if (isMobileFriendly === false) out.push('Page is not mobile-friendly')
+      if (typeof brokenLinks === 'number' && brokenLinks > 0) out.push(`${brokenLinks} broken links detected`)
+      return out
+    })()
+    const derivedRecs: string[] = (() => {
+      const out: string[] = []
+      if (typeof perfScore === 'number' && perfScore < 80) out.push('Optimize images, enable compression, and minify assets')
+      if (typeof meta?.title !== 'string' || !meta.title.trim()) out.push('Add a concise, keyword-rich meta title')
+      if (typeof meta?.description !== 'string' || !meta.description.trim()) out.push('Write a compelling meta description (120–155 chars)')
+      if (isMobileFriendly === false) out.push('Improve mobile layout and touch targets')
+      if (typeof brokenLinks === 'number' && brokenLinks > 0) out.push('Fix broken links and verify external references')
+      return out
+    })()
+    const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
     const positives: string[] = []
     if (typeof meta?.title === 'string' && meta.title.trim()) positives.push('Title tag present')
     if (typeof meta?.description === 'string' && meta.description.trim()) positives.push('Meta description present')
@@ -206,19 +251,19 @@ function generateReportHTML(reportData: {
             </ul>
           </div>
         ` : ''}
-        ${Array.isArray(ar.issues) && ar.issues.length ? `
+        ${(Array.isArray(ar.issues) && ar.issues.length) || derivedIssues.length ? `
           <div style="margin-top: 12px;">
             <strong>Key Issues:</strong>
             <ul>
-              ${ar.issues.slice(0,5).map((i: unknown) => `<li>• ${String(i)}</li>`).join('')}
+              ${(Array.isArray(ar.issues) && ar.issues.length ? ar.issues : derivedIssues).slice(0,5).map((i: unknown) => `<li>• ${String(i)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
-        ${Array.isArray(ar.recommendations) && ar.recommendations.length ? `
+        ${(Array.isArray(ar.recommendations) && ar.recommendations.length) || derivedRecs.length ? `
           <div style="margin-top: 12px;">
             <strong>Recommendations:</strong>
             <ul>
-              ${ar.recommendations.slice(0,5).map((r: unknown) => `<li>• ${String(r)}</li>`).join('')}
+              ${(Array.isArray(ar.recommendations) && ar.recommendations.length ? ar.recommendations : derivedRecs).slice(0,5).map((r: unknown) => `<li>• ${String(r)}</li>`).join('')}
             </ul>
           </div>
         ` : ''}
@@ -499,6 +544,52 @@ function generateReportHTML(reportData: {
       </div>
 
       <div class="section">
+        <h2>🏷️ Project Details</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label">Company</div>
+            <div class="value">${project.companyName || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Email</div>
+            <div class="value">${project.email || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Phone</div>
+            <div class="value">${project.phone || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Established</div>
+            <div class="value">${project.establishedYear || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Keywords</div>
+            <div class="value">${Array.isArray(project.keywords) && project.keywords.length ? project.keywords.join(', ') : '—'}</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="label">Address</div>
+          <div class="value">${[
+            project.address?.building,
+            project.address?.addressLine1,
+            project.address?.addressLine2,
+            project.address?.addressLine3,
+            project.address?.district,
+            project.address?.city,
+            project.address?.state,
+            project.address?.country,
+            project.address?.pincode
+          ].filter(Boolean).join(', ') || '—'}</div>
+        </div>
+        ${project.businessDescription ? `
+          <div style="margin-top:12px;">
+            <div class="label">Business Description</div>
+            <div>${project.businessDescription}</div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="section">
         <h2>📈 Executive Summary</h2>
         <div class="stats-grid">
           <div class="stat-card primary">
@@ -667,6 +758,73 @@ function generateReportHTML(reportData: {
         </table>
       </div>
 
+      ${comprehensiveSeoAnalysis ? `
+      <div class="section">
+        <h2>🧠 Deep Comprehensive SEO Analysis</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label">Meta Title</div>
+            <div class="value">${(comprehensiveSeoAnalysis.metaTags && comprehensiveSeoAnalysis.metaTags.title) || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Meta Description</div>
+            <div class="value">${(comprehensiveSeoAnalysis.metaTags && comprehensiveSeoAnalysis.metaTags.description) || '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Performance Score</div>
+            <div class="value">${(comprehensiveSeoAnalysis.performance && comprehensiveSeoAnalysis.performance.score !== undefined) ? Math.round(Number(comprehensiveSeoAnalysis.performance.score as number | string)) : '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Mobile Friendly</div>
+            <div class="value">${(comprehensiveSeoAnalysis.mobileFriendliness && comprehensiveSeoAnalysis.mobileFriendliness.isMobileFriendly !== undefined) ? (comprehensiveSeoAnalysis.mobileFriendliness.isMobileFriendly ? 'Yes' : 'No') : '—'}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Technical Issues</div>
+            <div class="value">${Array.isArray(comprehensiveSeoAnalysis.technicalSEO?.issues) ? comprehensiveSeoAnalysis.technicalSEO!.issues!.length : (comprehensiveSeoAnalysis.technicalSEO ? Object.keys(comprehensiveSeoAnalysis.technicalSEO).length : 0)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Backlinks Count</div>
+            <div class="value">${(() => {
+              const bl = comprehensiveSeoAnalysis.backlinks as unknown
+              if (Array.isArray(bl)) return bl.length
+              if (bl && typeof bl === 'object') {
+                const obj = bl as { count?: number; total?: number }
+                return obj.count ?? obj.total ?? '—'
+              }
+              return '—'
+            })()}</div>
+          </div>
+        </div>
+        ${(() => {
+          const comp = comprehensiveSeoAnalysis?.competitors as unknown
+          if (Array.isArray(comp)) {
+            const items = comp.slice(0,5).map((c: unknown) => {
+              const x = c as { name?: string; score?: number }
+              const name = x?.name || 'Competitor'
+              const score = typeof x?.score === 'number' ? x!.score : '—'
+              return `<li>• ${name} — Score: ${score}</li>`
+            }).join('')
+            return `
+              <div style="margin-top: 12px;">
+                <strong>Top Competitors:</strong>
+                <ul>${items || '<li>• No competitor data available</li>'}</ul>
+              </div>
+            `
+          }
+          if (comp && typeof comp === 'object') {
+            const keys = Object.keys(comp as Record<string, unknown>).slice(0,5)
+            return `
+              <div style="margin-top: 12px;">
+                <strong>Competitor Summary:</strong>
+                <ul>${keys.length ? keys.map(k => `<li>• ${k}</li>`).join('') : '<li>• No competitor data available</li>'}</ul>
+              </div>
+            `
+          }
+          return ''
+        })()}
+      </div>
+      ` : ''}
+
       <div class="section">
         <h2>📝 Recommendations</h2>
         <div class="insights">
@@ -694,6 +852,14 @@ function generateReportHTML(reportData: {
         })}</p>
         <p>&copy; ${new Date().getFullYear()} Opptym. All rights reserved. | Professional SEO Management Platform</p>
       </div>
+      <script>
+        // Auto-open the print dialog shortly after the page loads
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            try { window.print(); } catch (e) { /* no-op */ }
+          }, 300);
+        });
+      </script>
     </body>
     </html>
   `

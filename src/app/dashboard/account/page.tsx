@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SettingsNav } from '@/components/dashboard/settings-nav'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,6 +57,7 @@ export default function AccountPage() {
   const { data: session, update } = useSession()
   const router = useRouter()
   const { showToast } = useToast()
+  const userWithId = session?.user as ExtendedUser | undefined
   
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -89,7 +89,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (session?.user?.id) {
+      if (userWithId?.id) {
         try {
           const response = await fetch('/api/user/profile')
           if (response.ok) {
@@ -107,20 +107,20 @@ export default function AccountPage() {
             }
           } else {
             // Fallback to session data
-            const userData = session.user as ExtendedUser
+            const userData = userWithId as ExtendedUser
             setUser(userData)
           }
         } catch (error) {
-          console.error('Failed to fetch user data:', error)
+          // silently handle user data fetch error
           // Fallback to session data
-          const userData = session.user as ExtendedUser
+          const userData = userWithId as ExtendedUser
           setUser(userData)
         }
       }
     }
 
     fetchUserData()
-  }, [session])
+  }, [userWithId])
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -268,19 +268,19 @@ export default function AccountPage() {
 
   if (!user) {
     return (
-      <DashboardLayout>
+<>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-muted-foreground">Loading account settings...</p>
           </div>
         </div>
-      </DashboardLayout>
+</>
     )
   }
 
   return (
-    <DashboardLayout>
+<>
       <div className="space-y-6">
         {/* Header */}
         <div className="space-y-4">
@@ -686,6 +686,6 @@ export default function AccountPage() {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+</>
   )
 }

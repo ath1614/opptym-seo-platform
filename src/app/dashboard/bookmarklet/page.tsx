@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Logo } from '@/components/logo'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,16 +46,15 @@ export default function BookmarkletInfoPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        {/* Hero Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Opptym AI SEO Bookmarklet</h1>
-            <p className="text-muted-foreground">Auto‑fill directory submission forms using your saved project details</p>
-          </div>
-          <Logo width={48} height={48} />
+    <div className="space-y-8">
+      {/* Hero Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Opptym AI SEO Bookmarklet</h1>
+          <p className="text-muted-foreground">Auto‑fill directory submission forms using your saved project details</p>
         </div>
+        <Logo width={48} height={48} />
+      </div>
 
         {/* Table of Contents (sticky with smooth scrolling) */}
         <div className="sticky top-0 z-40 border-b bg-muted/50 backdrop-blur px-4 py-3 rounded-none">
@@ -386,6 +384,5 @@ export default function BookmarkletInfoPage() {
           Back to top
         </Button>
       </div>
-    </DashboardLayout>
   )
 }

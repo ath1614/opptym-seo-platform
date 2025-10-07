@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { ProjectForm } from '@/components/projects/project-form'
 import { useToast } from '@/components/ui/toast'
 
@@ -87,8 +86,8 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
   }
 
   return (
-    <DashboardLayout>
+<>
       <ProjectForm projectId={projectId || undefined} initialData={projectData || undefined} />
-    </DashboardLayout>
+</>
   )
 }

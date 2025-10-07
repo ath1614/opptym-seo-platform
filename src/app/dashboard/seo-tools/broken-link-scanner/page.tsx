@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -111,7 +110,7 @@ export default function BrokenLinkScannerPage() {
         setProjects(data.projects || [])
       }
     } catch (error) {
-      console.error('Failed to fetch projects:', error)
+      // silently handle project fetch error
     }
   }
 
@@ -312,7 +311,6 @@ export default function BrokenLinkScannerPage() {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('Broken Link Analysis Response:', data)
         // Transform the API response to match the expected structure
         const result = data.data as BrokenLinkAnalysis
         
@@ -450,7 +448,7 @@ export default function BrokenLinkScannerPage() {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -835,6 +833,6 @@ export default function BrokenLinkScannerPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   )
 }

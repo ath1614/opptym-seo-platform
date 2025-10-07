@@ -52,6 +52,61 @@ interface Project {
   category: string
   status: string
   createdAt: string
+  // Extended optional fields for detailed project report
+  title?: string
+  email?: string
+  companyName?: string
+  phone?: string
+  whatsapp?: string
+  businessDescription?: string
+  keywords?: string[]
+  targetAudience?: string
+  competitors?: string[]
+  goals?: string
+  notes?: string
+  address?: {
+    building?: string
+    addressLine1?: string
+    addressLine2?: string
+    addressLine3?: string
+    district?: string
+    city?: string
+    state?: string
+    country?: string
+    pincode?: string
+  }
+  seoMetadata?: {
+    metaTitle?: string
+    metaDescription?: string
+    keywords?: string[]
+    targetKeywords?: string[]
+    sitemapURL?: string
+    robotsURL?: string
+  }
+  articleSubmission?: {
+    articleTitle?: string
+    articleContent?: string
+    authorName?: string
+    authorBio?: string
+    tags?: string[]
+  }
+  classified?: {
+    productName?: string
+    price?: string
+    condition?: string
+    productImageURL?: string
+  }
+  social?: {
+    facebook?: string
+    twitter?: string
+    instagram?: string
+    linkedin?: string
+    youtube?: string
+  }
+  businessHours?: string
+  establishedYear?: number
+  logoImageURL?: string
+  customFields?: Array<{ key: string; value: string }>
 }
 
 interface ReportData {
@@ -244,6 +299,82 @@ export function ReportsDashboard() {
     }
   }, [showToast])
 
+  // Fetch full project details to enrich the report's project section
+  const fetchProjectDetails = useCallback(async (projectId: string) => {
+    if (!projectId) return
+    try {
+      const res = await fetch(`/api/projects/${projectId}`)
+      const data = await res.json()
+      if (res.ok && data.project) {
+        setReportData(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            project: {
+              ...prev.project,
+              ...data.project
+            }
+          }
+        })
+      }
+    } catch {
+      // Non-fatal: project enrichment failed
+    }
+  }, [])
+
+  // Generate a combined report: analytics + enriched project details
+  const generateReport = useCallback(async (projectId: string) => {
+    if (!projectId) return
+    setIsLoadingReport(true)
+    try {
+      // Fetch analytics/report and project details in parallel
+      const [reportRes, projectRes] = await Promise.all([
+        fetch(`/api/reports/project/${projectId}`),
+        fetch(`/api/projects/${projectId}`)
+      ])
+      const reportJson = await reportRes.json()
+      const projectJson = await projectRes.json()
+
+      if (!reportRes.ok) {
+        showToast({
+          title: 'Error',
+          description: reportJson.error || 'Failed to generate report data.',
+          variant: 'destructive'
+        })
+        return
+      }
+
+      // Base report data
+      let nextReport: ReportData = reportJson.reportData
+      // Enrich with full project details if available
+      if (projectRes.ok && projectJson.project) {
+        nextReport = {
+          ...nextReport,
+          project: {
+            ...nextReport.project,
+            ...projectJson.project
+          }
+        }
+      }
+
+      setReportData(nextReport)
+      setHasGeneratedReport(true)
+      showToast({
+        title: 'Report Ready',
+        description: 'Detailed project report generated successfully.',
+        variant: 'default'
+      })
+    } catch {
+      showToast({
+        title: 'Error',
+        description: 'Network error while generating report data',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsLoadingReport(false)
+    }
+  }, [showToast])
+
   const handleGenerateReport = () => {
     if (!selectedProjectId) {
       showToast({
@@ -253,7 +384,7 @@ export function ReportsDashboard() {
       })
       return
     }
-    fetchReportData(selectedProjectId)
+    generateReport(selectedProjectId)
   }
 
   const handleExportPDF = async () => {
@@ -261,8 +392,8 @@ export function ReportsDashboard() {
     
     setIsExporting(true)
     try {
-      // Try alternative PDF export first
-      let response = await fetch('/api/reports/export/pdf-alternative', {
+      // Try direct PDF export first (Puppeteer)
+      let response = await fetch('/api/reports/export/pdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -273,10 +404,10 @@ export function ReportsDashboard() {
         }),
       })
 
-      // If alternative fails, try original method
+      // If PDF generation fails, fall back to HTML export (print dialog)
       if (!response.ok) {
-        console.log('Alternative PDF export failed, trying original method...')
-        response = await fetch('/api/reports/export/pdf', {
+        console.log('Direct PDF export failed, falling back to HTML...')
+        response = await fetch('/api/reports/export/pdf-alternative', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -289,15 +420,17 @@ export function ReportsDashboard() {
       }
 
       if (response.ok) {
-        const contentType = response.headers.get('content-type')
+        const contentType = response.headers.get('content-type') || ''
         
-        if (contentType === 'application/pdf') {
+        if (contentType.includes('application/pdf')) {
           // PDF file - download directly
           const blob = await response.blob()
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
           a.download = `seo-report-${(reportData.project.projectName || reportData.project._id || 'project').replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
+          a.target = '_blank'
+          a.rel = 'noopener'
           document.body.appendChild(a)
           a.click()
           window.URL.revokeObjectURL(url)
@@ -308,7 +441,7 @@ export function ReportsDashboard() {
             description: 'Your SEO report has been downloaded successfully.',
             variant: 'success'
           })
-        } else if (contentType === 'text/html') {
+        } else if (contentType.includes('text/html')) {
           // HTML file - open in new tab for printing
           const htmlContent = await response.text()
           const newWindow = window.open('', '_blank')
@@ -328,6 +461,27 @@ export function ReportsDashboard() {
               variant: 'destructive'
             })
           }
+        } else {
+          // Unknown content type; try to open as a file in new tab
+          const blob = await response.blob()
+          const url = window.URL.createObjectURL(blob)
+          const newWindow = window.open(url, '_blank')
+          if (!newWindow) {
+            // Fallback to anchor click
+            const a = document.createElement('a')
+            a.href = url
+            a.target = '_blank'
+            a.rel = 'noopener'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+          }
+          window.URL.revokeObjectURL(url)
+          showToast({
+            title: 'Report Ready',
+            description: 'Opened report in a new tab.',
+            variant: 'default'
+          })
         }
       } else {
         const data = await response.json()
@@ -353,12 +507,12 @@ export function ReportsDashboard() {
     fetchProjects()
   }, [fetchProjects])
 
-  // Remove automatic report generation when project is selected
-  // useEffect(() => {
-  //   if (selectedProjectId) {
-  //     fetchReportData(selectedProjectId)
-  //   }
-  // }, [selectedProjectId, fetchReportData])
+  // Auto-generate report when a project is selected
+  useEffect(() => {
+    if (selectedProjectId) {
+      generateReport(selectedProjectId)
+    }
+  }, [selectedProjectId, generateReport])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -431,6 +585,14 @@ export function ReportsDashboard() {
       </div>
     )
   }
+
+  // Safely compute success rate (clamped 0–100, numeric fallback)
+  const successRate = (() => {
+    const sr = reportData?.analytics?.successRate
+    const num = typeof sr === 'number' ? sr : Number(sr)
+    if (!Number.isFinite(num)) return 0
+    return Math.max(0, Math.min(num, 100))
+  })()
 
   return (
     <div className="space-y-6">
@@ -557,21 +719,62 @@ export function ReportsDashboard() {
                 </div>
               </div>
 
+              {/* Project Details */}
+              <div className="mb-6 p-4 border rounded-lg">
+                <h4 className="font-semibold mb-3">Project Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                    <div className="text-xs text-muted-foreground">Company</div>
+                    <div className="font-medium">{reportData.project.companyName || '—'}</div>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                    <div className="text-xs text-muted-foreground">Email</div>
+                    <div className="font-medium">{reportData.project.email || '—'}</div>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                    <div className="text-xs text-muted-foreground">Phone</div>
+                    <div className="font-medium">{reportData.project.phone || '—'}</div>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                    <div className="text-xs text-muted-foreground">Address</div>
+                    <div className="font-medium">{[
+                      reportData.project.address?.city,
+                      reportData.project.address?.state,
+                      reportData.project.address?.country
+                    ].filter(Boolean).join(', ') || '—'}</div>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                    <div className="text-xs text-muted-foreground">Established</div>
+                    <div className="font-medium">{reportData.project.establishedYear || '—'}</div>
+                  </div>
+                  <div className="p-3 bg-white dark:bg-gray-800 rounded border">
+                    <div className="text-xs text-muted-foreground">Keywords</div>
+                    <div className="font-medium truncate">{(reportData.project.keywords && reportData.project.keywords.length > 0) ? reportData.project.keywords.join(', ') : '—'}</div>
+                  </div>
+                </div>
+                {reportData.project.businessDescription && (
+                  <div className="mt-4">
+                    <div className="text-xs text-muted-foreground">Business Description</div>
+                    <p className="text-sm">{reportData.project.businessDescription}</p>
+                  </div>
+                )}
+              </div>
+
               {/* SEO Health Score */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-semibold">SEO Health Score</h4>
-                  <Badge variant={reportData.analytics.successRate >= 80 ? "default" : reportData.analytics.successRate >= 60 ? "secondary" : "destructive"}>
-                    {reportData.analytics.successRate >= 80 ? "Excellent" : reportData.analytics.successRate >= 60 ? "Good" : "Needs Improvement"}
+                  <Badge variant={successRate >= 80 ? "default" : successRate >= 60 ? "secondary" : "destructive"}>
+                    {successRate >= 80 ? "Excellent" : successRate >= 60 ? "Good" : "Needs Improvement"}
                   </Badge>
                 </div>
                 <div className="w-full bg-muted rounded-full h-3">
                   <div 
                     className={`h-3 rounded-full transition-all duration-500 ${
-                      reportData.analytics.successRate >= 80 ? 'bg-green-500 dark:bg-green-400' : 
-                      reportData.analytics.successRate >= 60 ? 'bg-yellow-500 dark:bg-yellow-400' : 'bg-red-500 dark:bg-red-400'
+                      successRate >= 80 ? 'bg-green-500 dark:bg-green-400' : 
+                      successRate >= 60 ? 'bg-yellow-500 dark:bg-yellow-400' : 'bg-red-500 dark:bg-red-400'
                     }`}
-                    style={{ width: `${Math.min(reportData.analytics.successRate, 100)}%` }}
+                    style={{ width: `${successRate}%` }}
                   ></div>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -601,7 +804,7 @@ export function ReportsDashboard() {
                 </div>
                 <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/50 rounded-lg border">
                   <TrendingUp className="h-8 w-8 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{reportData.analytics.successRate}%</div>
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{successRate}%</div>
                   <div className="text-sm text-orange-600 dark:text-orange-400">Success Rate</div>
                 </div>
               </div>
@@ -617,7 +820,7 @@ export function ReportsDashboard() {
                     <p>• {reportData.seoToolsUsage.length} different SEO tool{reportData.seoToolsUsage.length !== 1 ? 's' : ''} used for analysis</p>
                     <p>• Total of {reportData.seoToolsUsage.reduce((sum, tool) => sum + tool.results.reduce((toolSum, result) => toolSum + (result.issues || 0), 0), 0)} issues identified across all tools</p>
                     <p>• {reportData.seoToolsUsage.reduce((sum, tool) => sum + tool.results.reduce((toolSum, result) => toolSum + (result.recommendations || 0), 0), 0)} recommendations provided for improvement</p>
-                    <p>• SEO Health Score: {Math.round(reportData.analytics.successRate)}/100 - {reportData.analytics.successRate >= 80 ? 'Excellent' : reportData.analytics.successRate >= 60 ? 'Good' : 'Needs Improvement'}</p>
+                <p>• SEO Health Score: {Math.round(successRate)}/100 - {successRate >= 80 ? 'Excellent' : successRate >= 60 ? 'Good' : 'Needs Improvement'}</p>
                   </div>
                 </div>
               )}
@@ -736,7 +939,7 @@ export function ReportsDashboard() {
                                       </div>
                                       <div className="flex items-center space-x-2">
                                         <Badge variant="outline" className="text-xs">
-                                          Score: {result.score || 'N/A'}
+                          Score: {result.score ?? 'N/A'}
                                         </Badge>
                                       </div>
                                     </div>
@@ -1442,11 +1645,11 @@ export function ReportsDashboard() {
                                                   <div className="p-3 bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-950/50 dark:to-yellow-950/50 rounded border">
                                                     <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">Performance Score Breakdown</div>
                                                     <div className="text-xs text-orange-700 dark:text-orange-300">
-                                                      <p><strong>Current Score:</strong> {result.analysisResults.score ?? 0}/100</p>
+                                                      <p><strong>Current Score:</strong> {(result.analysisResults.score ?? result.score ?? 0)}/100</p>
                                                       <p className="mt-1">
-                                                        {(result.analysisResults.score ?? 0) >= 90 ? "🎉 Excellent performance! Your site loads quickly." :
-                                                         (result.analysisResults.score ?? 0) >= 70 ? "👍 Good performance with room for improvement." :
-                                                         (result.analysisResults.score ?? 0) >= 50 ? "⚠️ Average performance. Consider optimizations." :
+                                                        {((result.analysisResults.score ?? result.score ?? 0)) >= 90 ? "🎉 Excellent performance! Your site loads quickly." :
+                                                         ((result.analysisResults.score ?? result.score ?? 0)) >= 70 ? "👍 Good performance with room for improvement." :
+                                                         ((result.analysisResults.score ?? result.score ?? 0)) >= 50 ? "⚠️ Average performance. Consider optimizations." :
                                                          "🚨 Poor performance. Immediate optimization needed."}
                                                       </p>
                                                     </div>

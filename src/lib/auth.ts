@@ -40,7 +40,6 @@ export const authOptions = {
             id: user._id.toString(),
             email: user.email,
             name: user.username,
-            image: user.profileImage,
             role: user.role,
             plan: user.plan,
             companyName: user.companyName
@@ -62,8 +61,13 @@ export const authOptions = {
         token.role = user.role
         token.plan = user.plan
         token.companyName = user.companyName
-        token.image = user.image
+        // Strip any picture/image field to avoid oversized JWT cookies
+        delete token.picture
+        delete token.image
       }
+      // Also ensure repeated calls keep token lean
+      delete token.picture
+      delete token.image
       return token
     },
     async session({ session, token }: { session: any; token: any }) {
@@ -72,7 +76,7 @@ export const authOptions = {
         session.user.role = token.role as string
         session.user.plan = token.plan as string
         session.user.companyName = token.companyName as string
-        session.user.image = token.image as string
+        // Avoid carrying image in session via JWT; components fetch profile separately
       }
       return session
     },

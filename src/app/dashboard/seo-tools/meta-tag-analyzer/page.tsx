@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -49,7 +48,7 @@ export default function MetaTagAnalyzerPage() {
         setProjects(data.projects || [])
       }
     } catch (_error) {
-      console.error('Failed to fetch projects:', _error)
+      // silently handle project fetch error
     }
   }
 
@@ -75,7 +74,6 @@ export default function MetaTagAnalyzerPage() {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('Meta Tag Analysis Response:', data)
         setAnalysisResult(data.data)
         showToast({
           title: 'Analysis Complete',
@@ -145,7 +143,7 @@ export default function MetaTagAnalyzerPage() {
   }
 
   return (
-    <DashboardLayout>
+<>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -330,6 +328,6 @@ export default function MetaTagAnalyzerPage() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+</>
   )
 }

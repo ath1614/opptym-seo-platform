@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -82,7 +81,7 @@ export default function KeywordDensityCheckerPage() {
         setProjects(data.projects || [])
       }
     } catch (error) {
-      console.error('Failed to fetch projects:', error)
+      // silently handle project fetch error
     }
   }
 
@@ -108,7 +107,6 @@ export default function KeywordDensityCheckerPage() {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('Keyword Density Analysis Response:', data)
         // Transform the KeywordDensityAnalysis data to match the expected interface
         const sourceKeywords: ApiKeywordItem[] = Array.isArray(data?.data?.keywords)
           ? (data.data.keywords as ApiKeywordItem[])
@@ -188,7 +186,7 @@ export default function KeywordDensityCheckerPage() {
   }
 
   return (
-    <DashboardLayout>
+<>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -368,6 +366,6 @@ export default function KeywordDensityCheckerPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+</>
   )
 }

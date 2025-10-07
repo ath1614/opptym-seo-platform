@@ -3,7 +3,6 @@
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { SEOTasksGrid } from '@/components/seo-tasks/seo-tasks-grid'
 import { SEOTasksStats } from '@/components/seo-tasks/seo-tasks-stats'
 
@@ -33,15 +32,14 @@ export default function SEOTasksPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">SEO Tasks</h1>
-          <p className="text-muted-foreground">
-            Submit your projects to directories, article sites, and other SEO platforms
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">SEO Tasks</h1>
+        <p className="text-muted-foreground">
+          Submit your projects to directories, article sites, and other SEO platforms
+        </p>
+      </div>
 
         {/* Stats */}
         <SEOTasksStats />
@@ -49,6 +47,5 @@ export default function SEOTasksPage() {
         {/* Tasks Grid */}
         <SEOTasksGrid />
       </div>
-    </DashboardLayout>
   )
 }
