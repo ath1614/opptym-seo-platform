@@ -16,6 +16,7 @@ import {
   analyzeBacklinks
 } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
+import { logActivity } from '@/lib/activity-logger'
 
 // Local types to avoid implicit any
 interface DetailedAnalysisResults {
@@ -379,6 +380,33 @@ export async function GET(
       monthlyTrend,
       comprehensiveSeoAnalysis,
       generatedAt: new Date()
+    }
+
+    // Log report generation for daily counting and audit
+    try {
+      await logActivity({
+        userId: session.user.id,
+        userEmail: session.user.email || 'unknown',
+        userName: session.user.name || session.user.username || 'unknown',
+        action: 'report_generated',
+        resource: 'report',
+        resourceId: projectId,
+        details: {
+          metadata: {
+            projectName: project.projectName || String(project._id),
+            generatedAt: new Date().toISOString(),
+            totals: {
+              seoToolsUsed: totalSeoToolsUsed,
+              submissions: totalSubmissions,
+              successRate: Math.round(successRate * 100) / 100
+            }
+          }
+        },
+        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown'
+      })
+    } catch (e) {
+      console.warn('Failed to log report generation:', e)
     }
 
     return NextResponse.json({ reportData })

@@ -127,7 +127,7 @@ export async function trackUsage(
     // Get actual current usage from database instead of cached counter
     let actualCurrentUsage = 0
     
-    if (limitType === 'projects') {
+  if (limitType === 'projects') {
       actualCurrentUsage = await Project.countDocuments({ userId: new mongoose.Types.ObjectId(userId) })
     } else if (limitType === 'submissions') {
       actualCurrentUsage = await Submission.countDocuments({ 
@@ -154,7 +154,7 @@ export async function trackUsage(
           }
         }
       }
-    } else if (limitType === 'seoTools') {
+  } else if (limitType === 'seoTools') {
       const SeoToolUsage = (await import('@/models/SeoToolUsage')).default
       actualCurrentUsage = await SeoToolUsage.countDocuments({ 
         userId: new mongoose.Types.ObjectId(userId)
@@ -177,12 +177,36 @@ export async function trackUsage(
           }
         }
       }
-    } else if (limitType === 'backlinks') {
+  } else if (limitType === 'backlinks') {
       const Backlink = (await import('@/models/Backlink')).default
       actualCurrentUsage = await Backlink.countDocuments({ 
         userId: new mongoose.Types.ObjectId(userId),
         status: 'active'
       })
+    } else if (limitType === 'reports') {
+      // Count reports using ActivityLog entries for today
+      const ActivityLog = (await import('@/models/ActivityLog')).default
+      const { start, end } = getTodayRange()
+      // Total reports overall (monthly counter fallback)
+      actualCurrentUsage = user.usage?.reports || 0
+      // Per-day check
+      if (dailyLimits.reportsPerDay !== -1) {
+        const todayReports = await ActivityLog.countDocuments({
+          userId: userId,
+          action: 'report_generated',
+          createdAt: { $gte: start, $lte: end }
+        })
+        const projected = todayReports + increment
+        if (projected > dailyLimits.reportsPerDay) {
+          console.log(`❌ Daily reports limit exceeded: ${projected} > ${dailyLimits.reportsPerDay}`)
+          return {
+            success: false,
+            message: `Daily reports limit exceeded`,
+            currentUsage: projected,
+            limit: dailyLimits.reportsPerDay
+          }
+        }
+      }
     } else {
       // For other types, use cached counter as fallback
       actualCurrentUsage = user.usage?.[limitType] || 0
@@ -323,6 +347,7 @@ export async function getUsageStats(userId: string) {
       createdAt: { $gte: start, $lte: end }
     })
 
+    const ActivityLog = (await import('@/models/ActivityLog')).default
     const result = {
       plan,
       limits,
@@ -330,7 +355,12 @@ export async function getUsageStats(userId: string) {
       dailyLimits,
       todayUsage: {
         submissions: todaySubmissions,
-        seoTools: todaySeoTools
+        seoTools: todaySeoTools,
+        reports: await ActivityLog.countDocuments({
+          userId: userId,
+          action: 'report_generated',
+          createdAt: { $gte: start, $lte: end }
+        })
       },
       isAtLimit: {
         projects: isLimitExceededWithCustom(limits, 'projects', realUsage.projects),

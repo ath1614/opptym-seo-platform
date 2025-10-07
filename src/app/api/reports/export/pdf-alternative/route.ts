@@ -168,7 +168,7 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend, comprehensiveSeoAnalysis } = reportData
   
-  // Build per-tool latest details section
+  // Build per-tool latest details section with tool-specific metric cards
   const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
     const latest = tool.latestResult || (tool.results && tool.results[0]) || null
     const ar = latest?.analysisResults || {}
@@ -211,6 +211,59 @@ function generateReportHTML(reportData: {
       if (brokenLinks === 0) positives.push('No broken links detected')
       else if (brokenLinks <= 2) positives.push('Low broken links count')
     }
+
+    // Build tool-specific cards to avoid irrelevant blanks
+    const toolNameLower = (tool.toolName || '').toLowerCase()
+    const cards: string[] = []
+    if (toolNameLower.includes('meta') || toolNameLower.includes('tag')) {
+      cards.push(`
+        <div class="stat-card">
+          <div class="label">Meta Title</div>
+          <div class="value">${meta.title || '—'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Meta Description</div>
+          <div class="value">${meta.description || '—'}</div>
+        </div>
+      `)
+    }
+    if (toolNameLower.includes('speed') || toolNameLower.includes('performance')) {
+      cards.push(`
+        <div class="stat-card">
+          <div class="label">Page Speed</div>
+          <div class="value">${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+        </div>
+      `)
+    }
+    if (toolNameLower.includes('mobile')) {
+      cards.push(`
+        <div class="stat-card">
+          <div class="label">Mobile Friendly</div>
+          <div class="value">${isMobileFriendly === undefined ? '—' : (isMobileFriendly ? 'Yes' : 'No')}</div>
+        </div>
+      `)
+    }
+    if (toolNameLower.includes('broken') || toolNameLower.includes('link')) {
+      cards.push(`
+        <div class="stat-card">
+          <div class="label">Broken Links</div>
+          <div class="value">${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
+        </div>
+      `)
+    }
+    if (!cards.length) {
+      // Generic fallback cards if tool type not matched
+      cards.push(`
+        <div class="stat-card">
+          <div class="label">Score</div>
+          <div class="value">${score !== undefined ? Math.round(Number(score)) : '—'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Issues</div>
+          <div class="value">${issuesCount}</div>
+        </div>
+      `)
+    }
     
     return `
       <div class="section">
@@ -221,28 +274,7 @@ function generateReportHTML(reportData: {
           <div><strong>Issues Found:</strong> ${issuesCount}</div>
           <div><strong>Recommendations:</strong> ${recsCount}</div>
         </div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="label">Meta Title</div>
-            <div class="value">${meta.title || '—'}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Meta Description</div>
-            <div class="value">${meta.description || '—'}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Mobile Friendly</div>
-            <div class="value">${isMobileFriendly === undefined ? '—' : (isMobileFriendly ? 'Yes' : 'No')}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Broken Links</div>
-            <div class="value">${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">Page Speed</div>
-            <div class="value">${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
-          </div>
-        </div>
+        <div class="stats-grid">${cards.join('')}</div>
         ${positives.length ? `
           <div style="margin-top: 12px;">
             <strong>Positive Highlights:</strong>

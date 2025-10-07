@@ -270,7 +270,7 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
-  // Build per-tool latest details section using latestResult when available
+  // Build per-tool latest details section using latestResult when available, with tool-specific cards
   const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
     const latest = tool.latestResult || (tool.results && tool.results[0]) || null
     const ar = latest?.analysisResults || {}
@@ -308,6 +308,38 @@ function generateReportHTML(reportData: {
       else if (brokenLinks <= 2) positives.push('Low broken links count')
     }
 
+    // Build tool-specific cards to avoid irrelevant blanks
+    const toolNameLower = (tool.toolName || '').toLowerCase()
+    const cards: string[] = []
+    if (toolNameLower.includes('meta') || toolNameLower.includes('tag')) {
+      cards.push(`
+        <div><strong>Meta Title:</strong> ${meta.title || '—'}</div>
+        <div><strong>Meta Description:</strong> ${meta.description || '—'}</div>
+      `)
+    }
+    if (toolNameLower.includes('speed') || toolNameLower.includes('performance')) {
+      cards.push(`
+        <div><strong>Page Speed:</strong> ${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+      `)
+    }
+    if (toolNameLower.includes('mobile')) {
+      cards.push(`
+        <div><strong>Mobile Friendly:</strong> ${isMobileFriendly === undefined ? '—' : (isMobileFriendly ? 'Yes' : 'No')}</div>
+      `)
+    }
+    if (toolNameLower.includes('broken') || toolNameLower.includes('link')) {
+      cards.push(`
+        <div><strong>Broken Links:</strong> ${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
+      `)
+    }
+    if (!cards.length) {
+      // Generic fallback cards if tool type not matched
+      cards.push(`
+        <div><strong>Score:</strong> ${score !== undefined ? Math.round(Number(score)) : '—'}</div>
+        <div><strong>Issues:</strong> ${issues.length}</div>
+      `)
+    }
+
     return `
       <section style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:16px 0;">
         <h3 style="color:#1f2937;margin:0 0 8px 0;">🔧 ${tool.toolName} — Latest Result</h3>
@@ -316,11 +348,7 @@ function generateReportHTML(reportData: {
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px;">
           <div><strong>Issues:</strong> ${issues.length}</div>
           <div><strong>Recommendations:</strong> ${recommendations.length}</div>
-          <div><strong>Meta Title:</strong> ${meta.title || '—'}</div>
-          <div><strong>Meta Description:</strong> ${meta.description || '—'}</div>
-          <div><strong>Mobile Friendly:</strong> ${isMobileFriendly === undefined ? '—' : (isMobileFriendly ? 'Yes' : 'No')}</div>
-          <div><strong>Broken Links:</strong> ${brokenLinks}${totalLinks !== undefined ? ` / ${totalLinks}` : ''}</div>
-          <div><strong>Page Speed:</strong> ${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+          ${cards.join('')}
         </div>
         ${positives.length ? `
           <div style="margin-top: 8px;">

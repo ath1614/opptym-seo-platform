@@ -157,24 +157,29 @@ export function getUsagePercentage(
 export interface DailyLimits {
   submissionsPerProjectPerDay: number
   seoToolsPerDay: number
+  reportsPerDay: number
 }
 
 export const DAILY_LIMITS: Record<keyof PlanLimits, DailyLimits> = {
   free: {
     submissionsPerProjectPerDay: 1,
-    seoToolsPerDay: 5
+    seoToolsPerDay: 5,
+    reportsPerDay: 1
   },
   pro: {
     submissionsPerProjectPerDay: 5,
-    seoToolsPerDay: 4
+    seoToolsPerDay: 4,
+    reportsPerDay: 5
   },
   business: {
     submissionsPerProjectPerDay: 10,
-    seoToolsPerDay: -1 // No per-day SEO tools cap specified
+    seoToolsPerDay: -1, // No per-day SEO tools cap specified
+    reportsPerDay: 10
   },
   enterprise: {
     submissionsPerProjectPerDay: 20,
-    seoToolsPerDay: -1 // No per-day SEO tools cap specified
+    seoToolsPerDay: -1, // No per-day SEO tools cap specified
+    reportsPerDay: -1 // Unlimited daily reports
   }
 }
 
@@ -188,7 +193,8 @@ export async function getDailyLimitsWithCustom(plan: string, userRole?: string):
   if (userRole === 'admin') {
     return {
       submissionsPerProjectPerDay: -1,
-      seoToolsPerDay: -1
+      seoToolsPerDay: -1,
+      reportsPerDay: -1
     }
   }
   // Currently, daily limits are not configurable via pricing API; use defaults

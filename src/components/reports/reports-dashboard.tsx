@@ -507,12 +507,8 @@ export function ReportsDashboard() {
     fetchProjects()
   }, [fetchProjects])
 
-  // Auto-generate report when a project is selected
-  useEffect(() => {
-    if (selectedProjectId) {
-      generateReport(selectedProjectId)
-    }
-  }, [selectedProjectId, generateReport])
+  // Do not auto-generate reports on selection; require manual trigger
+  // Removed auto-generation to ensure reports generate only when user clicks the button
 
   const getStatusIcon = (status: string) => {
     switch (status) {
