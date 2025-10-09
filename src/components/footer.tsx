@@ -54,11 +54,8 @@ export function Footer() {
               </a>
             </div>
 
-            {/* Contact Details */}
+            {/* Contact Details (Address removed) */}
             <div className="mt-6 space-y-2 text-sm text-muted-foreground max-w-md">
-              <p>
-                <span className="text-foreground font-semibold">Address:</span> Lakshmi Narsimha Colony, Road No.12, Dattatreya Nivas, Plot Number-591, Nagole, Hyderabad, Telangana, Bharath (India)
-              </p>
               <p>
                 <span className="text-foreground font-semibold">Phone:</span> +1 (909) 348-8855
               </p>

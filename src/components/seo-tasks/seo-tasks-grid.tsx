@@ -17,8 +17,7 @@ import {
   Search,
   ExternalLink,
   RefreshCw,
-  Globe,
-  Filter
+  
 } from 'lucide-react'
 import {
   Pagination,
@@ -45,6 +44,7 @@ interface Link {
   _id: string
   name: string
   domain: string
+  url: string
   submissionUrl: string
   classification: 'Directory Submission' | 'Article Submission' | 'Press Release' | 'BookMarking' | 'Business Listing' | 'Classified' | 'More SEO'
   category: string
@@ -137,7 +137,6 @@ export function SEOTasksGrid() {
   const [links, setLinks] = useState<Link[]>([])
   const [filteredLinks, setFilteredLinks] = useState<Link[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [selectedLocation, setSelectedLocation] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [draftSearchTerm, setDraftSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -152,7 +151,7 @@ export function SEOTasksGrid() {
     isLimitReached: boolean
     isUnlimited: boolean
   } | null>(null)
-  const [locations, setLocations] = useState<Location[]>([])
+  // Location filter disabled
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -162,17 +161,7 @@ export function SEOTasksGrid() {
   
   const { showToast } = useToast()
 
-  const fetchLocations = useCallback(async () => {
-    try {
-      const response = await fetch('/api/locations?active=true')
-      if (response.ok) {
-        const data = await response.json()
-        setLocations(data)
-      }
-    } catch (error) {
-      console.error('Error fetching locations:', error)
-    }
-  }, [])
+  // Location fetching disabled
 
   const fetchSubmissionStatus = useCallback(async () => {
     try {
@@ -187,7 +176,7 @@ export function SEOTasksGrid() {
     }
   }, [])
 
-  const fetchLinks = useCallback(async (page: number = 1, category: string = 'all', search: string = '', location: string = 'all') => {
+  const fetchLinks = useCallback(async (page: number = 1, category: string = 'all', search: string = '') => {
     try {
       setIsLoading(true)
       const offset = (page - 1) * linksPerPage
@@ -203,10 +192,6 @@ export function SEOTasksGrid() {
         params.append('category', category)
       }
       
-      if (location !== 'all') {
-        params.append('location', location)
-      }
-      
       if (search) {
         params.append('search', search)
       }
@@ -217,8 +202,15 @@ export function SEOTasksGrid() {
       
       if (response.ok) {
         console.log('Fetched SEO tasks data:', data)
-        setLinks(data.links)
-        setFilteredLinks(data.links)
+        const normalized = Array.isArray(data.links)
+          ? data.links.map((l: any) => ({
+              ...l,
+              url: l?.url ?? l?.submissionUrl ?? '',
+              submissionUrl: l?.submissionUrl ?? l?.url ?? ''
+            }))
+          : []
+        setLinks(normalized)
+        setFilteredLinks(normalized)
         setTotalLinks(data.total)
         setTotalPages(Math.ceil(data.total / linksPerPage))
         setCurrentPage(page)
@@ -258,18 +250,17 @@ export function SEOTasksGrid() {
     fetchLinks(1, 'all', '')
     fetchUsageStats()
     fetchSubmissionStatus()
-    fetchLocations()
   }, []) // Remove dependencies to prevent infinite loops
 
   // Handle search with debounce
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setCurrentPage(1)
-      fetchLinks(1, selectedCategory, searchTerm, selectedLocation)
+      fetchLinks(1, selectedCategory, searchTerm)
     }, 500) // 500ms debounce
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, selectedCategory, selectedLocation]) // Remove fetchLinks dependency
+  }, [searchTerm, selectedCategory]) // Remove fetchLinks dependency
 
   const handleFillForm = (link: Link) => {
     // Check if user has reached their submission limit
@@ -308,16 +299,15 @@ export function SEOTasksGrid() {
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      fetchLinks(page, selectedCategory, searchTerm, selectedLocation)
+      fetchLinks(page, selectedCategory, searchTerm)
     }
   }
 
   const handleRefresh = () => {
     console.log('Refreshing SEO tasks...')
-    fetchLinks(currentPage, selectedCategory, searchTerm, selectedLocation)
+    fetchLinks(currentPage, selectedCategory, searchTerm)
     fetchSubmissionStatus() // Also refresh submission status
     fetchUsageStats() // Refresh usage stats
-    fetchLocations() // Refresh available locations list so newly added directories appear
   }
 
   // Note: Category stats are now handled server-side with pagination
@@ -484,48 +474,25 @@ export function SEOTasksGrid() {
         </div>
       </div>
 
-      {/* Location Filter */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex items-center space-x-2">
-          <Globe className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground">Location:</span>
-        </div>
-        <Button
-          variant={selectedLocation === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedLocation('all')}
-        >
-          🌍 All Locations
-        </Button>
-        {locations.map((location) => (
-          <Button
-            key={location._id}
-            variant={selectedLocation === location.code ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedLocation(location.code)}
-          >
-            {location.flag} {location.name}
-          </Button>
-        ))}
-      </div>
+      {/* Location Filter disabled */}
 
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search links by name, description, or domain..."
-          className="pl-9"
-          value={draftSearchTerm}
-          onChange={(e) => setDraftSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              setSearchTerm(draftSearchTerm)
-              setCurrentPage(1)
-              fetchLinks(1, selectedCategory, draftSearchTerm, selectedLocation)
-            }
-          }}
-        />
+      <Input
+        placeholder="Search links by name, description, or domain..."
+        className="pl-9"
+        value={draftSearchTerm}
+        onChange={(e) => setDraftSearchTerm(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            setSearchTerm(draftSearchTerm)
+            setCurrentPage(1)
+            fetchLinks(1, selectedCategory, draftSearchTerm)
+          }
+        }}
+      />
       </div>
 
       {/* Links Grid */}
@@ -587,7 +554,7 @@ export function SEOTasksGrid() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => window.open(link.submissionUrl, '_blank')}
+                      onClick={() => window.open(link.url || link.submissionUrl, '_blank')}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>
@@ -624,7 +591,7 @@ export function SEOTasksGrid() {
                         <Button 
                           variant="outline"
                           className="w-full"
-                          onClick={() => window.open(link.submissionUrl, '_blank')}
+                          onClick={() => window.open(link.url || link.submissionUrl, '_blank')}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Visit Website to Use Bookmarklet

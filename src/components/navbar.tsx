@@ -38,12 +38,11 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
         <div className={`flex justify-between items-center ${isLanding ? 'h-14' : 'h-16'}`}>
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Logo width={60} height={60} />
+            <Logo width={40} height={40} />
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
+          <div className="hidden md:flex ml-10 items-baseline space-x-4">
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -102,13 +101,23 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                 <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
-
-              {/* Mobile menu button */}
+            {/* Mobile Controls (visible on small screens) */}
+            <div className="flex items-center gap-2 md:hidden">
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                onClick={toggleTheme}
+                className="h-9 w-9"
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle navigation menu"
               >
                 {isMenuOpen ? (
                   <X className="h-5 w-5" />
@@ -118,12 +127,11 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
               </Button>
             </div>
           </div>
-        </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden">
-            <div className={`px-2 pt-2 pb-3 space-y-1 sm:px-3 ${isLanding ? 'border-t-2 border-border rounded-b-3xl' : 'border-t'}` }>
+          <div className={`md:hidden ${isLanding ? 'border-t-2 border-border rounded-b-3xl' : 'border-t'}`}>
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
@@ -201,6 +209,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
             </div>
           </div>
         )}
+        </div>
       </div>
     </nav>
   )
