@@ -10,10 +10,18 @@ export default function SEOTipsPage() {
         <Logo width={48} height={48} showText />
       </header>
 
-      <h1 className="text-3xl font-bold text-foreground mb-2">SEO Best Practices – Detailed Guide</h1>
-      <p className="text-muted-foreground mb-8">
-        A practical, modern checklist to improve search performance with content quality, on-page optimization, speed, and sustainable link-building.
-      </p>
+  <h1 className="text-3xl font-bold text-foreground mb-2">SEO Best Practices – Detailed Guide</h1>
+  <p className="text-muted-foreground mb-8">
+    A practical, modern checklist to improve search performance with content quality, on-page optimization, speed, and sustainable link-building.
+  </p>
+
+      {/* Disclaimer */}
+      <div className="rounded-md border p-4 mb-8 bg-muted/30">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Disclaimer</h2>
+        <p className="text-sm text-muted-foreground">
+          While we strive to provide accurate and helpful SEO guidance, we do not promise 100% accuracy or guaranteed outcomes. The bookmarklet and our analysis features are continuously improving over time, and results may vary by site and context. Please use these tips and outputs as directional guidance and validate critical decisions with additional tools and your own judgement.
+        </p>
+      </div>
 
       <div className="space-y-8">
         {/* 1. User Intent */}

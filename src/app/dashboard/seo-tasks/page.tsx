@@ -41,6 +41,14 @@ export default function SEOTasksPage() {
         </p>
       </div>
 
+      {/* Disclaimer */}
+      <div className="rounded-md border p-4 bg-muted/30">
+        <h2 className="text-lg font-semibold text-foreground mb-2">Disclaimer</h2>
+        <p className="text-sm text-muted-foreground">
+          We strive to provide accurate and helpful SEO guidance, but we do not promise 100% accuracy or guaranteed outcomes. The bookmarklet and related automation features are continuously improving over time, and results may vary by site and context. Use these tasks and outputs as directional guidance and validate important decisions with additional tools and your own judgment.
+        </p>
+      </div>
+
         {/* Stats */}
         <SEOTasksStats />
 
