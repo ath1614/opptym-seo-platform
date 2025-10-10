@@ -203,7 +203,7 @@ export function SEOTasksGrid() {
       if (response.ok) {
         console.log('Fetched SEO tasks data:', data)
         const normalized = Array.isArray(data.links)
-          ? data.links.map((l: any) => ({
+          ? data.links.map((l: Partial<Link>) => ({
               ...l,
               url: l?.url ?? l?.submissionUrl ?? '',
               submissionUrl: l?.submissionUrl ?? l?.url ?? ''
