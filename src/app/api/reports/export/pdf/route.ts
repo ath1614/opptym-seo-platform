@@ -270,34 +270,81 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend } = reportData
   
+  // Helper types and guards for safer access
+  type MetaTitleDesc = string | { content?: string }
+  type AnalysisKeyword = {
+    keyword?: string
+    term?: string
+    count?: number
+    frequency?: number
+    density?: number
+    percentage?: number
+    status?: string
+  }
+  interface AnalysisResultsShape {
+    score?: number | string
+    overallScore?: number | string
+    issues?: Array<unknown>
+    recommendations?: Array<unknown>
+    metaTags?: { title?: MetaTitleDesc; description?: MetaTitleDesc }
+    performance?: { score?: number | string }
+    mobileFriendliness?: { isMobileFriendly?: boolean }
+    brokenLinks?: number | unknown[]
+    totalBrokenLinks?: number
+    totalLinks?: number
+    isMobileFriendly?: boolean
+    totalWords?: number
+    keywords?: AnalysisKeyword[]
+  }
+  interface ToolResult {
+    score?: number
+    url?: string
+    date?: Date | string
+    issues?: number
+    recommendations?: number
+    analysisResults?: AnalysisResultsShape
+  }
+  const toNumber = (v: unknown): number | undefined => {
+    if (typeof v === 'number' && Number.isFinite(v)) return v
+    if (typeof v === 'string') {
+      const n = Number(v)
+      return Number.isFinite(n) ? n : undefined
+    }
+    return undefined
+  }
+
   // Build per-tool latest details section using latestResult when available, with tool-specific cards
   const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
-    const latest = tool.latestResult || (tool.results && tool.results[0]) || null
-    const ar = latest?.analysisResults || {}
-    const meta = ar.metaTags || {}
-    const perf = ar.performance || {}
-    const mobile = ar.mobileFriendliness || {}
-    const brokenLinks = ar.brokenLinks ?? ar.totalBrokenLinks ?? 0
-    const totalLinks = ar.totalLinks ?? undefined
+    const latest: ToolResult | null = (tool.latestResult as ToolResult) || (tool.results && (Array.isArray(tool.results) ? (tool.results[0] as ToolResult) : (tool.results as unknown as ToolResult))) || null
+    const ar: AnalysisResultsShape = (latest?.analysisResults ?? {}) as AnalysisResultsShape
+    const meta = ar.metaTags ?? {}
+    const perf = ar.performance ?? {}
+    const mobile = ar.mobileFriendliness ?? {}
+    // Handle nested meta fields
+    const metaTitle = typeof meta.title === 'object' ? meta.title?.content : meta.title
+    const metaDescription = typeof meta.description === 'object' ? meta.description?.content : meta.description
+    // Broken links may be array or numeric
+    const brokenLinksArray = Array.isArray(ar.brokenLinks) ? ar.brokenLinks : []
+    const brokenLinks = typeof ar.totalBrokenLinks === 'number'
+      ? ar.totalBrokenLinks
+      : Array.isArray(brokenLinksArray) ? brokenLinksArray.length : (typeof ar.brokenLinks === 'number' ? ar.brokenLinks : 0)
+    const workingLinks = undefined as number | undefined
+    const totalLinks = typeof ar.totalLinks === 'number' ? ar.totalLinks : undefined
     const isMobileFriendly = ar.isMobileFriendly ?? mobile.isMobileFriendly ?? undefined
-    const score = latest?.score ?? ar.score ?? undefined
+    // Score fallback across tools
+    const score = latest?.score ?? toNumber(ar.score) ?? toNumber(ar.overallScore) ?? toNumber(perf.score)
     const issues = Array.isArray(ar.issues) ? ar.issues : []
     const recommendations = Array.isArray(ar.recommendations) ? ar.recommendations : []
     const lastUsedStr = (tool.lastUsed ? new Date(tool.lastUsed).toLocaleString() : 'N/A')
-    type AnalysisKeyword = {
-      keyword?: string
-      term?: string
-      count?: number
-      frequency?: number
-      density?: number
-      percentage?: number
-      status?: string
-    }
 
-    const keywordItems: AnalysisKeyword[] = Array.isArray(ar?.keywords) ? ar.keywords as AnalysisKeyword[] : []
-    const totalWords = typeof ar?.totalWords === 'number' ? ar.totalWords : undefined
+    const keywordItems: AnalysisKeyword[] = Array.isArray(ar.keywords) ? ar.keywords : []
+    const totalWords = typeof ar.totalWords === 'number' ? ar.totalWords : undefined
 
-    const perfScore = perf?.score !== undefined ? Number(perf.score as number | string) : undefined
+    const perfScore = ar.overallScore !== undefined
+      ? toNumber(ar.overallScore)
+      : perf.score !== undefined
+        ? toNumber(perf.score)
+        : undefined
     const positives: string[] = []
     if (typeof meta?.title === 'string' && meta.title.trim()) positives.push('Title tag present')
     if (typeof meta?.description === 'string' && meta.description.trim()) positives.push('Meta description present')
@@ -313,13 +360,13 @@ function generateReportHTML(reportData: {
     const cards: string[] = []
     if (toolNameLower.includes('meta') || toolNameLower.includes('tag')) {
       cards.push(`
-        <div><strong>Meta Title:</strong> ${meta.title || '—'}</div>
-        <div><strong>Meta Description:</strong> ${meta.description || '—'}</div>
+        <div><strong>Meta Title:</strong> ${metaTitle || '—'}</div>
+        <div><strong>Meta Description:</strong> ${metaDescription || '—'}</div>
       `)
     }
     if (toolNameLower.includes('speed') || toolNameLower.includes('performance')) {
       cards.push(`
-        <div><strong>Page Speed:</strong> ${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+        <div><strong>Page Speed:</strong> ${typeof perfScore === 'number' ? Math.round(perfScore) : '—'}</div>
       `)
     }
     if (toolNameLower.includes('mobile')) {
@@ -624,9 +671,53 @@ function generateReportHTML(reportData: {
               const lastUsedSafe = lastUsedDate && !isNaN(lastUsedDate.getTime())
                 ? lastUsedDate.toLocaleDateString()
                 : 'N/A'
-              const numericScores = tool.results
-                .map((r) => Number(r.score))
-                .filter((s) => Number.isFinite(s))
+              // Typed helpers for usage table
+              const pushNum = (acc: number[], v: unknown) => { const n = toNumber(v); if (typeof n === 'number') acc.push(n) }
+              const collectScores = (r: unknown): number[] => {
+                const out: number[] = []
+                if (r && typeof r === 'object') {
+                  const obj = r as Record<string, unknown>
+                  const ar = obj.analysisResults as Record<string, unknown> | undefined
+                  const perf = obj.performance as Record<string, unknown> | undefined
+                  pushNum(out, obj.score)
+                  pushNum(out, (obj as Record<string, unknown>).overallScore)
+                  pushNum(out, perf?.score)
+                  pushNum(out, ar?.score)
+                  pushNum(out, ar?.overallScore)
+                  pushNum(out, (ar?.performance as Record<string, unknown> | undefined)?.score)
+                }
+                return out
+              }
+              const getIssuesCount = (r: unknown): number => {
+                if (r && typeof r === 'object') {
+                  const obj = r as Record<string, unknown>
+                  if (typeof obj.issues === 'number') return obj.issues
+                  const ar = obj.analysisResults
+                  if (ar && typeof ar === 'object' && Array.isArray((ar as Record<string, unknown>).issues)) {
+                    return ((ar as Record<string, unknown>).issues as unknown[]).length
+                  }
+                }
+                return 0
+              }
+              const getBrokenLinksCount = (r: unknown): number => {
+                let brokenCount = 0
+                if (r && typeof r === 'object') {
+                  const obj = r as { [key: string]: unknown }
+                  const topBL = obj['brokenLinks']
+                  const ar = obj['analysisResults'] as { [key: string]: unknown } | undefined
+                  const arBL = ar?.['brokenLinks']
+                  const arTotalBL = ar?.['totalBrokenLinks']
+                  if (Array.isArray(topBL)) brokenCount = topBL.length
+                  else if (typeof topBL === 'number') brokenCount = topBL
+                  else if (Array.isArray(arBL)) brokenCount = (arBL as unknown[]).length
+                  else if (typeof arBL === 'number') brokenCount = arBL as number
+                  else if (typeof arTotalBL === 'number') brokenCount = arTotalBL as number
+                }
+                return brokenCount
+              }
+              const numericScores = Array.isArray(tool.results)
+                ? tool.results.flatMap((r) => collectScores(r as unknown))
+                : collectScores(tool.results as unknown)
               const avgScoreRaw = numericScores.length > 0 
                 ? Math.round(numericScores.reduce((sum, s) => sum + s, 0) / numericScores.length)
                 : null
@@ -634,23 +725,8 @@ function generateReportHTML(reportData: {
               // Derive performance label similarly to alternative exporter when score is missing
               const totals = tool.results.reduce(
                 (acc, r) => {
-                  let issuesCount = 0
-                  if (typeof r.issues === 'number') {
-                    issuesCount = r.issues
-                  } else {
-                    const issuesArray = r.analysisResults?.issues
-                    if (Array.isArray(issuesArray)) issuesCount = issuesArray.length
-                  }
-
-                  let brokenCount = 0
-                  const ar = r.analysisResults
-                  if (ar) {
-                    if (typeof ar.totalBrokenLinks === 'number') brokenCount = ar.totalBrokenLinks
-                    else if (typeof ar.brokenLinks === 'number') brokenCount = ar.brokenLinks
-                  }
-
-                  acc.issues += issuesCount
-                  acc.broken += brokenCount
+                  acc.issues += getIssuesCount(r as unknown)
+                  acc.broken += getBrokenLinksCount(r as unknown)
                   return acc
                 },
                 { issues: 0, broken: 0 }

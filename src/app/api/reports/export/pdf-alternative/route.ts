@@ -168,26 +168,124 @@ function generateReportHTML(reportData: {
 }) {
   const { project, analytics, seoToolsUsage, submissionsData, monthlyTrend, comprehensiveSeoAnalysis } = reportData
   
+  // Local helper types and guards for safe access
+  type MetaTitleDesc = string | { content?: string }
+  type AnalysisKeyword = {
+    keyword?: string
+    term?: string
+    count?: number
+    frequency?: number
+    density?: number
+    percentage?: number
+    status?: string
+  }
+  interface AnalysisResultsShape {
+    score?: number | string
+    overallScore?: number | string
+    issues?: Array<unknown>
+    recommendations?: Array<unknown>
+    metaTags?: { title?: MetaTitleDesc; description?: MetaTitleDesc }
+    performance?: { score?: number | string }
+    mobileFriendliness?: { isMobileFriendly?: boolean }
+    brokenLinks?: number | unknown[]
+    totalBrokenLinks?: number
+    totalLinks?: number
+    isMobileFriendly?: boolean
+    totalWords?: number
+    keywords?: AnalysisKeyword[]
+  }
+  interface ToolResult {
+    score?: number
+    url?: string
+    date?: Date | string
+    issues?: number
+    recommendations?: number
+    analysisResults?: AnalysisResultsShape
+  }
+  const toNumber = (v: unknown): number | undefined => {
+    if (typeof v === 'number' && Number.isFinite(v)) return v
+    if (typeof v === 'string') {
+      const n = Number(v)
+      return Number.isFinite(n) ? n : undefined
+    }
+    return undefined
+  }
+  const getIssuesCount = (r: unknown): number => {
+    if (r && typeof r === 'object') {
+      const obj = r as Record<string, unknown>
+      if (typeof obj.issues === 'number') return obj.issues
+      const ar = obj.analysisResults
+      if (ar && typeof ar === 'object' && Array.isArray((ar as Record<string, unknown>).issues)) {
+        return ((ar as Record<string, unknown>).issues as unknown[]).length
+      }
+    }
+    return 0
+  }
+  const getBrokenLinksCount = (r: unknown): number => {
+    let brokenCount = 0
+    if (r && typeof r === 'object') {
+      const obj = r as Record<string, unknown>
+      const topBL = obj.brokenLinks
+      const ar = obj.analysisResults as Record<string, unknown> | undefined
+      const arBL = ar?.brokenLinks
+      const arTotalBL = ar?.totalBrokenLinks
+      if (Array.isArray(topBL)) brokenCount = topBL.length
+      else if (typeof topBL === 'number') brokenCount = topBL
+      else if (Array.isArray(arBL)) brokenCount = arBL.length
+      else if (typeof arBL === 'number') brokenCount = arBL
+      else if (typeof arTotalBL === 'number') brokenCount = arTotalBL
+    }
+    return brokenCount
+  }
+  const collectScores = (r: unknown): number[] => {
+    const out: number[] = []
+    if (r && typeof r === 'object') {
+      const obj = r as Record<string, unknown>
+      const ar = obj.analysisResults as Record<string, unknown> | undefined
+      const perf = (obj as Record<string, unknown>).performance as Record<string, unknown> | undefined
+      const pushNum = (v: unknown) => { const n = toNumber(v); if (typeof n === 'number') out.push(n) }
+      pushNum(obj.score)
+      pushNum((obj as Record<string, unknown>).overallScore)
+      pushNum(perf?.score)
+      pushNum(ar?.score)
+      pushNum(ar?.overallScore)
+      pushNum((ar?.performance as Record<string, unknown> | undefined)?.score)
+    }
+    return out
+  }
+
   // Build per-tool latest details section with tool-specific metric cards
   const toolDetailsHTML = (seoToolsUsage || []).map((tool) => {
-    const latest = tool.latestResult || (tool.results && tool.results[0]) || null
-    const ar = latest?.analysisResults || {}
-    const meta = ar.metaTags || {}
-    const perf = ar.performance || {}
-    const mobile = ar.mobileFriendliness || {}
-    const brokenLinks = ar.brokenLinks ?? ar.totalBrokenLinks ?? 0
-    const totalLinks = ar.totalLinks ?? undefined
+    const latest: ToolResult | null = (tool.latestResult as ToolResult) || (tool.results && (Array.isArray(tool.results) ? (tool.results[0] as ToolResult) : (tool.results as unknown as ToolResult))) || null
+    const ar: AnalysisResultsShape = (latest?.analysisResults ?? {}) as AnalysisResultsShape
+    const meta = ar.metaTags ?? {}
+    const perf = ar.performance ?? {}
+    const mobile = ar.mobileFriendliness ?? {}
+    // Meta title/description may be nested objects with `content`
+    const metaTitle = typeof meta.title === 'object' ? meta.title?.content : meta.title
+    const metaDescription = typeof meta.description === 'object' ? meta.description?.content : meta.description
+    // Broken links may be an array or a numeric field
+    const brokenLinksArray = Array.isArray(ar.brokenLinks) ? ar.brokenLinks : []
+    const brokenLinks = typeof ar.totalBrokenLinks === 'number' 
+      ? ar.totalBrokenLinks 
+      : Array.isArray(brokenLinksArray) ? brokenLinksArray.length : (typeof ar.brokenLinks === 'number' ? ar.brokenLinks : 0)
+    const totalLinks = typeof ar.totalLinks === 'number' ? ar.totalLinks : undefined
     const isMobileFriendly = ar.isMobileFriendly ?? mobile.isMobileFriendly ?? undefined
-    const score = latest?.score ?? ar.score ?? undefined
-    const issuesCount = Array.isArray(ar.issues) ? ar.issues.length : (latest?.issues ?? 0)
-    const recsCount = Array.isArray(ar.recommendations) ? ar.recommendations.length : (latest?.recommendations ?? 0)
-    const perfScore = perf?.score !== undefined ? Number(perf.score as number | string) : undefined
+    // Score fallback across tools: latest.score → ar.score → overallScore → perf.score
+    const score = latest?.score ?? toNumber(ar.score) ?? toNumber(ar.overallScore) ?? toNumber(perf.score)
+    const issuesCount = Array.isArray(ar.issues) ? ar.issues.length : (typeof latest?.issues === 'number' ? latest.issues : 0)
+    const recsCount = Array.isArray(ar.recommendations) ? ar.recommendations.length : (typeof latest?.recommendations === 'number' ? latest.recommendations : 0)
+    const perfScore = ar.overallScore !== undefined 
+      ? toNumber(ar.overallScore) 
+      : perf.score !== undefined 
+        ? toNumber(perf.score) 
+        : undefined
     // Derive lightweight issues/recommendations if arrays are missing, so PDF always shows details
     const derivedIssues: string[] = (() => {
       const out: string[] = []
       if (typeof perfScore === 'number' && perfScore < 80) out.push(`Performance score is ${Math.round(perfScore)} (below 80)`) 
-      if (typeof meta?.title !== 'string' || !meta.title.trim()) out.push('Missing or empty meta title')
-      if (typeof meta?.description !== 'string' || !meta.description.trim()) out.push('Missing or empty meta description')
+      if (typeof metaTitle !== 'string' || !(metaTitle || '').toString().trim()) out.push('Missing or empty meta title')
+      if (typeof metaDescription !== 'string' || !(metaDescription || '').toString().trim()) out.push('Missing or empty meta description')
       if (isMobileFriendly === false) out.push('Page is not mobile-friendly')
       if (typeof brokenLinks === 'number' && brokenLinks > 0) out.push(`${brokenLinks} broken links detected`)
       return out
@@ -195,8 +293,8 @@ function generateReportHTML(reportData: {
     const derivedRecs: string[] = (() => {
       const out: string[] = []
       if (typeof perfScore === 'number' && perfScore < 80) out.push('Optimize images, enable compression, and minify assets')
-      if (typeof meta?.title !== 'string' || !meta.title.trim()) out.push('Add a concise, keyword-rich meta title')
-      if (typeof meta?.description !== 'string' || !meta.description.trim()) out.push('Write a compelling meta description (120–155 chars)')
+      if (typeof metaTitle !== 'string' || !(metaTitle || '').toString().trim()) out.push('Add a concise, keyword-rich meta title')
+      if (typeof metaDescription !== 'string' || !(metaDescription || '').toString().trim()) out.push('Write a compelling meta description (120–155 chars)')
       if (isMobileFriendly === false) out.push('Improve mobile layout and touch targets')
       if (typeof brokenLinks === 'number' && brokenLinks > 0) out.push('Fix broken links and verify external references')
       return out
@@ -219,11 +317,11 @@ function generateReportHTML(reportData: {
       cards.push(`
         <div class="stat-card">
           <div class="label">Meta Title</div>
-          <div class="value">${meta.title || '—'}</div>
+          <div class="value">${metaTitle || '—'}</div>
         </div>
         <div class="stat-card">
           <div class="label">Meta Description</div>
-          <div class="value">${meta.description || '—'}</div>
+          <div class="value">${metaDescription || '—'}</div>
         </div>
       `)
     }
@@ -231,7 +329,7 @@ function generateReportHTML(reportData: {
       cards.push(`
         <div class="stat-card">
           <div class="label">Page Speed</div>
-          <div class="value">${perf.score !== undefined ? Math.round(Number(perf.score)) : '—'}</div>
+          <div class="value">${perfScore !== undefined ? Math.round(Number(perfScore)) : '—'}</div>
         </div>
       `)
     }
@@ -677,27 +775,17 @@ function generateReportHTML(reportData: {
           </thead>
           <tbody>
             ${seoToolsUsage.length > 0 ? seoToolsUsage.map((tool) => {
-              const numericScores = tool.results
-                .map((r) => Number((r as { score: number | string }).score))
-                .filter((s) => Number.isFinite(s))
+              const numericScores = Array.isArray(tool.results)
+                ? tool.results.flatMap((r) => collectScores(r as unknown))
+                : collectScores(tool.results as unknown)
               const avgScoreRaw = numericScores.length > 0 
                 ? Math.round(numericScores.reduce((sum, s) => sum + s, 0) / numericScores.length) 
                 : null
 
               const totals = tool.results.reduce(
                 (acc, r) => {
-                  const issuesCount = typeof r.issues === 'number'
-                    ? r.issues
-                    : Array.isArray(r.analysisResults?.issues)
-                      ? r.analysisResults!.issues!.length
-                      : 0
-                  const brokenCount = typeof r.analysisResults?.totalBrokenLinks === 'number'
-                    ? (r.analysisResults!.totalBrokenLinks as number)
-                    : typeof r.analysisResults?.brokenLinks === 'number'
-                      ? (r.analysisResults!.brokenLinks as number)
-                      : 0
-                  acc.issues += issuesCount
-                  acc.broken += brokenCount
+                  acc.issues += getIssuesCount(r as unknown)
+                  acc.broken += getBrokenLinksCount(r as unknown)
                   return acc
                 },
                 { issues: 0, broken: 0 }
