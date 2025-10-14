@@ -74,15 +74,23 @@ export async function POST(request: NextRequest) {
     })
 
     // Send reset email
-    try {
-      await sendPasswordResetEmail(user.email, resetToken, user.name || user.username)
-    } catch (emailError) {
-      console.error('Error sending password reset email:', emailError)
-      // Don't fail the request if email fails
+    const emailResult = await sendPasswordResetEmail(user.email, resetToken, user.name || user.username)
+
+    // In development, provide a debug reset URL even if email fails
+    const debugResetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    if (!emailResult.success) {
+      console.error('Password reset email not sent:', emailResult.error)
+      return NextResponse.json({ 
+        message: 'If an account with that email exists, we attempted to send a password reset link.',
+        error: emailResult.error,
+        ...(isDev ? { debugResetUrl } : {})
+      }, { status: 500 })
     }
 
     return NextResponse.json({ 
-      message: 'If an account with that email exists, we have sent a password reset link.' 
+      message: 'If an account with that email exists, we have sent a password reset link.'
     })
 
   } catch (error) {

@@ -4,6 +4,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { StatsCards } from '@/components/dashboard/stats-cards'
+import { LineChart } from '@/components/dashboard/line-chart'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { CurrentPlanCard } from '@/components/dashboard/current-plan-card'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { OnboardingTutorial } from '@/components/onboarding/onboarding-tutorial'
@@ -63,14 +65,36 @@ interface AnalyticsData {
   completedProjects: number
 }
 
+interface TrendsData {
+  projectGrowth: Array<{ month: string; projects: number }>
+  submissionTrends: Array<{ month: string; submissions: number }>
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [trendsData, setTrendsData] = useState<TrendsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const { showOnboarding, hideOnboarding, markOnboardingAsSeen, showOnboardingAgain } = useOnboarding()
+
+  // Fallback: build last 12 months series with zeros to render chart even without API data
+  const buildEmptyTrends = (): TrendsData => {
+    const monthsLast12 = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date()
+      d.setMonth(d.getMonth() - (11 - i))
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      return `${y}-${m}`
+    })
+
+    return {
+      projectGrowth: monthsLast12.map(month => ({ month, projects: 0 })),
+      submissionTrends: monthsLast12.map(month => ({ month, submissions: 0 }))
+    }
+  }
 
   const fetchData = useCallback(async (isRefresh = false) => {
     try {
@@ -78,10 +102,11 @@ export default function DashboardPage() {
         setRefreshing(true)
       }
       
-      // Fetch both usage stats and analytics in parallel
-      const [usageResponse, analyticsResponse] = await Promise.all([
+      // Fetch usage stats, analytics, and trends in parallel
+      const [usageResponse, analyticsResponse, trendsResponse] = await Promise.all([
         fetch('/api/dashboard/usage', { credentials: 'include' }),
-        fetch('/api/dashboard/analytics', { credentials: 'include' })
+        fetch('/api/dashboard/analytics', { credentials: 'include' }),
+        fetch('/api/dashboard/trends', { credentials: 'include' })
       ])
 
       if (usageResponse.ok) {
@@ -115,6 +140,13 @@ export default function DashboardPage() {
           completedProjects: 0
         })
       }
+
+      if (trendsResponse.ok) {
+        const tData = await trendsResponse.json()
+        setTrendsData(tData)
+      } else {
+        setTrendsData(buildEmptyTrends())
+      }
     } catch (error) {
       // Set default data if all fails
       setUsageStats({
@@ -133,6 +165,7 @@ export default function DashboardPage() {
         activeProjects: 0,
         completedProjects: 0
       })
+      setTrendsData(buildEmptyTrends())
     } finally {
       setLoading(false)
       if (isRefresh) {
@@ -288,6 +321,36 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-xl font-semibold mb-4">Overview</h2>
           <StatsCards stats={stats} trends={trends} />
+        </div>
+
+        {/* Trends Line Chart */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Insights</h2>
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Trends</CardTitle>
+              <CardDescription>Projects and submissions over the last 12 months</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LineChart
+                series={[
+                  {
+                    name: 'Projects',
+                    color: '#3b82f6',
+                    points: (trendsData?.projectGrowth || []).map(p => ({ x: p.month, y: p.projects }))
+                  },
+                  {
+                    name: 'Submissions',
+                    color: '#22c55e',
+                    points: (trendsData?.submissionTrends || []).map(s => ({ x: s.month, y: s.submissions }))
+                  }
+                ]}
+                showLegend
+                showTooltips
+                areaOpacity={0.12}
+              />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions - Made More Prominent */}

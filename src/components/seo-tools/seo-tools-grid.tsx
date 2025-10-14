@@ -88,7 +88,7 @@ const seoTools: SEOTool[] = [
   },
   {
     id: 'keyword-researcher',
-    name: 'Keyword Researcher',
+    name: 'Keyword Research',
     description: 'Research and discover high-value keywords for your content',
     icon: TrendingUp,
     category: 'research',

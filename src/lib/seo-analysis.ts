@@ -1441,7 +1441,17 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
       return getFallbackKeywordAnalysis(url)
     }
     
-    const words = textContent.toLowerCase().match(/\b\w+\b/g) || []
+    // Gather additional weighted sources: title, headings, and meta keywords
+    let titleText = ''
+    try {
+      titleText = $('title').text() || ''
+    } catch {}
+    const h1Text = $('h1').map((_, el) => $(el).text()).get().join(' ')
+    const h2Text = $('h2').map((_, el) => $(el).text()).get().join(' ')
+    const metaKeywords = $('meta[name="keywords"]').attr('content') || ''
+
+    const combinedText = [textContent, titleText, h1Text, h2Text, metaKeywords].join(' ')
+    const words = combinedText.toLowerCase().match(/\b[\p{L}\p{N}][\p{L}\p{N}\-]+\b/gu) || []
     
     if (words.length === 0) {
       console.log('⚠️ No words found in content, using fallback analysis')
@@ -1450,13 +1460,31 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
     
     // Simple keyword extraction with improved filtering
     const wordCounts: { [key: string]: number } = {}
-    const stopWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'had', 'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him', 'his', 'how', 'man', 'new', 'now', 'old', 'see', 'two', 'way', 'who', 'boy', 'did', 'its', 'let', 'put', 'say', 'she', 'too', 'use'])
-    
+    const stopWords = new Set([
+      'the','and','for','are','but','not','you','all','can','had','her','was','one','our','out','day','get','has','him','his','how','man','new','now','old','see','two','way','who','boy','did','its','let','put','say','she','too','use',
+      'home','about','contact','privacy','terms','login','signup','menu','copyright','cookie','policy','newsletter','read','more','category','share','recent','popular','search'
+    ])
+
+    // Apply base counts
     words.forEach((word: string) => {
-      if (word.length > 3 && !stopWords.has(word) && /^[a-zA-Z]+$/.test(word)) {
+      if (word.length > 3 && !stopWords.has(word) && /^[a-zA-Z\-]+$/.test(word)) {
         wordCounts[word] = (wordCounts[word] || 0) + 1
       }
     })
+
+    // Boost words appearing in title and headings
+    const boostTerm = (text: string, weight: number) => {
+      const items = text.toLowerCase().match(/\b[\p{L}\p{N}][\p{L}\p{N}\-]+\b/gu) || []
+      items.forEach((w) => {
+        if (w.length > 3 && !stopWords.has(w)) {
+          wordCounts[w] = (wordCounts[w] || 0) + weight
+        }
+      })
+    }
+    boostTerm(titleText, 3)
+    boostTerm(h1Text, 2)
+    boostTerm(h2Text, 1)
+    boostTerm(metaKeywords, 2)
 
     // Get top keywords with better validation
     const sortedByCount = Object.entries(wordCounts)
@@ -1470,10 +1498,14 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
       .map(([keyword, count]) => {
         const lengthFactor = Math.max(1, Math.min(10, Math.round(keyword.length / 2)))
         const freqFactor = count / maxCount
-        const searchVolume = Math.max(100, Math.round(count * 120 * (1 + 0.5 * freqFactor)))
-        const difficultyRaw = Math.round(35 + lengthFactor * 4 + freqFactor * 30)
+        // Weight search volume more conservatively and scale by heading presence
+        const inTitle = titleText.toLowerCase().includes(keyword.toLowerCase())
+        const inH1 = h1Text.toLowerCase().includes(keyword.toLowerCase())
+        const positionBoost = (inTitle ? 0.6 : 0) + (inH1 ? 0.3 : 0)
+        const searchVolume = Math.max(50, Math.round(count * 100 * (1 + positionBoost + 0.3 * freqFactor)))
+        const difficultyRaw = Math.round(30 + lengthFactor * 4 + freqFactor * 25)
         const difficulty = Math.max(10, Math.min(90, difficultyRaw))
-        const cpc = Math.round((difficulty / 30) * 100) / 100
+        const cpc = Math.round((difficulty / 35) * 100) / 100
         const competition: 'low' | 'medium' | 'high' = difficulty >= 65 ? 'high' : difficulty >= 45 ? 'medium' : 'low'
         return { keyword, searchVolume, difficulty, cpc, competition }
       })

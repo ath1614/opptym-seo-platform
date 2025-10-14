@@ -41,11 +41,24 @@ export default function ForgotPasswordPage() {
           description: "Check your email for password reset instructions.",
         })
       } else {
-        showToast({
-          title: "Error",
-          description: data.error || "Failed to send reset email. Please try again.",
-          variant: "destructive",
-        })
+        // If backend provided a dev reset URL, show it to unblock testing
+        if (data.debugResetUrl) {
+          setIsSubmitted(true)
+          showToast({
+            title: "Email not configured",
+            description: "Using development reset link below to proceed.",
+          })
+          // Open the debug reset URL in a new tab for convenience
+          try {
+            window.open(data.debugResetUrl, '_blank')
+          } catch {}
+        } else {
+          showToast({
+            title: "Error",
+            description: data.error || "Failed to send reset email. Please try again.",
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
       showToast({

@@ -1,15 +1,25 @@
 import nodemailer from 'nodemailer'
 import { emailTemplates } from './email-templates'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-})
+function createTransport() {
+  const host = process.env.SMTP_HOST
+  const port = parseInt(process.env.SMTP_PORT || '587')
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+
+  if (!host || !user || !pass) {
+    console.warn('SMTP configuration missing. Emails will not be sent. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM.')
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: user && pass ? { user, pass } : undefined,
+  })
+}
+
+const transporter = createTransport()
 
 export async function sendVerificationEmail(email: string, token: string, username: string) {
   const verificationUrl = `${process.env.NEXTAUTH_URL}/verify-email?token=${token}`
@@ -41,6 +51,14 @@ export async function sendPasswordResetEmail(email: string, token: string, usern
   }
 
   try {
+    // Verify transporter before sending to catch misconfiguration early
+    try {
+      await transporter.verify()
+    } catch (verifyError) {
+      console.error('SMTP verify failed:', verifyError)
+      return { success: false, error: 'Email service not configured' }
+    }
+
     await transporter.sendMail(mailOptions)
     return { success: true }
   } catch (error) {

@@ -76,7 +76,7 @@ const quickActions = [
     title: 'Track Rankings',
     description: 'Monitor keyword positions',
     icon: BarChart3,
-    href: '/dashboard/rankings',
+    href: '/dashboard/seo-tools/keyword-tracker',
     color: 'bg-orange-500 hover:bg-orange-600',
     limitType: 'seoTools' as const,
     requiresPlan: 'pro' as const
@@ -86,7 +86,7 @@ const quickActions = [
     title: 'Keyword Research',
     description: 'Discover new keywords',
     icon: Target,
-    href: '/dashboard/keywords',
+    href: '/dashboard/seo-tools/keyword-researcher',
     color: 'bg-indigo-500 hover:bg-indigo-600',
     limitType: 'seoTools' as const,
     requiresPlan: 'pro' as const
