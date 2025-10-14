@@ -29,6 +29,25 @@ interface AnalysisData {
     description: string
     impact: string
   }>
+  // Exact keywords found
+  primaryKeywords: Array<{
+    keyword: string
+    searchVolume: number
+    difficulty: number
+    cpc: number
+    competition: string
+  }>
+  relatedKeywords: Array<{
+    keyword: string
+    searchVolume: number
+    difficulty: number
+    relevance: number
+  }>
+  longTailKeywords: Array<{
+    keyword: string
+    searchVolume: number
+    difficulty: number
+  }>
   // Enhanced analysis data
   keywordMetrics: {
     totalKeywords: number
@@ -632,6 +651,102 @@ export default function KeywordResearcherPage() {
                     </div>
                     <div className="text-2xl font-bold">{analysisData.keywordMetrics.opportunityScore}/100</div>
                     <div className="text-xs text-muted-foreground">Growth potential</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Exact Keywords Found */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Search className="h-5 w-5 text-primary" />
+                  <span>Exact Keywords Found</span>
+                </CardTitle>
+                <CardDescription>
+                  Lists of keywords detected during analysis with key metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Primary Keywords */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Primary Keywords</h4>
+                      <Badge variant="outline">{analysisData.primaryKeywords?.length || 0}</Badge>
+                    </div>
+                    {analysisData.primaryKeywords && analysisData.primaryKeywords.length > 0 ? (
+                      <div className="space-y-2">
+                        {analysisData.primaryKeywords.map((k, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-950/20 rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">{k.keyword}</span>
+                                <Badge variant="outline" className="text-xs capitalize">{k.competition}</Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {k.searchVolume.toLocaleString()} searches • {k.difficulty}% difficulty • CPC ${k.cpc.toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No primary keywords found.</p>
+                    )}
+                  </div>
+
+                  {/* Related Keywords */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Related Keywords</h4>
+                      <Badge variant="outline">{analysisData.relatedKeywords?.length || 0}</Badge>
+                    </div>
+                    {analysisData.relatedKeywords && analysisData.relatedKeywords.length > 0 ? (
+                      <div className="space-y-2">
+                        {analysisData.relatedKeywords.map((k, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-950/20 rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">{k.keyword}</span>
+                                <Badge variant="outline" className="text-xs">Relevance {Math.round(k.relevance)}%</Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {k.searchVolume.toLocaleString()} searches • {k.difficulty}% difficulty
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No related keywords found.</p>
+                    )}
+                  </div>
+
+                  {/* Long-Tail Keywords */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Long-Tail Keywords</h4>
+                      <Badge variant="outline">{analysisData.longTailKeywords?.length || 0}</Badge>
+                    </div>
+                    {analysisData.longTailKeywords && analysisData.longTailKeywords.length > 0 ? (
+                      <div className="space-y-2">
+                        {analysisData.longTailKeywords.map((k, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-950/20 rounded-lg">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium">{k.keyword}</span>
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {k.searchVolume.toLocaleString()} searches • {k.difficulty}% difficulty
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No long-tail keywords found.</p>
+                    )}
                   </div>
                 </div>
               </CardContent>

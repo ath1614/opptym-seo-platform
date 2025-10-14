@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import { analyzeKeywordResearch } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
-import mongoose from 'mongoose'
+// mongoose import not required when using Project.findById with string id
 
 export async function POST(
   request: NextRequest,
@@ -33,28 +33,16 @@ export async function POST(
     
     await connectDB()
 
-    // Resolve website URL from simplified tool project or full project
-    const id = new mongoose.Types.ObjectId(projectId)
-    const { default: SeoToolProject } = await import('@/models/SeoToolProject')
+    // Resolve website URL from full project
     const { default: Project } = await import('@/models/Project')
-    let websiteURL: string | null = null
-
-    const toolProject = await SeoToolProject.findById(id)
-    if (toolProject) {
-      if (toolProject.userId.toString() !== session.user.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-      websiteURL = toolProject.websiteURL
-    } else {
-      const project = await Project.findById(id)
-      if (!project) {
-        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-      }
-      if (project.userId.toString() !== session.user.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-      websiteURL = project.websiteURL
+    const project = await Project.findById(projectId)
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
+    if (project.userId.toString() !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+    const websiteURL: string | null = project.websiteURL
 
     // websiteURL has been resolved above with ownership validated
 
