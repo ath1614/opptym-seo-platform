@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   FolderOpen, 
   Send, 
-  Link, 
   TrendingUp, 
   Target,
   ArrowUp,
@@ -58,13 +57,6 @@ export function StatsCards({ stats, trends }: StatsCardsProps) {
       description: 'This month'
     },
     {
-      title: 'Backlinks',
-      value: stats.backlinks,
-      icon: Link,
-      trend: trends?.backlinks || 0,
-      description: 'Total backlinks'
-    },
-    {
       title: 'Success Rate',
       value: `${stats.successRate}%`,
       icon: TrendingUp,
@@ -81,7 +73,7 @@ export function StatsCards({ stats, trends }: StatsCardsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statCards.map((stat, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

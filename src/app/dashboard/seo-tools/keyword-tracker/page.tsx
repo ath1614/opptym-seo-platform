@@ -16,6 +16,7 @@ interface Project {
   _id: string
   projectName: string
   websiteURL: string
+  title?: string
 }
 
 interface KeywordData {
@@ -101,7 +102,7 @@ export default function KeywordTrackerPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects')
+      const response = await fetch('/api/seo-tool-projects')
       if (response.ok) {
         const data = await response.json()
         setProjects(data.projects || [])
@@ -450,7 +451,7 @@ export default function KeywordTrackerPage() {
                   <SelectContent>
                     {projects.map((project) => (
                       <SelectItem key={project._id} value={project._id}>
-                        {project.projectName} - {project.websiteURL}
+                        {project.title ?? project.projectName} - {project.websiteURL}
                       </SelectItem>
                     ))}
                   </SelectContent>

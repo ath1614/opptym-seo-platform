@@ -34,11 +34,6 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    name: 'Projects',
-    href: '/dashboard/projects',
-    icon: FolderOpen,
-  },
-  {
     name: 'SEO Tools',
     href: '/dashboard/seo-tools',
     icon: Search,
@@ -47,11 +42,6 @@ const navigation = [
     name: 'SEO Tasks',
     href: '/dashboard/seo-tasks',
     icon: CheckSquare,
-  },
-  {
-    name: 'Backlinks',
-    href: '/dashboard/backlinks',
-    icon: LinkIcon,
   },
   {
     name: 'Reports',

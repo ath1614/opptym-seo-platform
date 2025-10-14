@@ -29,7 +29,7 @@ export async function GET() {
     await connectDB()
 
     // Get user growth data (last 12 months)
-    const userGrowth = await User.aggregate([
+    const userGrowthRaw = await User.aggregate([
       {
         $match: {
           createdAt: {
@@ -70,7 +70,7 @@ export async function GET() {
     ])
 
     // Get project growth data (last 12 months)
-    const projectGrowth = await Project.aggregate([
+    const projectGrowthRaw = await Project.aggregate([
       {
         $match: {
           createdAt: {
@@ -111,7 +111,7 @@ export async function GET() {
     ])
 
     // Get submission trends (last 12 months)
-    const submissionTrends = await Submission.aggregate([
+    const submissionTrendsRaw = await Submission.aggregate([
       {
         $match: {
           submittedAt: {
@@ -151,6 +151,23 @@ export async function GET() {
         }
       }
     ])
+
+    // Normalize to last 12 months with zero-fill for missing months
+    const monthsLast12 = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date()
+      d.setMonth(d.getMonth() - (11 - i))
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      return `${y}-${m}`
+    })
+
+    const userGrowthMap = new Map(userGrowthRaw.map((u: any) => [u.month, u.users]))
+    const projectGrowthMap = new Map(projectGrowthRaw.map((p: any) => [p.month, p.projects]))
+    const submissionTrendsMap = new Map(submissionTrendsRaw.map((s: any) => [s.month, s.submissions]))
+
+    const userGrowth = monthsLast12.map(month => ({ month, users: userGrowthMap.get(month) ?? 0 }))
+    const projectGrowth = monthsLast12.map(month => ({ month, projects: projectGrowthMap.get(month) ?? 0 }))
+    const submissionTrends = monthsLast12.map(month => ({ month, submissions: submissionTrendsMap.get(month) ?? 0 }))
 
     // Get plan distribution
     const planStats = await User.aggregate([

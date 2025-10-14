@@ -83,12 +83,6 @@ export function CurrentPlanCard({ plan, usage, limits: apiLimits }: CurrentPlanC
       type: 'seoTools' as const
     },
     {
-      label: 'Backlinks',
-      used: usage.backlinks,
-      limit: limits.backlinks,
-      type: 'backlinks' as const
-    },
-    {
       label: 'Reports',
       used: usage.reports,
       limit: limits.reports,

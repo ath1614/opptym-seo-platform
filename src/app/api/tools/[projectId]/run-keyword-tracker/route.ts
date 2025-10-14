@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import { analyzeKeywordTracking } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
+import mongoose from 'mongoose'
 
 export async function POST(
   request: NextRequest,
@@ -18,16 +19,30 @@ export async function POST(
     const { projectId } = await params
     await connectDB()
 
-    // Get project details
+    // Resolve website URL from simplified tool project or full project
+    const id = new mongoose.Types.ObjectId(projectId)
+    const { default: SeoToolProject } = await import('@/models/SeoToolProject')
     const { default: Project } = await import('@/models/Project')
-    const project = await Project.findById(projectId)
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-    }
 
-    // Check if user owns the project
-    if (project.userId.toString() !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    let websiteURL: string | null = null
+
+    // Try simplified SEO tool project first
+    const toolProject = await SeoToolProject.findById(id)
+    if (toolProject) {
+      if (toolProject.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = toolProject.websiteURL
+    } else {
+      // Fallback to full project
+      const project = await Project.findById(id)
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+      if (project.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = project.websiteURL
     }
 
     // Track usage
@@ -41,22 +56,22 @@ export async function POST(
     }
 
     // Run keyword tracking analysis
-    console.log(`🔍 Starting analysis for project: ${projectId}, URL: ${project.websiteURL}`)
+    console.log(`🔍 Starting analysis for project: ${projectId}, URL: ${websiteURL}`)
     
     // Validate URL
-    if (!project.websiteURL) {
+    if (!websiteURL) {
       throw new Error('Project website URL is not set')
     }
     
     try {
-      new URL(project.websiteURL)
+      new URL(websiteURL)
     } catch (urlError) {
-      throw new Error(`Invalid project URL: ${project.websiteURL}`)
+      throw new Error(`Invalid project URL: ${websiteURL}`)
     }
     
     try {
       // Run keyword tracking analysis
-      const analysisResult = await analyzeKeywordTracking(project.websiteURL)
+    const analysisResult = await analyzeKeywordTracking(websiteURL)
       
       // Only save usage to database AFTER successful analysis
       const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
@@ -65,7 +80,7 @@ export async function POST(
         projectId: projectId,
         toolId: 'keyword-tracker',
         toolName: 'Keyword Tracker',
-        url: project.websiteURL,
+      url: websiteURL,
         results: analysisResult,
         createdAt: new Date()
       })

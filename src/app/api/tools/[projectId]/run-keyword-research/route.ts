@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
-import { analyzeKeywordTracking, analyzeKeywordResearch } from '@/lib/seo-analysis'
+import { analyzeKeywordResearch } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
+import mongoose from 'mongoose'
 
 export async function POST(
   request: NextRequest,
@@ -32,20 +33,33 @@ export async function POST(
     
     await connectDB()
 
-    // Get project details
+    // Resolve website URL from simplified tool project or full project
+    const id = new mongoose.Types.ObjectId(projectId)
+    const { default: SeoToolProject } = await import('@/models/SeoToolProject')
     const { default: Project } = await import('@/models/Project')
-    const project = await Project.findById(projectId)
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    let websiteURL: string | null = null
+
+    const toolProject = await SeoToolProject.findById(id)
+    if (toolProject) {
+      if (toolProject.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = toolProject.websiteURL
+    } else {
+      const project = await Project.findById(id)
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+      if (project.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = project.websiteURL
     }
 
-    // Check if user owns the project
-    if (project.userId.toString() !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
+    // websiteURL has been resolved above with ownership validated
 
     // Track usage
-    const usageResult = await trackUsage(session.user.id, 'seoTools', 1)
+    const usageResult = await trackUsage(session.user.id, 'seoTools', 1, { projectId })
     if (!usageResult.success) {
       return NextResponse.json({ 
         error: usageResult.message,
@@ -56,10 +70,10 @@ export async function POST(
 
     // Perform keyword research analysis
     try {
-       console.log(`🔍 Starting keyword research for project: ${projectId}, URL: ${project.websiteURL}`)
+       console.log(`🔍 Starting keyword research for project: ${projectId}, URL: ${websiteURL}`)
        
        // Validate website URL
-       if (!project.websiteURL) {
+       if (!websiteURL) {
          console.log('⚠️ No website URL found for project')
          return NextResponse.json(
            { 
@@ -71,8 +85,8 @@ export async function POST(
        }
 
        // Run keyword research analysis
-       console.log(`🔍 Starting keyword research analysis for ${project.websiteURL}`)
-       const analysisResult = await analyzeKeywordResearch(project.websiteURL)
+       console.log(`🔍 Starting keyword research analysis for ${websiteURL}`)
+       const analysisResult = await analyzeKeywordResearch(websiteURL)
        
        // Add seed keyword to results if provided
        if (seedKeyword) {
@@ -80,7 +94,7 @@ export async function POST(
          console.log(`📝 Added seed keyword: ${seedKeyword}`)
        }
        
-       console.log(`✅ Keyword research analysis completed for ${project.websiteURL}`)
+       console.log(`✅ Keyword research analysis completed for ${websiteURL}`)
        
        // Always save results to database (even if it's fallback data)
        const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
@@ -89,7 +103,7 @@ export async function POST(
          projectId: projectId,
          toolId: 'keyword-research',
          toolName: 'Keyword Research',
-         url: project.websiteURL,
+         url: websiteURL,
          results: analysisResult,
          createdAt: new Date()
        })
@@ -116,7 +130,7 @@ export async function POST(
        // Even if analysis fails completely, try to provide fallback data
        try {
          const { getFallbackKeywordAnalysis } = await import('@/lib/seo-analysis')
-         const fallbackResult = getFallbackKeywordAnalysis(project.websiteURL)
+         const fallbackResult = getFallbackKeywordAnalysis(websiteURL || '')
          
          if (seedKeyword) {
            fallbackResult.seedKeyword = seedKeyword
@@ -131,7 +145,7 @@ export async function POST(
            projectId: projectId,
            toolId: 'keyword-research',
            toolName: 'Keyword Research',
-           url: project.websiteURL,
+           url: websiteURL,
            results: fallbackResult,
            createdAt: new Date()
          })

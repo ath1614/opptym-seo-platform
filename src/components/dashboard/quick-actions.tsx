@@ -9,7 +9,6 @@ import {
   Search, 
   FileText, 
   BarChart3, 
-  Link, 
   Target,
   Upload,
   Download,
@@ -80,16 +79,6 @@ const quickActions = [
     href: '/dashboard/rankings',
     color: 'bg-orange-500 hover:bg-orange-600',
     limitType: 'seoTools' as const,
-    requiresPlan: 'pro' as const
-  },
-  {
-    id: 'build-backlinks',
-    title: 'Build Backlinks',
-    description: 'Find link opportunities',
-    icon: Link,
-    href: '/dashboard/backlinks',
-    color: 'bg-pink-500 hover:bg-pink-600',
-    limitType: 'backlinks' as const,
     requiresPlan: 'pro' as const
   },
   {

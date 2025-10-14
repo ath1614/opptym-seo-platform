@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import { analyzeSitemapAndRobots } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
+import mongoose from 'mongoose'
 
 export async function POST(
   request: NextRequest,
@@ -19,15 +20,32 @@ export async function POST(
     await connectDB()
 
     // Get project details
-    const { default: Project } = await import('@/models/Project')
-    const project = await Project.findById(projectId)
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    // Try simplified SEO tool project first
+    const { default: SeoToolProject } = await import('@/models/SeoToolProject')
+    const id = new mongoose.Types.ObjectId(projectId)
+    const toolProject = await SeoToolProject.findById(id)
+
+    let websiteURL: string | null = null
+    if (toolProject) {
+      if (toolProject.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = toolProject.websiteURL
+    } else {
+      const { default: Project } = await import('@/models/Project')
+      const project = await Project.findById(id)
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+      if (project.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = project.websiteURL
     }
 
-    // Check if user owns the project
-    if (project.userId.toString() !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    // Ensure a valid website URL was resolved
+    if (!websiteURL) {
+      return NextResponse.json({ error: 'Website URL not found for project' }, { status: 400 })
     }
 
     // Track usage
@@ -42,7 +60,7 @@ export async function POST(
 
     try {
       // Run sitemap and robots analysis
-      const analysisResult = await analyzeSitemapAndRobots(project.websiteURL)
+      const analysisResult = await analyzeSitemapAndRobots(websiteURL)
       
       // Only save usage to database AFTER successful analysis
       const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
@@ -51,7 +69,7 @@ export async function POST(
         projectId: projectId,
         toolId: 'sitemap-robots-checker',
         toolName: 'Sitemap & Robots Checker',
-        url: project.websiteURL,
+        url: websiteURL,
         results: analysisResult,
         createdAt: new Date()
       })

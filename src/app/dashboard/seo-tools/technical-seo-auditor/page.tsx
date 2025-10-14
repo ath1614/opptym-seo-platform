@@ -37,6 +37,7 @@ interface Project {
   _id: string
   projectName: string
   websiteURL: string
+  title?: string
 }
 
 interface TechnicalMetrics {
@@ -147,7 +148,7 @@ export default function TechnicalSeoAuditorPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects')
+      const response = await fetch('/api/seo-tool-projects')
       if (response.ok) {
         const data = await response.json()
         setProjects(data.projects || [])
@@ -595,7 +596,7 @@ export default function TechnicalSeoAuditorPage() {
                   <SelectContent>
                     {projects.map((project) => (
                       <SelectItem key={project._id} value={project._id}>
-                        {project.projectName} - {project.websiteURL}
+                        {project.title ?? project.projectName} - {project.websiteURL}
                       </SelectItem>
                     ))}
                   </SelectContent>

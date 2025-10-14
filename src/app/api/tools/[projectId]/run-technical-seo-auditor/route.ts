@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import { analyzeTechnicalSEO } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
+import mongoose from 'mongoose'
 
 export async function POST(
   request: NextRequest,
@@ -18,17 +19,35 @@ export async function POST(
     const { projectId } = await params
     await connectDB()
 
-    // Get project details
+    // Resolve website URL from simplified tool project or full project
+    const id = new mongoose.Types.ObjectId(projectId)
+    const { default: SeoToolProject } = await import('@/models/SeoToolProject')
     const { default: Project } = await import('@/models/Project')
-    const project = await Project.findById(projectId)
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    let websiteURL: string | null = null
+
+    const toolProject = await SeoToolProject.findById(id)
+    if (toolProject) {
+      if (toolProject.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = toolProject.websiteURL
+    } else {
+      const project = await Project.findById(id)
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+      if (project.userId.toString() !== session.user.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      }
+      websiteURL = project.websiteURL
     }
 
-    // Check if user owns the project
-    if (project.userId.toString() !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    // Ensure a valid website URL was resolved
+    if (!websiteURL) {
+      return NextResponse.json({ error: 'Website URL not found for project' }, { status: 400 })
     }
+
+    // websiteURL has been resolved above with ownership validated
 
     // Track usage
     const usageResult = await trackUsage(session.user.id, 'seoTools', 1, { projectId })
@@ -43,7 +62,7 @@ export async function POST(
     // Run technical SEO analysis
     try {
       // Run technical SEO audit
-      const analysisResult = await analyzeTechnicalSEO(project.websiteURL)
+      const analysisResult = await analyzeTechnicalSEO(websiteURL)
       
       // Only save usage to database AFTER successful analysis
       const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
@@ -52,7 +71,7 @@ export async function POST(
         projectId: projectId,
         toolId: 'technical-seo-auditor',
         toolName: 'Technical SEO Auditor',
-        url: project.websiteURL,
+        url: websiteURL,
         results: analysisResult,
         createdAt: new Date()
       })

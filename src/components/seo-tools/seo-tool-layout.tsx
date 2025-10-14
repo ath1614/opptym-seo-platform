@@ -42,7 +42,7 @@ export function SEOToolLayout({
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects')
+      const response = await fetch('/api/seo-tool-projects')
       const data = await response.json()
       
       if (response.ok) {
@@ -52,6 +52,39 @@ export function SEOToolLayout({
       // Handle error silently
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const getToolRoute = (id: string) => {
+    switch (id) {
+      case 'technical-seo-auditor':
+        return 'run-technical-seo-auditor'
+      case 'keyword-tracker':
+        return 'run-keyword-tracker'
+      case 'keyword-researcher':
+        return 'run-keyword-research'
+      case 'page-speed-analyzer':
+        return 'run-page-speed'
+      case 'broken-link-scanner':
+        return 'run-broken-links'
+      case 'mobile-checker':
+        return 'run-mobile-checker'
+      case 'backlink-scanner':
+        return 'run-backlinks'
+      case 'canonical-checker':
+        return 'run-canonical'
+      case 'sitemap-robots-checker':
+        return 'run-sitemap-robots'
+      case 'keyword-density-checker':
+        return 'run-keyword-density'
+      case 'meta-tag-analyzer':
+        return 'run-meta'
+      case 'competitor-analyzer':
+        return 'run-competitors'
+      case 'alt-text-checker':
+        return 'run-alt-text'
+      default:
+        return ''
     }
   }
 
@@ -74,18 +107,23 @@ export function SEOToolLayout({
     setIsAnalyzing(true)
     
     try {
-      // Call the actual SEO tools API
-      const response = await fetch('/api/seo-tools', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          toolId: toolId,
-          url: targetUrl,
-          projectId: selectedProject || null
-        }),
-      })
+      // Prefer project-specific API when a project is selected
+      const projectSpecificRoute = selectedProject ? getToolRoute(toolId) : ''
+      const response = selectedProject && projectSpecificRoute
+        ? await fetch(`/api/tools/${selectedProject}/${projectSpecificRoute}`, {
+            method: 'POST',
+          })
+        : await fetch('/api/seo-tools', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              toolId: toolId,
+              url: targetUrl,
+              projectId: selectedProject || null
+            }),
+          })
 
       if (response.ok) {
         const data = await response.json()
@@ -230,7 +268,7 @@ export function SEOToolLayout({
                     projects.map((project) => (
                       <SelectItem key={project._id} value={project._id}>
                         <div className="flex flex-col">
-                          <span>{project.projectName}</span>
+                          <span>{project.title ?? project.projectName}</span>
                           <span className="text-xs text-muted-foreground">{project.websiteURL}</span>
                         </div>
                       </SelectItem>
