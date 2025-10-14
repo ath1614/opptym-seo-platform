@@ -34,6 +34,11 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
+    name: 'Projects',
+    href: '/dashboard/projects',
+    icon: FolderOpen,
+  },
+  {
     name: 'SEO Tools',
     href: '/dashboard/seo-tools',
     icon: Search,
