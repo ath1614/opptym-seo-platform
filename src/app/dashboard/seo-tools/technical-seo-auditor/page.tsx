@@ -148,10 +148,21 @@ export default function TechnicalSeoAuditorPage() {
 
   const fetchProjects = async () => {
     try {
+      // Primary: SEO tools-optimized projects endpoint
       const response = await fetch('/api/seo-tool-projects')
       if (response.ok) {
         const data = await response.json()
-        setProjects(data.projects || [])
+        if (Array.isArray(data.projects) && data.projects.length > 0) {
+          setProjects(data.projects)
+          return
+        }
+      }
+
+      // Fallback: generic projects endpoint
+      const fallbackRes = await fetch('/api/projects')
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json()
+        setProjects(fallbackData.projects || [])
       }
     } catch {
       // silently handle project fetch error

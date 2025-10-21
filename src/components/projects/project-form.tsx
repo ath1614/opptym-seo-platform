@@ -23,6 +23,7 @@ interface CustomField {
   key: string
   value: string
   type: 'text' | 'url' | 'number' | 'email' | 'phone'
+  section?: 'basic' | 'address' | 'seo' | 'article' | 'classified' | 'social'
 }
 
 export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
@@ -703,6 +704,55 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     ))
   }
 
+  // Section-aware custom fields helpers
+  const addSectionCustomField = (section: CustomField['section']) => {
+    setCustomFields(prev => [
+      ...prev,
+      { key: '', value: '', type: 'text', section: section || 'social' }
+    ])
+  }
+
+  const updateSectionCustomField = (
+    section: CustomField['section'],
+    sectionIndex: number,
+    field: 'key' | 'value' | 'type',
+    value: string
+  ) => {
+    setCustomFields(prev => {
+      let count = -1
+      const targetIdx = prev.findIndex(cf => {
+        const sec = cf.section || 'social'
+        if (sec === (section || 'social')) {
+          count += 1
+          return count === sectionIndex
+        }
+        return false
+      })
+      if (targetIdx === -1) return prev
+      return prev.map((item, i) => i === targetIdx ? { ...item, [field]: value } : item)
+    })
+  }
+
+  const removeSectionCustomField = (section: CustomField['section'], sectionIndex: number) => {
+    setCustomFields(prev => {
+      let count = -1
+      let targetIdx = -1
+      prev.some((cf, i) => {
+        const sec = cf.section || 'social'
+        if (sec === (section || 'social')) {
+          count += 1
+          if (count === sectionIndex) {
+            targetIdx = i
+            return true
+          }
+        }
+        return false
+      })
+      if (targetIdx === -1) return prev
+      return prev.filter((_, i) => i !== targetIdx)
+    })
+  }
+
   const refreshData = async () => {
     if (!projectId) return
     
@@ -933,7 +983,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     try {
       const payload = {
         ...formData,
-        customFields: customFields.filter(field => field.key && field.value)
+        customFields: customFields
+          .filter(field => field.key && field.value)
+          .map(field => ({
+            key: field.key,
+            value: field.value,
+            type: field.type,
+            section: field.section || 'social'
+          }))
       }
 
       const url = projectId ? `/api/projects/${projectId}` : '/api/projects'
@@ -1397,6 +1454,73 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Custom Fields */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Fields</CardTitle>
+                <CardDescription>
+                  Add custom fields for additional basic information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {customFields.filter(f => f.section === 'basic').map((field, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-3">
+                      <Input
+                        placeholder="Field name"
+                        value={field.key}
+                        onChange={(e) => updateSectionCustomField('basic', index, 'key', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={field.type || 'text'} 
+                        onValueChange={(value) => updateSectionCustomField('basic', index, 'type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-6">
+                      <Input
+                        placeholder={`Enter ${field.type || 'text'} value`}
+                        value={field.value}
+                        type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
+                        onChange={(e) => updateSectionCustomField('basic', index, 'value', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeSectionCustomField('basic', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addSectionCustomField('basic')}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Custom Field
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Address Tab */}
@@ -1555,6 +1679,73 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Custom Fields */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Fields</CardTitle>
+                <CardDescription>
+                  Add custom fields for address information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {customFields.filter(f => f.section === 'address').map((field, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-3">
+                      <Input
+                        placeholder="Field name"
+                        value={field.key}
+                        onChange={(e) => updateSectionCustomField('address', index, 'key', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={field.type || 'text'} 
+                        onValueChange={(value) => updateSectionCustomField('address', index, 'type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-6">
+                      <Input
+                        placeholder={`Enter ${field.type || 'text'} value`}
+                        value={field.value}
+                        type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
+                        onChange={(e) => updateSectionCustomField('address', index, 'value', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeSectionCustomField('address', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addSectionCustomField('address')}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Custom Field
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1809,6 +2000,73 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Custom Fields */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Fields</CardTitle>
+                <CardDescription>
+                  Add custom fields for SEO metadata
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {customFields.filter(f => f.section === 'seo').map((field, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-3">
+                      <Input
+                        placeholder="Field name"
+                        value={field.key}
+                        onChange={(e) => updateSectionCustomField('seo', index, 'key', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={field.type || 'text'} 
+                        onValueChange={(value) => updateSectionCustomField('seo', index, 'type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-6">
+                      <Input
+                        placeholder={`Enter ${field.type || 'text'} value`}
+                        value={field.value}
+                        type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
+                        onChange={(e) => updateSectionCustomField('seo', index, 'value', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeSectionCustomField('seo', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addSectionCustomField('seo')}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Custom Field
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Article Tab */}
@@ -1906,6 +2164,73 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Custom Fields */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Fields</CardTitle>
+                <CardDescription>
+                  Add custom fields for article submissions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {customFields.filter(f => f.section === 'article').map((field, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-3">
+                      <Input
+                        placeholder="Field name"
+                        value={field.key}
+                        onChange={(e) => updateSectionCustomField('article', index, 'key', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={field.type || 'text'} 
+                        onValueChange={(value) => updateSectionCustomField('article', index, 'type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-6">
+                      <Input
+                        placeholder={`Enter ${field.type || 'text'} value`}
+                        value={field.value}
+                        type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
+                        onChange={(e) => updateSectionCustomField('article', index, 'value', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeSectionCustomField('article', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addSectionCustomField('article')}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Custom Field
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Classified Tab */}
@@ -1963,6 +2288,73 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     placeholder="https://example.com/product.jpg"
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Custom Fields */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Fields</CardTitle>
+                <CardDescription>
+                  Add custom fields for classified listings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {customFields.filter(f => f.section === 'classified').map((field, index) => (
+                  <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                    <div className="col-span-3">
+                      <Input
+                        placeholder="Field name"
+                        value={field.key}
+                        onChange={(e) => updateSectionCustomField('classified', index, 'key', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Select 
+                        value={field.type || 'text'} 
+                        onValueChange={(value) => updateSectionCustomField('classified', index, 'type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Text</SelectItem>
+                          <SelectItem value="url">URL</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="phone">Phone</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-6">
+                      <Input
+                        placeholder={`Enter ${field.type || 'text'} value`}
+                        value={field.value}
+                        type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
+                        onChange={(e) => updateSectionCustomField('classified', index, 'value', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeSectionCustomField('classified', index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => addSectionCustomField('classified')}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Custom Field
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -2045,19 +2437,19 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {customFields.map((field, index) => (
+                {customFields.filter(f => (f.section || 'social') === 'social').map((field, index) => (
                   <div key={index} className="grid grid-cols-12 gap-2 items-center">
                     <div className="col-span-3">
                       <Input
                         placeholder="Field name"
                         value={field.key}
-                        onChange={(e) => updateCustomField(index, 'key', e.target.value)}
+                        onChange={(e) => updateSectionCustomField('social', index, 'key', e.target.value)}
                       />
                     </div>
                     <div className="col-span-2">
                       <Select 
                         value={field.type || 'text'} 
-                        onValueChange={(value) => updateCustomField(index, 'type', value)}
+                        onValueChange={(value) => updateSectionCustomField('social', index, 'type', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Type" />
@@ -2076,7 +2468,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                         placeholder={`Enter ${field.type || 'text'} value`}
                         value={field.value}
                         type={field.type === 'number' ? 'number' : field.type === 'email' ? 'email' : field.type === 'url' ? 'url' : field.type === 'phone' ? 'tel' : 'text'}
-                        onChange={(e) => updateCustomField(index, 'value', e.target.value)}
+                        onChange={(e) => updateSectionCustomField('social', index, 'value', e.target.value)}
                       />
                     </div>
                     <div className="col-span-1">
@@ -2084,7 +2476,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                         type="button"
                         variant="outline"
                         size="icon"
-                        onClick={() => removeCustomField(index)}
+                        onClick={() => removeSectionCustomField('social', index)}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -2094,7 +2486,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={addCustomField}
+                  onClick={() => addSectionCustomField('social')}
                   className="w-full"
                 >
                   <Plus className="h-4 w-4 mr-2" />

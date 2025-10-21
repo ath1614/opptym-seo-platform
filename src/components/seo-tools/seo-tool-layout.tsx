@@ -18,6 +18,7 @@ interface SEOToolLayoutProps {
   toolDescription: string
   children: React.ReactNode
   mockData: any
+  mode?: 'analysis' | 'generator'
 }
 
 export function SEOToolLayout({ 
@@ -25,7 +26,8 @@ export function SEOToolLayout({
   toolName, 
   toolDescription, 
   children, 
-  mockData 
+  mockData,
+  mode = 'analysis'
 }: SEOToolLayoutProps) {
   const [url, setUrl] = useState('')
   const [selectedProject, setSelectedProject] = useState('')
@@ -42,11 +44,19 @@ export function SEOToolLayout({
 
   const fetchProjects = async () => {
     try {
+      // Primary: SEO tools-optimized projects endpoint
       const response = await fetch('/api/seo-tool-projects')
       const data = await response.json()
       
-      if (response.ok) {
+      if (response.ok && Array.isArray(data.projects) && data.projects.length > 0) {
         setProjects(data.projects)
+      } else {
+        // Fallback: generic projects endpoint
+        const fallbackRes = await fetch('/api/projects')
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json()
+          setProjects(fallbackData.projects || [])
+        }
       }
     } catch {
       // Handle error silently
@@ -210,7 +220,7 @@ export function SEOToolLayout({
             <p className="text-muted-foreground">{toolDescription}</p>
           </div>
         </div>
-        {results && (
+        {mode === 'analysis' && results && (
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -233,6 +243,7 @@ export function SEOToolLayout({
       </div>
 
       {/* Input Form */}
+{mode === 'analysis' && (
       <Card>
         <CardHeader>
           <CardTitle>Analysis Configuration</CardTitle>
@@ -325,9 +336,10 @@ export function SEOToolLayout({
           </div>
         </CardContent>
       </Card>
+)}
 
       {/* Loading State */}
-      {isAnalyzing && (
+      {mode === 'analysis' && isAnalyzing && (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
@@ -359,14 +371,20 @@ export function SEOToolLayout({
       )}
 
       {/* Results */}
-      {results && !isAnalyzing && (
+      {mode === 'analysis' ? (
+        results && !isAnalyzing && (
+          <div className="space-y-6">
+            {children}
+          </div>
+        )
+      ) : (
         <div className="space-y-6">
           {children}
         </div>
       )}
 
       {/* No Results State */}
-      {!results && !isAnalyzing && (
+      {mode === 'analysis' && !results && !isAnalyzing && (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">

@@ -24,7 +24,8 @@ import {
   User,
   Settings,
   HelpCircle,
-  LogOut
+  LogOut,
+  Globe
 } from 'lucide-react'
 
 const navigation = [
@@ -42,6 +43,11 @@ const navigation = [
     name: 'SEO Tools',
     href: '/dashboard/seo-tools',
     icon: Search,
+  },
+  {
+    name: 'Analyze Website',
+    href: '/dashboard/analyze-website',
+    icon: Globe,
   },
   {
     name: 'SEO Tasks',

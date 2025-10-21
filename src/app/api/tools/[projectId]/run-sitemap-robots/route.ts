@@ -5,10 +5,11 @@ import connectDB from '@/lib/mongodb'
 import { analyzeSitemapAndRobots } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 import mongoose from 'mongoose'
+import Project from '@/models/Project'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: { projectId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,34 +17,20 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { projectId } = await params
+    const { projectId } = params
     await connectDB()
 
-    // Get project details
-    // Try simplified SEO tool project first
-    const { default: SeoToolProject } = await import('@/models/SeoToolProject')
+    // Resolve project and validate ownership
     const id = new mongoose.Types.ObjectId(projectId)
-    const toolProject = await SeoToolProject.findById(id)
-
-    let websiteURL: string | null = null
-    if (toolProject) {
-      if (toolProject.userId.toString() !== session.user.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-      websiteURL = toolProject.websiteURL
-    } else {
-      const { default: Project } = await import('@/models/Project')
-      const project = await Project.findById(id)
-      if (!project) {
-        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
-      }
-      if (project.userId.toString() !== session.user.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-      }
-      websiteURL = project.websiteURL
+    const project = await Project.findById(id)
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+    if (project.userId.toString() !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // Ensure a valid website URL was resolved
+    const websiteURL = project.websiteURL
     if (!websiteURL) {
       return NextResponse.json({ error: 'Website URL not found for project' }, { status: 400 })
     }

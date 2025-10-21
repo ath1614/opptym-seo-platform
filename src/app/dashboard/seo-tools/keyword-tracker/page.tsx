@@ -102,10 +102,21 @@ export default function KeywordTrackerPage() {
 
   const fetchProjects = async () => {
     try {
+      // Primary: SEO tools-optimized projects endpoint
       const response = await fetch('/api/seo-tool-projects')
       if (response.ok) {
         const data = await response.json()
-        setProjects(data.projects || [])
+        if (Array.isArray(data.projects) && data.projects.length > 0) {
+          setProjects(data.projects)
+          return
+        }
+      }
+
+      // Fallback: generic projects endpoint
+      const fallbackRes = await fetch('/api/projects')
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json()
+        setProjects(fallbackData.projects || [])
       }
     } catch (error) {
       // silently handle project fetch error
@@ -349,9 +360,9 @@ export default function KeywordTrackerPage() {
 
   const getIssueColor = (type: Issue['type']) => {
     switch (type) {
-      case 'critical': return 'border-red-200 bg-red-50'
-      case 'warning': return 'border-yellow-200 bg-yellow-50'
-      case 'info': return 'border-blue-200 bg-blue-50'
+      case 'critical': return 'border-red-200 bg-red-50 dark:border-red-800/30 dark:bg-red-900/20'
+      case 'warning': return 'border-yellow-200 bg-yellow-50 dark:border-yellow-800/30 dark:bg-yellow-900/20'
+      case 'info': return 'border-blue-200 bg-blue-50 dark:border-blue-800/30 dark:bg-blue-900/20'
     }
   }
 

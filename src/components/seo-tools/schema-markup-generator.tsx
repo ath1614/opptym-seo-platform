@@ -1107,7 +1107,7 @@ export function SchemaMarkupGenerator() {
   }
 
   return (
-    <SEOToolLayout 
+    <SEOToolLayout mode="generator"
       toolId="schema-validator"
       toolName="Schema Markup Generator"
       toolDescription="Create structured data markup for your website to enhance search engine visibility"
@@ -1152,59 +1152,7 @@ export function SchemaMarkupGenerator() {
                     </Select>
                   </div>
 
-                  {/* Project Selection and Auto-Fill */}
-                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm">
-                        <Sparkles className="h-4 w-4 text-blue-600" />
-                        Auto-Fill from Project
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        Select a project to automatically populate schema fields with your project data
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex gap-3">
-                        <div className="flex-1">
-                          <Select 
-                            value={selectedProject} 
-                            onValueChange={setSelectedProject}
-                            disabled={isLoadingProjects}
-                          >
-                            <SelectTrigger className="bg-white">
-                              <SelectValue placeholder={isLoadingProjects ? "Loading projects..." : "Select a project"} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {projects.map((project) => (
-                                <SelectItem key={project._id} value={project._id}>
-                                  {project.projectName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button 
-                          onClick={autoPopulateFromProject}
-                          disabled={!selectedProject || isAutoPopulating}
-                          variant="outline"
-                          size="sm"
-                          className="bg-white hover:bg-blue-50 border-blue-200"
-                        >
-                          {isAutoPopulating ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Filling...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="h-4 w-4 mr-2" />
-                              Auto-Fill
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* Project Selection and Auto-Fill removed */}
                   
                   {renderFormFields()}
                   

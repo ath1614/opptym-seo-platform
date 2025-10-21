@@ -3,6 +3,8 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface ICustomField {
   key: string
   value: string
+  // Add optional section to group custom fields by form section
+  section?: 'basic' | 'address' | 'seo' | 'article' | 'classified' | 'social'
 }
 
 export interface IProject extends Document {
@@ -102,6 +104,12 @@ const CustomFieldSchema = new Schema({
     type: String,
     required: true,
     trim: true
+  },
+  // Optional section for grouping in specific form tabs
+  section: {
+    type: String,
+    enum: ['basic', 'address', 'seo', 'article', 'classified', 'social'],
+    required: false
   }
 }, { _id: false })
 

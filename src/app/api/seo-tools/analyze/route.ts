@@ -151,12 +151,14 @@ export async function POST(request: NextRequest) {
     // Check if user can use SEO tools
     const canUse = await trackUsage(session.user.id, 'seoTools', 1)
     
-    if (!canUse) {
+    if (!canUse?.success) {
       return NextResponse.json(
         { 
           error: 'SEO tools limit exceeded',
           limitType: 'seoTools',
-          message: 'You have reached your SEO tools limit. Please upgrade your plan to continue.'
+          currentUsage: canUse?.currentUsage,
+          limit: canUse?.limit,
+          message: canUse?.message || 'You have reached your SEO tools limit. Please upgrade your plan to continue.'
         },
         { status: 403 }
       )
@@ -167,14 +169,33 @@ export async function POST(request: NextRequest) {
 
     // Save the analysis result
     await connectDB()
-    
+
+    const toolNameMap: Record<string, string> = {
+      'website-analyzer': 'Website Analyzer',
+      'meta-tag-checker': 'Meta Tag Checker',
+      'alt-text-checker': 'Alt Text Checker',
+      'canonical-checker': 'Canonical Checker',
+      'broken-link-scanner': 'Broken Link Scanner',
+      'technical-seo-auditor': 'Technical SEO Auditor',
+      'sitemap-robots-checker': 'Sitemap & Robots Checker'
+    }
+    const ar = analysisResult as { overallScore?: number; brokenLinks?: { broken?: number }; recommendations?: Array<{ title?: string }> }
+    const recommendations = Array.isArray(ar.recommendations)
+      ? ar.recommendations.map((r) => r?.title ? r.title : '')
+      : []
+    const issuesCount = ar?.brokenLinks?.broken
+
     const seoToolUsage = new SeoToolUsage({
       userId: new mongoose.Types.ObjectId(session.user.id),
-      toolType: toolType,
-      url: url,
-      result: analysisResult,
-      score: analysisResult.overallScore,
-      createdAt: new Date()
+      toolId: toolType,
+      toolName: toolNameMap[toolType] || toolType,
+      url,
+      results: {
+        score: ar?.overallScore ?? 0,
+        issues: typeof issuesCount === 'number' ? issuesCount : undefined,
+        recommendations,
+        data: analysisResult
+      }
     })
 
     await seoToolUsage.save()
@@ -215,8 +236,7 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
         'Accept-Encoding': 'gzip, deflate',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1'
-      },
-      timeout: 10000 // 10 second timeout
+      }
     })
 
     if (!response.ok) {
@@ -233,58 +253,25 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
       return {
         url,
         timestamp: new Date().toISOString(),
-        canonicalUrl: analysis.metaTags.canonical.content,
-        hasCanonical: !!analysis.metaTags.canonical.content,
-        isSelfReferencing: analysis.metaTags.canonical.content === url,
-        duplicateContent: [], // Would need more complex analysis
-        canonicalIssues: analysis.metaTags.canonical.status === 'warning' ? [
-          {
-            type: 'missing_canonical',
-            message: 'Canonical URL is missing',
-            severity: 'medium' as const
-          }
-        ] : [],
-        recommendations: analysis.metaTags.canonical.status === 'warning' ? [
-          'Add a canonical URL to prevent duplicate content issues',
-          'Ensure canonical URL points to the preferred version of the page',
-          'Use absolute URLs for canonical tags'
-        ] : [
-          'Canonical URL is properly configured',
-          'Consider adding hreflang tags for international SEO'
-        ],
-        score: analysis.metaTags.canonical.status === 'good' ? 90 : 40
+        overallScore: analysis.overallScore,
+        brokenLinks: analysis.brokenLinks,
+        metaTags: analysis.metaTags,
+        altText: analysis.altText,
+        pageSpeed: analysis.pageSpeed,
+        recommendations: analysis.recommendations
       }
     }
     
     if (toolType === 'alt-text-checker') {
-      const imagesWithAlt = analysis.altText.images.filter(img => img.alt && img.alt.trim() !== '').length
-      const imagesWithoutAlt = analysis.altText.images.length - imagesWithAlt
-      const coverage = analysis.altText.images.length > 0 ? Math.round((imagesWithAlt / analysis.altText.images.length) * 100) : 100
-      
       return {
         url,
         timestamp: new Date().toISOString(),
-        totalImages: analysis.altText.images.length,
-        imagesWithAlt,
-        imagesWithoutAlt,
-        altTextCoverage: coverage,
-        images: analysis.altText.images.map(img => ({
-          src: img.src,
-          alt: img.alt,
-          status: img.alt && img.alt.trim() !== '' ? 'good' as const : 'error' as const,
-          recommendation: img.alt && img.alt.trim() !== '' ? 'Alt text is present' : 'Add descriptive alt text for accessibility'
-        })),
-        recommendations: imagesWithoutAlt > 0 ? [
-          'Add alt text to all images for better accessibility',
-          'Use descriptive alt text that explains the image content',
-          'Avoid using generic alt text like "image" or "photo"',
-          'For decorative images, use empty alt text (alt="")'
-        ] : [
-          'All images have alt text - great for accessibility!',
-          'Consider reviewing alt text for clarity and descriptiveness',
-          'Ensure alt text is relevant to the image content'
-        ],
-        score: coverage >= 90 ? 95 : coverage >= 70 ? 75 : 40
+        overallScore: analysis.overallScore,
+        brokenLinks: analysis.brokenLinks,
+        metaTags: analysis.metaTags,
+        altText: analysis.altText,
+        pageSpeed: analysis.pageSpeed,
+        recommendations: analysis.recommendations
       }
     }
     
@@ -378,17 +365,17 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
         accessibility: {
           score: 0,
           status: 'error',
-          issues: []
+          issues: [] as Array<{ type: 'error' | 'warning' | 'info'; message: string; severity: 'high' | 'medium' | 'low' }>
         },
         bestPractices: {
           score: 0,
           status: 'error',
-          issues: []
+          issues: [] as Array<{ type: 'error' | 'warning' | 'info'; message: string; severity: 'high' | 'medium' | 'low' }>
         },
         seo: {
           score: 0,
           status: 'error',
-          issues: []
+          issues: [] as Array<{ type: 'error' | 'warning' | 'info'; message: string; severity: 'high' | 'medium' | 'low' }>
         }
       },
       recommendations: [
@@ -406,6 +393,12 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
 
 async function analyzeHTML(html: string, baseUrl: string) {
   // Simple HTML parsing (in production, you'd use a proper HTML parser)
+  type Status = 'good' | 'warning' | 'error'
+  type LinkType = 'internal' | 'external'
+  type Severity = 'high' | 'medium' | 'low'
+  type LinkItem = { url: string; status: number; type: LinkType; foundOn: string; impact: Severity }
+  type ImageItem = { src: string; alt: string; status: Status; recommendation: string }
+  type RecommendationItem = { category: string; priority: Severity; title: string; description: string; impact: string }
   const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i)
   const descriptionMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i)
   const keywordsMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']*)["'][^>]*>/i)
@@ -426,83 +419,87 @@ async function analyzeHTML(html: string, baseUrl: string) {
     return hrefMatch ? hrefMatch[1] : ''
   }).filter(href => href)
   
-  // Extract all images
-  const imgMatches = html.match(/<img[^>]*>/gi) || []
-  const images = imgMatches.map(match => {
+  // Extract all image sources and alt text
+  const imageMatches = html.match(/<img[^>]*src=["']([^"']*)["'][^>]*alt=["']([^"']*)["'][^>]*>/gi) || []
+  const images = imageMatches.map(match => {
     const srcMatch = match.match(/src=["']([^"']*)["']/i)
     const altMatch = match.match(/alt=["']([^"']*)["']/i)
-    return {
-      src: srcMatch ? srcMatch[1] : '',
-      alt: altMatch ? altMatch[1] : ''
-    }
-  }).filter(img => img.src)
+    return { src: srcMatch ? srcMatch[1] : '', alt: altMatch ? altMatch[1] : '' }
+  })
   
-  // Analyze meta tags
-  const title = titleMatch ? titleMatch[1].trim() : ''
-  const description = descriptionMatch ? descriptionMatch[1].trim() : ''
-  const keywords = keywordsMatch ? keywordsMatch[1].trim() : ''
-  const viewport = viewportMatch ? viewportMatch[1].trim() : ''
-  const robots = robotsMatch ? robotsMatch[1].trim() : ''
-  const canonical = canonicalMatch ? canonicalMatch[1].trim() : ''
+  // Analyze meta tags more realistically
+  const title = titleMatch ? titleMatch[1] : ''
+  const titleLength = title ? title.length : 0
+  const description = descriptionMatch ? descriptionMatch[1] : ''
+  const descriptionLength = description ? description.length : 0
+  const keywords = keywordsMatch ? keywordsMatch[1] : ''
+  const viewport = viewportMatch ? viewportMatch[1] : ''
+  const robots = robotsMatch ? robotsMatch[1] : ''
+  const canonical = canonicalMatch ? canonicalMatch[1] : ''
+  const ogTitle = ogTitleMatch ? ogTitleMatch[1] : ''
+  const ogDescription = ogDescriptionMatch ? ogDescriptionMatch[1] : ''
+  const ogImage = ogImageMatch ? ogImageMatch[1] : ''
+  const ogUrl = ogUrlMatch ? ogUrlMatch[1] : ''
   
-  // Analyze title
-  const titleAnalysis = {
+  // Determine title status and recommendation
+  const titleAnalysis: { content: string; length: number; status: Status; recommendation: string } = {
     content: title,
-    length: title.length,
-    status: title.length === 0 ? 'error' : title.length < 30 ? 'warning' : title.length > 60 ? 'warning' : 'good',
-    recommendation: title.length === 0 ? 'Title is missing' : 
-                   title.length < 30 ? 'Title is too short (recommended: 30-60 characters)' :
-                   title.length > 60 ? 'Title is too long (recommended: 30-60 characters)' :
-                   'Title length is optimal'
+    length: titleLength,
+    status: titleLength > 10 && titleLength <= 60 ? 'good' : titleLength > 60 ? 'warning' : 'error',
+    recommendation: titleLength > 10 && titleLength <= 60 ? 'Title length is optimal' : titleLength > 60 ? 'Shorten the title to less than 60 characters' : 'Add a title with 10+ characters'
   }
   
-  // Analyze description
-  const descriptionAnalysis = {
+  // Determine description status and recommendation
+  const descriptionAnalysis: { content: string; length: number; status: Status; recommendation: string } = {
     content: description,
-    length: description.length,
-    status: description.length === 0 ? 'error' : description.length < 120 ? 'warning' : description.length > 160 ? 'warning' : 'good',
-    recommendation: description.length === 0 ? 'Meta description is missing' :
-                   description.length < 120 ? 'Meta description is too short (recommended: 120-160 characters)' :
-                   description.length > 160 ? 'Meta description is too long (recommended: 120-160 characters)' :
-                   'Meta description length is optimal'
+    length: descriptionLength,
+    status: descriptionLength > 50 && descriptionLength <= 160 ? 'good' : descriptionLength > 160 ? 'warning' : 'error',
+    recommendation: descriptionLength > 50 && descriptionLength <= 160 ? 'Description length is optimal' : descriptionLength > 160 ? 'Shorten the description to less than 160 characters' : 'Add a description with at least 50 characters'
   }
   
-  // Analyze keywords
-  const keywordsAnalysis = {
+  const keywordsAnalysis: { content: string; status: Status; recommendation: string } = {
     content: keywords,
     status: keywords ? 'warning' : 'good',
-    recommendation: keywords ? 'Meta keywords are not recommended for SEO. Consider removing them.' : 'Good - no meta keywords tag (recommended)'
+    recommendation: keywords ? 'Meta keywords are not used by search engines. Consider removing.' : 'No meta keywords detected - this is recommended'
   }
   
-  // Analyze viewport
-  const viewportAnalysis = {
+  const viewportAnalysis: { content: string; status: Status; recommendation: string } = {
     content: viewport,
     status: viewport ? 'good' : 'error',
     recommendation: viewport ? 'Viewport meta tag is properly configured for mobile' : 'Viewport meta tag is missing - required for mobile optimization'
   }
   
-  // Analyze robots
-  const robotsAnalysis = {
+  const robotsAnalysis: { content: string; status: Status; recommendation: string } = {
     content: robots,
     status: robots ? 'good' : 'warning',
     recommendation: robots ? 'Robots meta tag is configured' : 'Consider adding robots meta tag for better control'
   }
   
-  // Analyze Open Graph
-  const ogAnalysis = {
-    title: ogTitleMatch ? ogTitleMatch[1].trim() : '',
-    description: ogDescriptionMatch ? ogDescriptionMatch[1].trim() : '',
-    image: ogImageMatch ? ogImageMatch[1].trim() : '',
-    url: ogUrlMatch ? ogUrlMatch[1].trim() : '',
-    status: (ogTitleMatch && ogDescriptionMatch && ogImageMatch) ? 'good' : 'warning',
-    recommendation: (ogTitleMatch && ogDescriptionMatch && ogImageMatch) ? 'Open Graph tags are properly configured for social sharing' : 'Some Open Graph tags are missing - add og:title, og:description, and og:image'
-  }
-  
-  // Analyze canonical
-  const canonicalAnalysis = {
+  const canonicalAnalysis: { content: string; status: Status; recommendation: string } = {
     content: canonical,
     status: canonical ? 'good' : 'warning',
     recommendation: canonical ? 'Canonical URL is properly set' : 'Consider adding canonical URL to avoid duplicate content issues'
+  }
+  
+  const ogAnalysis: { title: string; description: string; image: string; url: string; status: Status; recommendation: string } = {
+    title: ogTitle,
+    description: ogDescription,
+    image: ogImage,
+    url: ogUrl,
+    status: ogTitle && ogDescription ? 'good' : 'warning',
+    recommendation: ogTitle && ogDescription ? 'Open Graph tags are properly configured for social sharing' : 'Some Open Graph tags are missing - add og:title, og:description, and og:image'
+  }
+  
+  // Extract all images (including those without alt)
+  const imgMatchesGeneric = html.match(/<img[^>]*src=["']([^"']*)["'][^>]*>/gi) || []
+  for (const match of imgMatchesGeneric) {
+    const srcMatch = match.match(/src=["']([^"']*)["']/i)
+    if (srcMatch) {
+      const existing = images.find(img => img.src === srcMatch[1])
+      if (!existing) {
+        images.push({ src: srcMatch[1], alt: '' })
+      }
+    }
   }
   
   // Analyze images and alt text
@@ -511,7 +508,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
   const duplicateAlt = images.filter(img => img.alt).length - new Set(images.filter(img => img.alt).map(img => img.alt)).size
   const altHealthScore = totalImages > 0 ? Math.round(((totalImages - missingAlt) / totalImages) * 100) : 100
   
-  const imageAnalysis = images.map(img => ({
+  const imageAnalysis: ImageItem[] = images.map(img => ({
     src: img.src,
     alt: img.alt,
     status: !img.alt ? 'error' : 'good',
@@ -526,7 +523,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
   const linkHealthScore = totalLinks > 0 ? Math.round(((totalLinks - brokenLinks) / totalLinks) * 100) : 100
   
   // Create more realistic link analysis
-  const linkAnalysis = links.slice(0, Math.min(20, totalLinks)).map((link, index) => {
+  const linkAnalysis: LinkItem[] = links.slice(0, Math.min(20, totalLinks)).map((link, index) => {
     const isBroken = index < brokenLinks
     const isRedirect = !isBroken && index < brokenLinks + redirects
     const isExternal = link.startsWith('http') && !link.includes(new URL(baseUrl).hostname)
@@ -548,7 +545,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
   const overallScore = Math.round(metaScore + altScore + linkScore)
   
   // Generate recommendations
-  const recommendations = []
+  const recommendations: RecommendationItem[] = []
   
   if (titleAnalysis.status !== 'good') {
     recommendations.push({
@@ -707,7 +704,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
       overallScore: Math.floor(Math.random() * 40) + 60, // Simulate 60-100 score
       performance: {
         score: Math.floor(Math.random() * 40) + 60,
-        status: 'good',
+        status: 'good' as Status,
         metrics: {
           firstContentfulPaint: Math.random() * 2 + 1,
           largestContentfulPaint: Math.random() * 3 + 2,
@@ -717,18 +714,18 @@ async function analyzeHTML(html: string, baseUrl: string) {
       },
       accessibility: {
         score: Math.floor(Math.random() * 30) + 70,
-        status: 'good',
-        issues: []
+        status: 'good' as Status,
+        issues: [] as Array<{ type: 'error' | 'warning' | 'info'; message: string; severity: Severity }>
       },
       bestPractices: {
         score: Math.floor(Math.random() * 30) + 70,
-        status: 'good',
-        issues: []
+        status: 'good' as Status,
+        issues: [] as Array<{ type: 'error' | 'warning' | 'info'; message: string; severity: Severity }>
       },
       seo: {
         score: Math.floor(Math.random() * 30) + 70,
-        status: 'good',
-        issues: []
+        status: 'good' as Status,
+        issues: [] as Array<{ type: 'error' | 'warning' | 'info'; message: string; severity: Severity }>
       }
     },
     recommendations

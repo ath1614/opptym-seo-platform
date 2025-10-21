@@ -110,10 +110,21 @@ export default function KeywordResearcherPage() {
 
   const fetchProjects = async () => {
     try {
+      // Primary: SEO tools-optimized projects endpoint
       const response = await fetch('/api/seo-tool-projects')
       if (response.ok) {
         const data = await response.json()
-        setProjects(data.projects || [])
+        if (Array.isArray(data.projects) && data.projects.length > 0) {
+          setProjects(data.projects)
+          return
+        }
+      }
+
+      // Fallback: generic projects endpoint
+      const fallbackRes = await fetch('/api/projects')
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json()
+        setProjects(fallbackData.projects || [])
       }
     } catch (error) {
       // silently handle project fetch error
@@ -513,7 +524,7 @@ export default function KeywordResearcherPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Keyword Researcher</h1>
+              <h1 className="text-2xl font-bold">Keyword Research</h1>
               <p className="text-muted-foreground">Discover high-value keywords to improve your SEO strategy and content planning</p>
             </div>
           </div>

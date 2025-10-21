@@ -30,10 +30,10 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
   const isLanding = variant === 'landing'
   const navClass = isLanding
     ? "mx-auto mt-6 w-[min(95%,1100px)] rounded-full border-2 border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md"
-    : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+     : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 
   return (
-    <nav className={navClass}>
+    <nav className={`relative ${navClass} sticky top-0 z-50`}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`flex justify-between items-center ${isLanding ? 'h-16' : 'h-16'}`}>
           {/* Logo */}
@@ -42,7 +42,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex ml-10 items-baseline space-x-4">
+          <div className="hidden lg:flex ml-6 items-baseline space-x-4">
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -67,28 +67,43 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
               >
                 Why Choose Us
               </Link>
+              <Link
+                href="/#knowledge-base"
+                className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Knowledge Base
+              </Link>
+          </div>
 
-              {/* Auth Links */}
+          {/* Desktop Controls */}
+          <div className="hidden lg:flex items-center space-x-4">
               {status === 'authenticated' ? (
-                <div className="flex items-center space-x-3">
+                <>
                   <Link href="/dashboard">
-                    <Button size="sm" variant="outline" className="hidden sm:flex">
-                      <User className="mr-2 h-4 w-4" /> Dashboard
+                    <Button variant="outline" size="sm" className="gap-1">
+                      <User className="h-4 w-4" />
+                      Dashboard
                     </Button>
                   </Link>
-                  <Button size="sm" variant="destructive" className="hidden sm:flex" onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="gap-1"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
                   </Button>
-                </div>
+                </>
               ) : (
-                <div className="flex items-center space-x-3">
+                <>
                   <Link href="/auth/login">
-                    <Button size="sm" variant="outline" className="hidden sm:flex">Log In</Button>
+                    <Button variant="outline" size="sm">Log In</Button>
                   </Link>
                   <Link href="/auth/register">
-                    <Button size="sm" className="hidden sm:flex">Sign Up</Button>
+                    <Button size="sm">Sign Up</Button>
                   </Link>
-                </div>
+                </>
               )}
 
               <Button
@@ -104,7 +119,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
           </div>
 
           {/* Mobile Controls (visible on small screens) */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -131,40 +146,35 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className={`md:hidden ${isLanding ? 'border-t-2 border-border rounded-b-3xl' : 'border-t'}`}>
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <div className={`lg:hidden ${isLanding ? 'mt-2 border-t-2 border-border rounded-b-3xl bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 relative z-50 shadow-lg' : 'border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-50 shadow-lg'}`}>
+             <div className="px-3 py-3 space-y-1">
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
               >
                 Features
               </Link>
               <Link
                 href="/#seo-tasks"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
               >
                 SEO Tasks
               </Link>
               <Link
                 href="/#pricing"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
               >
                 Pricing
               </Link>
               <Link
                 href="/#why-choose-us"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
               >
                 Why Choose Us
               </Link>
               <Link
                 href="/#knowledge-base"
                 className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setIsMenuOpen(false)}
               >
                 Knowledge Base
               </Link>
@@ -175,13 +185,11 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                   <Link
                     href="/dashboard"
                     className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
                   >
                     Dashboard
                   </Link>
                   <button
                     onClick={() => {
-                      setIsMenuOpen(false)
                       handleSignOut()
                     }}
                     className="text-left block w-full px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700"
@@ -194,24 +202,22 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                   <Link
                     href="/auth/login"
                     className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
                   >
                     Log In
                   </Link>
                   <Link
                     href="/auth/register"
                     className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
                   >
                     Sign Up
                   </Link>
                 </>
               )}
             </div>
-          </div>
-        )}
-        </div>
-      </div>
-    </nav>
-  )
-}
+            </div>
+         )}
+         </div>
+       </div>
+     </nav>
+   )
+ }

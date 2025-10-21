@@ -110,8 +110,8 @@ export async function GET(request: NextRequest) {
       return `${y}-${m}`
     })
 
-    const projectGrowthMap = new Map(projectGrowthRaw.map((p: any) => [p.month, p.projects]))
-    const submissionTrendsMap = new Map(submissionTrendsRaw.map((s: any) => [s.month, s.submissions]))
+    const projectGrowthMap = new Map(projectGrowthRaw.map((p) => [p.month, p.projects]))
+    const submissionTrendsMap = new Map(submissionTrendsRaw.map((s) => [s.month, s.submissions]))
 
     const projectGrowth = monthsLast12.map(month => ({ month, projects: projectGrowthMap.get(month) ?? 0 }))
     const submissionTrends = monthsLast12.map(month => ({ month, submissions: submissionTrendsMap.get(month) ?? 0 }))
