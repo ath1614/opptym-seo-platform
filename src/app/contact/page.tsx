@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
+import { Mail, Phone, Clock, Send, CheckCircle, Info } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 export default function ContactPage() {
@@ -35,24 +35,56 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    showToast({
-      title: "Message Sent!",
-      description: "Thank you for your message! We'll get back to you within 24 hours.",
-      variant: "success"
-    });
-    setFormData({
-      name: "",
-      email: "",
-      company: "",
-      phone: "",
-      subject: "",
-      message: "",
-      planInterest: ""
-    });
-    setIsSubmitting(false);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          company: formData.company,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+          planInterest: formData.planInterest,
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast({
+          title: 'Unable to send your message',
+          description: data?.error || 'Please try again later or email support@opptym.com.',
+          variant: 'destructive'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      showToast({
+        title: 'Message Sent!',
+        description: "Thank you! We'll get back to you within 24 hours.",
+        variant: 'success'
+      });
+      setFormData({
+        name: "",
+        email: "",
+        company: "",
+        phone: "",
+        subject: "",
+        message: "",
+        planInterest: ""
+      });
+    } catch (err) {
+      showToast({
+        title: 'Network error',
+        description: 'Unable to send your message. Please check your connection and try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -267,20 +299,7 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-4">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <MapPin className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Visit Us</h3>
-                    <p className="text-muted-foreground">
-                      Lakshmi Narsimha Colony, Road No.12,<br />
-                      Dattatreya Nivas, Plot Number-591,<br />
-                      Nagole, Hyderabad, Telangana<br />
-                      Bharath (India)
-                    </p>
-                  </div>
-                </div>
+                {/* Removed address block */}
 
                 <div className="flex items-start space-x-4">
                   <div className="bg-primary/10 p-3 rounded-lg">
@@ -324,6 +343,21 @@ export default function ContactPage() {
                   <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                   <span className="text-muted-foreground">Free trial with no credit card required</span>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* How This Form Works */}
+            <Card className="border-border bg-background/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-xl text-foreground flex items-center">
+                  <Info className="h-5 w-5 text-primary mr-2" />
+                  How This Form Works
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-muted-foreground">
+                <p>When you submit the form, we send your message securely to our server and route it to our support inbox.</p>
+                <p>We include your name, email, subject and message, plus any optional details (company, phone, plan interest) so our team can assist you quickly.</p>
+                <p>You’ll see a confirmation once sent. If something goes wrong, we’ll show an error and you can try again or email <span className="text-foreground">support@opptym.com</span>.</p>
               </CardContent>
             </Card>
           </motion.div>
