@@ -29,7 +29,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
 
   const isLanding = variant === 'landing'
   const navClass = isLanding
-    ? "mx-auto mt-6 w-[min(95%,1100px)] rounded-full border-2 border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md"
+    ? "mx-auto mt-2 sm:mt-6 w-full sm:w-[min(95%,1100px)] rounded-none sm:rounded-full border-0 sm:border-2 border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md"
      : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 
   return (
@@ -146,76 +146,172 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className={`lg:hidden ${isLanding ? 'mt-2 border-t-2 border-border rounded-b-3xl bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 relative z-50 shadow-lg' : 'border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-50 shadow-lg'}`}>
-             <div className="px-3 py-3 space-y-1">
-              <Link
-                href="/#features"
-                className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-              >
-                Features
-              </Link>
-              <Link
-                href="/#seo-tasks"
-                className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-              >
-                SEO Tasks
-              </Link>
-              <Link
-                href="/#pricing"
-                className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-              >
-                Pricing
-              </Link>
-              <Link
-                href="/#why-choose-us"
-                className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-              >
-                Why Choose Us
-              </Link>
-              <Link
-                href="/#knowledge-base"
-                className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-              >
-                Knowledge Base
-              </Link>
+          isLanding ? (
+            <div
+              className="fixed inset-0 z-[100] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="absolute top-4 right-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsMenuOpen(false)}
+                  aria-label="Close navigation menu"
+                  className="h-10 w-10"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="flex h-full flex-col items-center justify-center space-y-2 px-6">
+                <Link
+                  href="/#features"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Features
+                </Link>
+                <Link
+                  href="/#seo-tasks"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  SEO Tasks
+                </Link>
+                <Link
+                  href="/#pricing"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Pricing
+                </Link>
+                <Link
+                  href="/#why-choose-us"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Why Choose Us
+                </Link>
+                <Link
+                  href="/#knowledge-base"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Knowledge Base
+                </Link>
 
-              {/* Mobile Auth Links */}
-              {status === 'authenticated' ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  <button
-                    onClick={() => {
-                      handleSignOut()
-                    }}
-                    className="text-left block w-full px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/login"
-                    className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
+                {/* Mobile Auth Links (overlay) */}
+                {status === 'authenticated' ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false)
+                        handleSignOut()
+                      }}
+                      className="text-left block w-full px-3 py-2 rounded-md text-xl font-medium text-red-600 hover:text-red-700"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-xl font-medium transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
+          ) : (
+            <div className={`lg:hidden ${isLanding ? 'mt-2 border-t-2 border-border rounded-b-3xl bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 relative z-50 shadow-lg' : 'border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-50 shadow-lg'}`}>
+              <div className="px-3 py-3 space-y-1">
+                <Link
+                  href="/#features"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                >
+                  Features
+                </Link>
+                <Link
+                  href="/#seo-tasks"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                >
+                  SEO Tasks
+                </Link>
+                <Link
+                  href="/#pricing"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                >
+                  Pricing
+                </Link>
+                <Link
+                  href="/#why-choose-us"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                >
+                  Why Choose Us
+                </Link>
+                <Link
+                  href="/#knowledge-base"
+                  className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                >
+                  Knowledge Base
+                </Link>
+
+                {/* Mobile Auth Links */}
+                {status === 'authenticated' ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleSignOut()
+                      }}
+                      className="text-left block w-full px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    >
+                      Log In
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      className="text-foreground hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                    >
+                      Sign Up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
-         )}
+          )
+        )}
          </div>
        </div>
      </nav>

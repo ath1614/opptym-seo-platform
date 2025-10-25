@@ -187,7 +187,23 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         // Convert establishedYear to string for form input
         establishedYear: (initialData as any).establishedYear ? String((initialData as any).establishedYear) : ''
       }
-      setFormData(mergedData as any)
+      // Normalize category and website field aliases
+      const rawCategory = (((initialData as any).category ?? (formData as any).category) ?? '').toString().trim()
+      const normalizedMap: Record<string, string> = {
+        'miscellaneous / general': 'Miscellaneous / General',
+        'miscellaneous & general': 'Miscellaneous / General',
+        'miscellaneous/general': 'Miscellaneous / General',
+        'general': 'Miscellaneous / General',
+        'misc': 'Miscellaneous / General',
+        'miscellaneous': 'Miscellaneous / General'
+      }
+      const key = rawCategory.toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ')
+      const normalizedCategory = normalizedMap[key] || rawCategory
+      const websiteURL = (initialData as any).websiteURL || (initialData as any).websiteUrl || (mergedData as any).websiteURL
+
+      const finalData = { ...mergedData, category: normalizedCategory, websiteURL }
+
+      setFormData(finalData as any)
       setCustomFields((initialData as any).customFields || [])
       
       // Initialize display values for comma-separated fields
@@ -817,7 +833,24 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
           goals: (data.project as any).goals || '',
           notes: (data.project as any).notes || ''
         }
-        setFormData(mergedData as any)
+
+        // Normalize category and website aliases from server response
+        const rawCategory = (((data.project as any).category ?? (formData as any).category) ?? '').toString().trim()
+        const normalizedMap: Record<string, string> = {
+          'miscellaneous / general': 'Miscellaneous / General',
+          'miscellaneous & general': 'Miscellaneous / General',
+          'miscellaneous/general': 'Miscellaneous / General',
+          'general': 'Miscellaneous / General',
+          'misc': 'Miscellaneous / General',
+          'miscellaneous': 'Miscellaneous / General'
+        }
+        const key = rawCategory.toLowerCase().replace(/\s*\/\s*/g, '/').replace(/\s+/g, ' ')
+        const normalizedCategory = normalizedMap[key] || rawCategory
+        const websiteURL = (data.project as any).websiteURL || (data.project as any).websiteUrl || (mergedData as any).websiteURL
+
+        const finalData = { ...mergedData, category: normalizedCategory, websiteURL }
+
+        setFormData(finalData as any)
         setCustomFields((data.project as any).customFields || [])
         
         showToast({

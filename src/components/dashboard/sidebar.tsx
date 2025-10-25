@@ -35,6 +35,11 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
+    name: 'Analyze Website',
+    href: '/dashboard/analyze-website',
+    icon: Globe,
+  },
+  {
     name: 'Projects',
     href: '/dashboard/projects',
     icon: FolderOpen,
@@ -43,11 +48,6 @@ const navigation = [
     name: 'SEO Tools',
     href: '/dashboard/seo-tools',
     icon: Search,
-  },
-  {
-    name: 'Analyze Website',
-    href: '/dashboard/analyze-website',
-    icon: Globe,
   },
   {
     name: 'SEO Tasks',
@@ -145,7 +145,7 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className={cn("flex-1 space-y-2 overflow-y-auto", isCollapsed ? "p-2" : "p-4")}>
+      <nav className={cn("flex-1 space-y-2 overflow-y-auto", isCollapsed ? "p-2" : "p-4")}> 
         {navigation.map((item) => {
           const isActive = pathname === item.href
           return (
@@ -264,11 +264,6 @@ export function Sidebar({ className }: SidebarProps) {
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </button>
-            </div>
-
-            <div className="pt-2 text-[10px] text-muted-foreground text-center">
-              <p>Opptym SEO Platform</p>
-              <p>v1.0.0</p>
             </div>
           </div>
         )}

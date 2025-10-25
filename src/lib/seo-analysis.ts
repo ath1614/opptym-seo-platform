@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio'
+import { getAutocompleteSuggestions, getSearchVolumeDataForKeywords, getTrendsFromSerpApi } from './providers/seo-data'
 
 export interface MetaTagAnalysis {
   url: string
@@ -1412,21 +1413,17 @@ export async function analyzeMobileFriendly(url: string): Promise<MobileAnalysis
 export async function analyzeKeywordResearch(url: string): Promise<KeywordResearchAnalysis> {
   try {
     console.log(`🔍 Starting keyword research analysis for ${url}`)
-    
-    // Validate input URL
     if (!url || typeof url !== 'string') {
       console.log('⚠️ Invalid URL provided, using fallback analysis')
       return getFallbackKeywordAnalysis(url || 'unknown')
     }
-    
+
     const $ = await fetchAndParseHTML(url)
-    
     if (!$) {
       console.log('⚠️ Using fallback analysis for keyword research')
       return getFallbackKeywordAnalysis(url)
     }
 
-    // Extract keywords from content with better error handling
     const body = $('body')
     if (body.length === 0) {
       console.log('⚠️ No body content found, using fallback analysis')
@@ -1435,44 +1432,42 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
 
     let textContent = ''
     try {
-      textContent = body.text() || ''
+      const cloned = body.clone()
+      cloned.find('script, style, noscript').remove()
+      textContent = cloned.text() || ''
     } catch (error) {
       console.error('Error extracting text content:', error)
       return getFallbackKeywordAnalysis(url)
     }
-    
-    // Gather additional weighted sources: title, headings, and meta keywords
-    let titleText = ''
-    try {
-      titleText = $('title').text() || ''
-    } catch {}
+
+    const titleText = $('title').text() || ''
     const h1Text = $('h1').map((_, el) => $(el).text()).get().join(' ')
     const h2Text = $('h2').map((_, el) => $(el).text()).get().join(' ')
     const metaKeywords = $('meta[name="keywords"]').attr('content') || ''
 
     const combinedText = [textContent, titleText, h1Text, h2Text, metaKeywords].join(' ')
     const words = combinedText.toLowerCase().match(/\b[\p{L}\p{N}][\p{L}\p{N}\-]+\b/gu) || []
-    
     if (words.length === 0) {
       console.log('⚠️ No words found in content, using fallback analysis')
       return getFallbackKeywordAnalysis(url)
     }
-    
-    // Simple keyword extraction with improved filtering
+
     const wordCounts: { [key: string]: number } = {}
     const stopWords = new Set([
       'the','and','for','are','but','not','you','all','can','had','her','was','one','our','out','day','get','has','him','his','how','man','new','now','old','see','two','way','who','boy','did','its','let','put','say','she','too','use',
-      'home','about','contact','privacy','terms','login','signup','menu','copyright','cookie','policy','newsletter','read','more','category','share','recent','popular','search'
+      'home','about','contact','privacy','terms','login','signup','menu','copyright','cookie','policy','newsletter','read','more','category','share','recent','popular','search',
+      // Code/framework and generic noise tokens
+      'null','undefined','meta','static','children','chunks','chunk','name','content','script','data','json','page','component','layout','stylesheet','next','react','vercel','node','import','export','const','var','let','function','return','true','false','class','id','document','window','server','client','app','href','rel','src','type','png','svg','ico','jpg','jpeg','gif','css','js','http','https','www','com'
     ])
 
-    // Apply base counts
+    const allowedShortKeywords = new Set(['seo','ai','ux','ui','api','cms','ads'])
     words.forEach((word: string) => {
-      if (word.length > 3 && !stopWords.has(word) && /^[a-zA-Z\-]+$/.test(word)) {
+      const isAllowedShort = allowedShortKeywords.has(word)
+      if ((word.length > 3 || isAllowedShort) && !stopWords.has(word) && /^[a-zA-Z\-]+$/.test(word)) {
         wordCounts[word] = (wordCounts[word] || 0) + 1
       }
     })
 
-    // Boost words appearing in title and headings
     const boostTerm = (text: string, weight: number) => {
       const items = text.toLowerCase().match(/\b[\p{L}\p{N}][\p{L}\p{N}\-]+\b/gu) || []
       items.forEach((w) => {
@@ -1486,63 +1481,168 @@ export async function analyzeKeywordResearch(url: string): Promise<KeywordResear
     boostTerm(h2Text, 1)
     boostTerm(metaKeywords, 2)
 
-    // Get top keywords with better validation
     const sortedByCount = Object.entries(wordCounts)
       .filter(([, count]) => count >= 2)
       .sort(([,a], [,b]) => b - a)
 
+    // Extract multi-word phrases from title/headings
+    const tokenizeClean = (text: string) => (text.toLowerCase().match(/[a-zA-Z][a-zA-Z\-]+/g) || [])
+      .filter((t) => (t.length > 3 || allowedShortKeywords.has(t)) && !stopWords.has(t))
+
+    const makePhrases = (tokens: string[]) => {
+      const phrases: string[] = []
+      for (let i = 0; i < tokens.length - 1; i++) {
+        phrases.push(`${tokens[i]} ${tokens[i + 1]}`)
+        if (i < tokens.length - 2) {
+          phrases.push(`${tokens[i]} ${tokens[i + 1]} ${tokens[i + 2]}`)
+        }
+      }
+      return phrases
+    }
+
+    const titleTokens = tokenizeClean(titleText)
+    const h1Tokens = tokenizeClean(h1Text)
+    const h2Tokens = tokenizeClean(h2Text)
+    const phraseCounts = new Map<string, number>()
+    ;[titleTokens, h1Tokens, h2Tokens].forEach((tokens) => {
+      makePhrases(tokens).forEach((p) => {
+        const occurrences = (combinedText.match(new RegExp(p.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g')) || []).length
+        phraseCounts.set(p, (phraseCounts.get(p) || 0) + (occurrences || 1))
+      })
+    })
+    const topPhrases = Array.from(phraseCounts.entries()).sort((a, b) => b[1] - a[1]).map(([p]) => p).slice(0, 5)
+
     const maxCount = sortedByCount.length > 0 ? Math.max(...sortedByCount.map(([, c]) => c)) : 1
 
-    const topKeywords = sortedByCount
-      .slice(0, 10)
-      .map(([keyword, count]) => {
-        const lengthFactor = Math.max(1, Math.min(10, Math.round(keyword.length / 2)))
-        const freqFactor = count / maxCount
-        // Weight search volume more conservatively and scale by heading presence
-        const inTitle = titleText.toLowerCase().includes(keyword.toLowerCase())
-        const inH1 = h1Text.toLowerCase().includes(keyword.toLowerCase())
-        const positionBoost = (inTitle ? 0.6 : 0) + (inH1 ? 0.3 : 0)
-        const searchVolume = Math.max(50, Math.round(count * 100 * (1 + positionBoost + 0.3 * freqFactor)))
-        const difficultyRaw = Math.round(30 + lengthFactor * 4 + freqFactor * 25)
-        const difficulty = Math.max(10, Math.min(90, difficultyRaw))
-        const cpc = Math.round((difficulty / 35) * 100) / 100
-        const competition: 'low' | 'medium' | 'high' = difficulty >= 65 ? 'high' : difficulty >= 45 ? 'medium' : 'low'
-        return { keyword, searchVolume, difficulty, cpc, competition }
-      })
+    const isNoise = (kw: string) => {
+      if (!kw) return true
+      const k = kw.toLowerCase().trim()
+      return stopWords.has(k) || k === 'undefined' || k === 'null'
+    }
 
-    if (topKeywords.length === 0) {
+    // Seed keyword: prefer a top phrase, else title main term, else top counted word
+    const titleMain = (titleText.split('|')[0] || titleText).trim().split(' - ')[0]
+    const seedCandidate = topPhrases.find((p) => !isNoise(p)) || titleMain || (sortedByCount[0]?.[0] || '')
+    const seedKeyword = seedCandidate
+
+    // Build initial keywords from phrases + tokens
+    const candidateCounts = new Map<string, number>()
+    topPhrases.forEach((p) => {
+      const c = phraseCounts.get(p) || 2
+      candidateCounts.set(p, Math.max(2, c))
+    })
+    sortedByCount.forEach(([k, c]) => {
+      if (!candidateCounts.has(k)) candidateCounts.set(k, c)
+    })
+
+    const combinedCandidates = Array.from(candidateCounts.entries())
+      .sort(([, a], [, b]) => b - a)
+      .map(([k]) => k)
+
+    // Initial top keywords with deterministic estimates
+    const initialTopKeywords = combinedCandidates.slice(0, 10).map((keyword) => {
+      const count = candidateCounts.get(keyword) || 2
+      const lengthFactor = Math.max(1, Math.min(10, Math.round(keyword.length / 2)))
+      const freqFactor = count / Math.max(1, maxCount)
+      const inTitle = titleText.toLowerCase().includes(keyword.toLowerCase())
+      const inH1 = h1Text.toLowerCase().includes(keyword.toLowerCase())
+      const positionBoost = (inTitle ? 0.6 : 0) + (inH1 ? 0.3 : 0)
+      const estVolume = Math.max(50, Math.round(count * 100 * (1 + positionBoost + 0.3 * freqFactor)))
+      const estDifficulty = Math.max(10, Math.min(90, Math.round(30 + lengthFactor * 4 + freqFactor * 25)))
+      const estCpc = Math.round((estDifficulty / 40) * 100) / 100
+      return { keyword, estVolume, estDifficulty, estCpc }
+    })
+
+    if (initialTopKeywords.length === 0) {
       console.log('⚠️ No keywords extracted, using fallback analysis')
       return getFallbackKeywordAnalysis(url)
     }
 
-    const relatedKeywords = topKeywords.slice(0, 5).map(kw => ({
-      keyword: kw.keyword,
-      searchVolume: Math.round(kw.searchVolume * 0.9),
-      difficulty: Math.max(10, Math.round(kw.difficulty * 0.9)),
-      relevance: Math.max(70, Math.min(100, Math.round(70 + (kw.difficulty / 90) * 30)))
-    }))
+    // Provider metrics for top keywords
+    const providerMetrics = await getSearchVolumeDataForKeywords(initialTopKeywords.map(k => k.keyword))
 
-    const longTailKeywords = topKeywords.slice(0, 3).map(kw => ({
-      keyword: `${kw.keyword} guide tutorial`,
-      searchVolume: Math.max(50, Math.round(kw.searchVolume * 0.15)),
-      difficulty: Math.max(10, Math.round(kw.difficulty * 0.8))
-    }))
+    const topKeywords = initialTopKeywords.map(k => {
+      const m = providerMetrics[k.keyword]
+      const searchVolume = m?.searchVolume ?? k.estVolume
+      const competition = m?.competition ?? null
+      const difficulty = typeof competition === 'number' ? Math.max(10, Math.min(90, competition)) : k.estDifficulty
+      const cpc = m?.cpcUSD ?? k.estCpc
+      const compBand: 'low' | 'medium' | 'high' = difficulty >= 65 ? 'high' : difficulty >= 45 ? 'medium' : 'low'
+      return { keyword: k.keyword, searchVolume, difficulty, cpc, competition: compBand }
+    })
+
+    // Establish domain focus tokens from the page's own top keywords
+    const focusTokens = new Set<string>([
+      'seo','keyword','competitor','analysis','research','rank','ranking','organic','traffic','backlink','audit','tools','platform','optimization','ai','content'
+    ])
+    const siteTokens = new Set<string>()
+    topKeywords.forEach((k) => {
+      k.keyword.toLowerCase().split(/\s+/).forEach((t) => {
+        if ((t.length > 3 || allowedShortKeywords.has(t)) && !stopWords.has(t)) {
+          siteTokens.add(t)
+        }
+      })
+    })
+    const activeFocus = new Set<string>([...focusTokens].filter((t) => siteTokens.has(t)))
+
+    // Related keywords from Google Autocomplete, filtered to domain focus with fallback
+    const rawSuggestions = await getAutocompleteSuggestions(seedKeyword || topKeywords[0]?.keyword || '')
+    const filteredSuggestions = activeFocus.size
+      ? rawSuggestions.filter((s) => {
+          const lower = s.toLowerCase()
+          for (const t of activeFocus) {
+            if (lower.includes(t)) return true
+          }
+          return false
+        })
+      : rawSuggestions
+    const relatedSet = Array.from(new Set(filteredSuggestions)).slice(0, 10)
+    const relatedCandidateFinal = relatedSet.length ? relatedSet : topPhrases.slice(1, 6)
+    const relatedMetrics = await getSearchVolumeDataForKeywords(relatedCandidateFinal)
+
+    const relatedKeywords = relatedCandidateFinal.slice(0, 8).map((kw) => {
+      const m = relatedMetrics[kw]
+      const vol = m?.searchVolume ?? Math.max(50, Math.round((topKeywords[0]?.searchVolume || 200) * 0.6))
+      const diffBase = topKeywords[0]?.difficulty || 40
+      const diff = Math.max(10, Math.min(90, Math.round(diffBase * 0.9)))
+      const relevance = Math.max(60, Math.min(100, Math.round(70 + (diff / 90) * 20)))
+      return { keyword: kw, searchVolume: vol, difficulty: diff, relevance }
+    })
+
+    // Long-tail keywords with cleaner templates and noise filtering
+    const longTailBase = [seedKeyword, topKeywords[0]?.keyword, topKeywords[1]?.keyword].filter(Boolean) as string[]
+    const noise = (kw: string) => stopWords.has(kw.toLowerCase()) || ['undefined','null','meta','static','children','chunks'].includes(kw.toLowerCase())
+    const base = longTailBase.find((b) => b && !noise(b)) || topKeywords[0]?.keyword || ''
+    const templates = ['best practices', 'tools', 'how to']
+    const longTailRaw = templates.slice(0, 3).map((t) => (t === 'how to' ? `how to ${base}` : `${base} ${t}`))
+    const longTailMetrics = await getSearchVolumeDataForKeywords(longTailRaw)
+    const longTailKeywords = longTailRaw.slice(0, 3).map((phrase, idx) => {
+      const m = longTailMetrics[phrase]
+      const vol = m?.searchVolume ?? Math.max(50, Math.round((topKeywords[0]?.searchVolume || 200) * 0.15))
+      const diff = Math.max(10, Math.min(90, Math.round((topKeywords[0]?.difficulty || 40) * 0.8)))
+      return { keyword: phrase, searchVolume: vol, difficulty: diff }
+    })
+
+    // Trends data (optional)
+    const trends = seedKeyword ? await getTrendsFromSerpApi(seedKeyword) : []
+    const rising = trends.length > 0 && trends[trends.length - 1].value > trends[0].value
 
     const recommendations = [
-      'Focus on long-tail keywords for better ranking opportunities',
-      'Consider keyword difficulty when planning content strategy',
-      'Monitor search volume trends for your target keywords',
-      'Use related keywords to expand your content reach'
+      'Prioritize keywords with higher search volume and moderate difficulty',
+      'Expand coverage using related queries from Google Autocomplete',
+      'Leverage long-tail phrases for quicker rankings and conversions',
+      rising ? 'Trend is rising — publish timely content around the seed keyword' : 'Monitor trends and adjust content cadence accordingly'
     ]
 
     console.log(`✅ Keyword research analysis completed for ${url}`)
     return {
       url,
+      seedKeyword,
       primaryKeywords: topKeywords,
       relatedKeywords,
       longTailKeywords,
       recommendations,
-      score: 85
+      score: Math.max(0, Math.min(100, Math.round(60 + Math.min(40, (topKeywords[0]?.searchVolume || 0) / 5000))))
     }
   } catch (error) {
     console.error('❌ Error in keyword research analysis:', error)
@@ -1955,14 +2055,12 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
   }
 }
 
-// Competitor Analyzer - Real Analysis
+// Competitor Analyzer - Provider-backed enrichment
 export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysis> {
   const $ = await fetchAndParseHTML(url)
-  
+
   if (!$) {
     console.log(`⚠️ Unable to fetch webpage for ${url}, returning fallback competitor analysis`)
-    
-    // Return a fallback analysis when the webpage cannot be fetched
     return {
       url,
       competitors: [
@@ -1980,11 +2078,7 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
         }
       ],
       competitiveGaps: [
-        {
-          keyword: 'competitor analysis',
-          opportunity: 0,
-          difficulty: 0
-        }
+        { keyword: 'competitor analysis', opportunity: 0, difficulty: 0 }
       ],
       recommendations: [
         'Unable to analyze competitors due to network connectivity issues',
@@ -2000,9 +2094,15 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
 
   // Extract external links to identify potential competitors
   const links = $('a[href]')
+  const originHost = new URL(url).hostname
   const externalLinks = links.filter((_, link) => {
     const href = $(link).attr('href')
-    return Boolean(href && href.startsWith('http') && !href.includes(new URL(url).hostname))
+    try {
+      const linkUrl = href ? new URL(href, url) : null
+      return Boolean(linkUrl && linkUrl.hostname !== originHost && linkUrl.protocol.startsWith('http'))
+    } catch {
+      return false
+    }
   })
 
   // Analyze external domains as potential competitors
@@ -2033,7 +2133,7 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     'snapchat.com', 'www.snapchat.com',
     'reddit.com', 'www.reddit.com',
     'discord.com', 'www.discord.com',
-    
+
     // Tech/Utility Platforms
     'google.com', 'www.google.com', 'gmail.com',
     'microsoft.com', 'www.microsoft.com',
@@ -2042,7 +2142,7 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     'github.com', 'www.github.com',
     'stackoverflow.com', 'www.stackoverflow.com',
     'wikipedia.org', 'www.wikipedia.org',
-    
+
     // CDNs and Services
     'cloudflare.com', 'www.cloudflare.com',
     'amazonaws.com', 'aws.amazon.com',
@@ -2100,51 +2200,63 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     .slice(0, 5)
 
   for (const [domain, count] of topDomains) {
-    // Simulate domain authority based on domain characteristics
-    let domainAuthority = 50
-    if (domain.includes('gov') || domain.includes('edu')) {
+    const baseHost = domain.replace(/^www\./, '')
+    const name = baseHost.split('.')[0]
+    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1)
+
+    // Deterministic domain authority based on domain class and link frequency
+    let domainAuthority = 40
+    if (baseHost.includes('gov') || baseHost.includes('edu')) {
       domainAuthority = 90
-    } else if (domain.includes('org')) {
-      domainAuthority = 75
-    } else if (domain.includes('com')) {
-      domainAuthority = 60
+    } else if (baseHost.includes('org')) {
+      domainAuthority = 70
+    } else if (baseHost.includes('com')) {
+      domainAuthority = 55
     }
-    
-    // Adjust based on domain structure
-    if (domain.split('.').length === 2) {
-      domainAuthority += 10
+    domainAuthority = Math.max(25, Math.min(95, Math.round(domainAuthority + 8 * Math.log(count + 1))))
+
+    const backlinksEst = Math.round(300 + count * 120)
+
+    // Try to analyze competitor homepage for real top keywords
+    let topKeywords: string[] = []
+    let organicTrafficEst = 0
+    let keywordsCountEst = 0
+    try {
+      const homeUrl = `https://${baseHost}`
+      const kw = await analyzeKeywordResearch(homeUrl)
+      topKeywords = kw.primaryKeywords.map(k => k.keyword).slice(0, 5)
+      organicTrafficEst = Math.round(kw.primaryKeywords.reduce((sum, k) => sum + (k.searchVolume || 0), 0) * 0.55)
+      keywordsCountEst = Math.max(200, kw.primaryKeywords.length * 200)
+    } catch {
+      // Fallback: use Google Autocomplete suggestions for brand seed
+      const suggestions = await getAutocompleteSuggestions(capitalizedName)
+      topKeywords = suggestions.slice(0, 5)
+      const metrics = await getSearchVolumeDataForKeywords(topKeywords)
+      organicTrafficEst = Math.round(topKeywords.reduce((sum, k) => sum + (metrics[k]?.searchVolume || 200), 0) * 0.5)
+      keywordsCountEst = Math.max(150, topKeywords.length * 150)
     }
 
-    // Generate company name from domain
-    const name = domain.replace(/\.(com|org|net|edu|gov)$/, '').replace(/^www\./, '').split('.')[0]
-    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1)
+    const strengths: string[] = []
+    const weaknesses: string[] = []
+    const opportunities: string[] = []
+
+    if (domainAuthority >= 70) strengths.push('High domain authority')
+    if (domainAuthority < 50) weaknesses.push('Lower domain authority')
+    if (keywordsCountEst >= 400) strengths.push('Broad keyword coverage')
+    if (keywordsCountEst < 200) weaknesses.push('Limited keyword coverage')
+    opportunities.push('Target long-tail keywords')
 
     competitors.push({
       name: capitalizedName,
       domain,
-      domainAuthority: Math.min(100, domainAuthority),
-      backlinks: Math.floor(Math.random() * 10000) + 1000,
-      organicTraffic: Math.floor(Math.random() * 100000) + 10000,
-      keywords: Math.floor(Math.random() * 5000) + 500,
-      topKeywords: ['SEO tools', 'website analysis', 'digital marketing'].slice(0, 3),
-      strengths: [
-        'Strong domain authority',
-        'High organic traffic',
-        'Comprehensive SEO tools',
-        'Active content marketing'
-      ].slice(0, Math.floor(Math.random() * 3) + 2),
-      weaknesses: [
-        'Limited mobile optimization',
-        'Slow page load times',
-        'Poor user experience',
-        'Outdated content'
-      ].slice(0, Math.floor(Math.random() * 2) + 1),
-      opportunities: [
-        'Expand content marketing',
-        'Improve technical SEO',
-        'Target long-tail keywords',
-        'Enhance social media presence'
-      ].slice(0, Math.floor(Math.random() * 3) + 2)
+      domainAuthority,
+      backlinks: backlinksEst,
+      organicTraffic: Math.max(5000, organicTrafficEst),
+      keywords: keywordsCountEst,
+      topKeywords,
+      strengths: strengths.length > 0 ? strengths : ['Solid market presence'],
+      weaknesses: weaknesses.length > 0 ? weaknesses : ['Improve technical SEO'],
+      opportunities
     })
   }
 
@@ -2232,21 +2344,22 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   const metaDescription = $('meta[name="description"]').attr('content') || ''
   const content = [title, metaDescription].join(' ').toLowerCase()
 
-  const competitiveGaps = []
-  const potentialKeywords = [
-    'free SEO tools', 'website speed test', 'mobile optimization',
-    'technical SEO', 'content optimization', 'local SEO'
-  ]
-
-  for (const keyword of potentialKeywords) {
-    if (!content.includes(keyword.toLowerCase())) {
-      competitiveGaps.push({
-        keyword,
-        opportunity: Math.floor(Math.random() * 30) + 50,
-        difficulty: Math.floor(Math.random() * 40) + 30
-      })
-    }
-  }
+  // Compute competitive gaps from competitor top keywords and provider metrics
+  const kwSet = new Set<string>()
+  competitors.forEach(c => c.topKeywords.forEach(k => kwSet.add(k)))
+  const kwList = Array.from(kwSet)
+  const metrics = await getSearchVolumeDataForKeywords(kwList)
+  const competitiveGaps = kwList
+    .filter(k => !content.includes(k.toLowerCase()))
+    .map(k => {
+      const m = metrics[k]
+      const difficulty = typeof m?.competition === 'number' ? Math.max(10, Math.min(90, m.competition)) : 50
+      const vol = m?.searchVolume ?? 200
+      const opportunity = Math.max(10, Math.min(100, Math.round(vol * (1 - difficulty / 100) / 50)))
+      return { keyword: k, opportunity, difficulty }
+    })
+    .sort((a, b) => b.opportunity - a.opportunity)
+    .slice(0, 6)
 
   const recommendations = []
   if (competitors.length > 0) {

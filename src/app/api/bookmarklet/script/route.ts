@@ -169,14 +169,15 @@ export async function GET(request: NextRequest) {
     const projectData = {
       projectName: project.projectName || '',
       title: project.title || '',
-      websiteURL: project.websiteURL || '',
+      websiteURL: project.websiteURL || project.websiteUrl || '',
       email: project.email || '',
       companyName: project.companyName || '',
       phone: project.phone || '',
       whatsapp: project.whatsapp || '',
       businessDescription: project.businessDescription || '',
       category: project.category || '',
-      address: project.address || {}
+      address: project.address || {},
+      customFields: project.customFields || []
     };
     
     const linkData = {
@@ -295,6 +296,43 @@ export async function GET(request: NextRequest) {
     }
   });
   
+    // Also try to fill using custom fields defined in the project
+    if (projectData.customFields && projectData.customFields.length) {
+      projectData.customFields.forEach(function(cf) {
+        try {
+          var key = (cf.key || '').toLowerCase().trim();
+          var value = cf.value || '';
+          if (!key || !value) return;
+          // Prefer exact name/id matches
+          var element = document.querySelector('input[name="' + key + '"], textarea[name="' + key + '"], select[name="' + key + '"]') 
+            || document.getElementById(key);
+          if (!element) {
+            // Try placeholder match or partial name matches
+            element = document.querySelector('[placeholder*="' + key + '"]');
+          }
+          if (element && !element.value) {
+            element.value = value;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+            filledCount++;
+          } else {
+            // Fallback: search any input by name/id similarity
+            var allInputs = document.querySelectorAll('input, textarea, select');
+            for (var i = 0; i < allInputs.length; i++) {
+              var nm = (allInputs[i].name || allInputs[i].id || allInputs[i].placeholder || '').toLowerCase();
+              if (!allInputs[i].value && nm && (nm.includes(key) || key.includes(nm))) {
+                allInputs[i].value = value;
+                allInputs[i].dispatchEvent(new Event('input', { bubbles: true }));
+                allInputs[i].dispatchEvent(new Event('change', { bubbles: true }));
+                filledCount++;
+                break;
+              }
+            }
+          }
+        } catch (e) { /* ignore failures */ }
+      });
+    }
+
     // If no fields were filled, try common field patterns
     if (filledCount === 0) {
       var commonFields = [
@@ -397,6 +435,12 @@ export async function GET(request: NextRequest) {
       }
       if (fieldNameLower.includes('address')) {
         return projectData.address.street || projectData.address.city || '';
+      }
+
+      // Custom field exact key match
+      var cfMatch = (projectData.customFields || []).find(function(cf){ return (cf.key || '').toLowerCase() === fieldNameLower; });
+      if (cfMatch && cfMatch.value) {
+        return cfMatch.value;
       }
       
       return null;

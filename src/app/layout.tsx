@@ -93,6 +93,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
+          {/* Removed ErrorBoundary wrapper */}
           <div className="relative flex min-h-screen flex-col">
             <ConditionalNavbar />
             <main className="flex-1">{children}</main>
