@@ -39,9 +39,113 @@ import {
 import Link from "next/link"
 import { LandingPricing } from "@/components/pricing/landing-pricing"
 import { useSession } from "next-auth/react"
+import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useToast } from "@/components/ui/toast"
+import { Loader2, Image, Gauge } from "lucide-react"
 
 export default function HomeClient() {
   const { status } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { showToast } = useToast()
+
+  type Recommendation = string | { title?: string }
+  type AnalysisResult = {
+    overallScore?: number
+    brokenLinks?: { total?: number; broken?: number; working?: number; redirects?: number }
+    pageSpeed?: { performance?: { metrics?: { firstContentfulPaint?: number; largestContentfulPaint?: number; firstInputDelay?: number; cumulativeLayoutShift?: number } } }
+    metaTags?: {
+      title?: { content?: string; length?: number; status?: string }
+      description?: { content?: string; status?: string }
+      keywords?: { content?: string; status?: string }
+      viewport?: { content?: string; status?: string }
+      robots?: { content?: string; status?: string }
+      canonical?: { content?: string; status?: string }
+      openGraph?: { title?: string; status?: string }
+    }
+    altText?: { totalImages?: number; missingAlt?: number; duplicateAlt?: number; healthScore?: number }
+    recommendations?: Recommendation[]
+  }
+
+  const [websiteURL, setWebsiteURL] = useState("")
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+
+  const handleAnalyze = async (url?: string) => {
+    const targetUrl = (url ?? websiteURL).trim()
+    if (!targetUrl) {
+      showToast({ title: "Website URL required", description: "Please enter your website URL to analyze.", variant: "destructive" })
+      return
+    }
+    setIsAnalyzing(true)
+    setAnalysisError(null)
+    setAnalysisResult(null)
+    try {
+      const resp = await fetch("/api/test-seo-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl, toolType: "website-analyzer" }),
+      })
+      const json = await resp.json()
+      if (!resp.ok || !json?.success) {
+        throw new Error(json?.error || "Failed to analyze the website.")
+      }
+      setAnalysisResult(json.data as AnalysisResult)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      setAnalysisError(message || "An unexpected error occurred.")
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  const handleGenerateReport = async () => {
+    const targetUrl = websiteURL.trim()
+    if (!targetUrl) {
+      showToast({ title: "Website URL required", description: "Please enter your website URL before generating a report.", variant: "destructive" })
+      return
+    }
+
+    if (status !== "authenticated") {
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/?website=${encodeURIComponent(targetUrl)}&analyze=1`)}`)
+      return
+    }
+
+    setIsGeneratingReport(true)
+    try {
+      const resp = await fetch("/api/seo-tools/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: targetUrl, toolType: "website-analyzer" }),
+      })
+      const json = await resp.json()
+      if (!resp.ok || !json?.success) {
+        throw new Error(json?.error || "Failed to generate report.")
+      }
+      showToast({ title: "Report generated", description: "Your analysis has been saved. Visit Dashboard → SEO Tools to view.", variant: "default" })
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err)
+      showToast({ title: "Report failed", description: message || "Unable to generate report.", variant: "destructive" })
+    } finally {
+      setIsGeneratingReport(false)
+    }
+  }
+
+  useEffect(() => {
+    const preset = searchParams?.get("website") || ""
+    const autoAnalyze = searchParams?.get("analyze") === "1"
+    if (preset) setWebsiteURL(preset)
+    if (preset && autoAnalyze) {
+      handleAnalyze(preset)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -120,6 +224,172 @@ export default function HomeClient() {
               </div>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Analyze Website Section */}
+      <section id="analyze-website" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="text-center mb-10">
+            <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">🔎 Analyze Your Website</Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">Free Website Analysis</h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">Run a quick, professional SEO check on any URL. Sign in to generate and save a full report to your dashboard.</p>
+          </motion.div>
+
+          <Card className="border-0 bg-card/50 backdrop-blur-sm shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-xl flex items-center justify-center gap-2">
+                <Globe className="w-5 h-5" /> Enter your website URL
+              </CardTitle>
+              <CardDescription className="text-center">We’ll analyze meta tags, broken links, alt text, page speed and more.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <Input
+                  placeholder="https://example.com"
+                  value={websiteURL}
+                  onChange={(e) => setWebsiteURL(e.target.value)}
+                  className="md:flex-1 text-base h-12"
+                />
+                <div className="flex gap-3">
+                  <Button onClick={() => handleAnalyze()} disabled={isAnalyzing} className="h-12 px-6">
+                    {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                    Analyze Website
+                  </Button>
+                  <Button onClick={handleGenerateReport} disabled={isGeneratingReport} variant="outline" className="h-12 px-6">
+                    {isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                    Generate Report
+                  </Button>
+                </div>
+              </div>
+
+              {analysisError && (
+                <div className="mt-4 text-destructive text-sm text-center">{analysisError}</div>
+              )}
+
+              {analysisResult && (
+                <div className="mt-10 space-y-8">
+                  {/* Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="bg-muted/30">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Overall Score</CardTitle>
+                        <CardDescription>How your page performs overall</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <Progress value={analysisResult.overallScore || 0} />
+                          <div className="text-sm text-muted-foreground">Score: {analysisResult.overallScore || 0}/100</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-muted/30">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><LinkIcon className="w-4 h-4" /> Broken Links</CardTitle>
+                        <CardDescription>Links health overview</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                          <div>Total: {analysisResult?.brokenLinks?.total ?? 0}</div>
+                          <div className="text-red-500">Broken: {analysisResult?.brokenLinks?.broken ?? 0}</div>
+                          <div className="text-green-600">Working: {analysisResult?.brokenLinks?.working ?? 0}</div>
+                          <div>Redirects: {analysisResult?.brokenLinks?.redirects ?? 0}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-muted/30">
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><Gauge className="w-4 h-4" /> Page Speed</CardTitle>
+                        <CardDescription>Key performance metrics</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                          <div>FCP: {analysisResult?.pageSpeed?.performance?.metrics?.firstContentfulPaint ?? 0} ms</div>
+                          <div>LCP: {analysisResult?.pageSpeed?.performance?.metrics?.largestContentfulPaint ?? 0} ms</div>
+                          <div>FID: {analysisResult?.pageSpeed?.performance?.metrics?.firstInputDelay ?? 0} ms</div>
+                          <div>CLS: {analysisResult?.pageSpeed?.performance?.metrics?.cumulativeLayoutShift ?? 0}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Details */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Meta Tags</CardTitle>
+                        <CardDescription>Status of core meta elements</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm text-muted-foreground">
+                          <div>Title: <span className="font-medium text-foreground">{analysisResult?.metaTags?.title?.content || "—"}</span> ({analysisResult?.metaTags?.title?.length || 0} chars) [{analysisResult?.metaTags?.title?.status || "—"}]</div>
+                          <div>Description: <span className="font-medium text-foreground">{analysisResult?.metaTags?.description?.content || "—"}</span> [{analysisResult?.metaTags?.description?.status || "—"}]</div>
+                          <div>Keywords: {analysisResult?.metaTags?.keywords?.content || "—"} [{analysisResult?.metaTags?.keywords?.status || "—"}]</div>
+                          <div>Viewport: {analysisResult?.metaTags?.viewport?.content || "—"} [{analysisResult?.metaTags?.viewport?.status || "—"}]</div>
+                          <div>Robots: {analysisResult?.metaTags?.robots?.content || "—"} [{analysisResult?.metaTags?.robots?.status || "—"}]</div>
+                          <div>Canonical: {analysisResult?.metaTags?.canonical?.content || "—"} [{analysisResult?.metaTags?.canonical?.status || "—"}]</div>
+                          <div>Open Graph: {analysisResult?.metaTags?.openGraph?.title || "—"} [{analysisResult?.metaTags?.openGraph?.status || "—"}]</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center gap-2"><Image className="w-4 h-4" /> Alt Text</CardTitle>
+                        <CardDescription>Image accessibility and SEO</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                          <div>Total Images: {analysisResult?.altText?.totalImages ?? 0}</div>
+                          <div className="text-red-500">Missing Alt: {analysisResult?.altText?.missingAlt ?? 0}</div>
+                          <div>Duplicate Alt: {analysisResult?.altText?.duplicateAlt ?? 0}</div>
+                          <div>Health Score: {analysisResult?.altText?.healthScore ?? 0}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Recommendations */}
+                  <div>
+                    <Card className="bg-muted/30">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Top Recommendations</CardTitle>
+                        <CardDescription>Actionable improvements prioritized</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {(analysisResult?.recommendations || []).slice(0, 5).map((rec: Recommendation, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                              <span>{typeof rec === "string" ? rec : rec?.title || "Recommendation"}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* CTA */}
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-3">Sign in to save this analysis and access your full report anytime.</p>
+                    <div className="flex justify-center gap-4">
+                      <Button onClick={handleGenerateReport} disabled={isGeneratingReport} className="px-6">
+                        {isGeneratingReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                        Generate Report
+                      </Button>
+                      {status !== "authenticated" && (
+                        <Link href="/auth/login">
+                          <Button variant="outline" className="px-6"><Shield className="mr-2 h-4 w-4" /> Sign In</Button>
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </section>
 

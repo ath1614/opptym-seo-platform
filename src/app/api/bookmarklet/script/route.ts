@@ -298,39 +298,90 @@ export async function GET(request: NextRequest) {
   
     // Also try to fill using custom fields defined in the project
     if (projectData.customFields && projectData.customFields.length) {
-      projectData.customFields.forEach(function(cf) {
+      // Helpers to normalize and map canonical keys
+      function normalizeKey(key) {
+        return (key || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+      }
+      function canonicalKey(key) {
+        var n = normalizeKey(key);
+        if (!n) return '';
+        if (['username','user','username','user_name','login','loginname','account','handle'].includes(n)) return 'username';
+        if (['firstname','first','fname','givenname','forename'].includes(n)) return 'firstname';
+        if (['lastname','last','lname','surname','familyname'].includes(n)) return 'lastname';
+        if (['fullname','name','contactname'].includes(n)) return 'fullname';
+        if (['password','pass','pwd','newpassword'].includes(n)) return 'password';
+        if (['confirmpassword','passwordconfirm','passwordconfirmation','passwordverification','password2','verify','verifypassword','retypepassword','repeatpassword','repeatpass'].includes(n)) return 'confirmpassword';
+        if (['email','mail','emailaddress','e-mail'].includes(n)) return 'email';
+        return n;
+      }
+      // Build canonical value map from custom fields
+      var canonMap = {};
+      projectData.customFields.forEach(function(cf){
         try {
-          var key = (cf.key || '').toLowerCase().trim();
+          var canon = canonicalKey(cf.key);
           var value = cf.value || '';
-          if (!key || !value) return;
-          // Prefer exact name/id matches
-          var element = document.querySelector('input[name="' + key + '"], textarea[name="' + key + '"], select[name="' + key + '"]') 
-            || document.getElementById(key);
-          if (!element) {
-            // Try placeholder match or partial name matches
-            element = document.querySelector('[placeholder*="' + key + '"]');
-          }
-          if (element && !element.value) {
-            element.value = value;
-            element.dispatchEvent(new Event('input', { bubbles: true }));
-            element.dispatchEvent(new Event('change', { bubbles: true }));
-            filledCount++;
-          } else {
-            // Fallback: search any input by name/id similarity
-            var allInputs = document.querySelectorAll('input, textarea, select');
-            for (var i = 0; i < allInputs.length; i++) {
-              var nm = (allInputs[i].name || allInputs[i].id || allInputs[i].placeholder || '').toLowerCase();
-              if (!allInputs[i].value && nm && (nm.includes(key) || key.includes(nm))) {
-                allInputs[i].value = value;
-                allInputs[i].dispatchEvent(new Event('input', { bubbles: true }));
-                allInputs[i].dispatchEvent(new Event('change', { bubbles: true }));
-                filledCount++;
-                break;
-              }
-            }
-          }
-        } catch (e) { /* ignore failures */ }
+          if (!canon || !value) return;
+          if (!canonMap[canon]) canonMap[canon] = value;
+        } catch (e) { /* ignore */ }
       });
+      // Derive related values
+      if (canonMap['password'] && !canonMap['confirmpassword']) {
+        canonMap['confirmpassword'] = canonMap['password'];
+      }
+      if (!canonMap['firstname'] || !canonMap['lastname']) {
+        var full = canonMap['fullname'];
+        if (full) {
+          var parts = full.trim().split(/\s+/);
+          if (!canonMap['firstname']) canonMap['firstname'] = parts[0] || '';
+          if (!canonMap['lastname']) canonMap['lastname'] = parts.length > 1 ? parts.slice(1).join(' ') : '';
+        }
+      }
+      if (!canonMap['fullname'] && (canonMap['firstname'] || canonMap['lastname'])) {
+        var fn = canonMap['firstname'] || '';
+        var ln = canonMap['lastname'] || '';
+        canonMap['fullname'] = [fn, ln].filter(Boolean).join(' ').trim();
+      }
+      // expose for getFieldValue usage
+      window.__bookmarkletCanonMap = canonMap;
+
+      // Fill by canonical categories across typical selectors
+      function fillByCanonical(canon, value) {
+        if (!value) return;
+        var inputs = Array.from(document.querySelectorAll('input, textarea, select'));
+        function m(el) {
+          var t = (el.getAttribute('type') || '').toLowerCase();
+          var n = (el.name || el.id || el.placeholder || '').toLowerCase();
+          switch (canon) {
+            case 'username':
+              return t !== 'password' && /(user(name)?|login|account|handle)/.test(n);
+            case 'password':
+              return t === 'password' && !/(confirm|verify|retype|repeat)/.test(n);
+            case 'confirmpassword':
+              return t === 'password' && /(confirm|verify|retype|repeat|again)/.test(n);
+            case 'firstname':
+              return /(first|given|fname|forename)/.test(n);
+            case 'lastname':
+              return /(last|surname|lname|family)/.test(n);
+            case 'fullname':
+              return /(full.?name|^name$|\bname\b)/.test(n) && !/(user|company|business)/.test(n);
+            case 'email':
+              return /(email|e-mail|mail)/.test(n);
+            default:
+              return false;
+          }
+        }
+        inputs.forEach(function(el){
+          if (!el.value && m(el)) {
+            el.value = value;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            filledCount++;
+          }
+        });
+      }
+
+      // Apply fills for all canonical keys we have
+      Object.keys(canonMap).forEach(function(k){ fillByCanonical(k, canonMap[k]); });
     }
 
     // If no fields were filled, try common field patterns
@@ -403,8 +454,43 @@ export async function GET(request: NextRequest) {
     }
     
     function getFieldValue(fieldName, projectData) {
-      var fieldNameLower = fieldName.toLowerCase();
-      
+      var raw = fieldName || '';
+      var fieldNameLower = raw.toLowerCase();
+      function normalizeKeyLocal(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'').trim(); }
+      function canonicalKeyLocal(s){
+        var n = normalizeKeyLocal(s);
+        if (!n) return '';
+        if (['username','user','user_name','login','loginname','account','handle'].includes(n)) return 'username';
+        if (['firstname','first','fname','givenname','forename'].includes(n)) return 'firstname';
+        if (['lastname','last','lname','surname','familyname'].includes(n)) return 'lastname';
+        if (['fullname','name','contactname'].includes(n)) return 'fullname';
+        if (['password','pass','pwd','newpassword'].includes(n)) return 'password';
+        if (['confirmpassword','passwordconfirm','passwordconfirmation','passwordverification','password2','verify','verifypassword','retypepassword','repeatpassword','repeatpass'].includes(n)) return 'confirmpassword';
+        if (['email','mail','emailaddress','e-mail'].includes(n)) return 'email';
+        return n;
+      }
+
+      // Prefer canonical custom-field values when available
+      try {
+        var canonMap = (window && window.__bookmarkletCanonMap) || {};
+        var canon = canonicalKeyLocal(raw);
+        if (canonMap[canon]) return canonMap[canon];
+        if (canon === 'firstname' && canonMap['fullname']) {
+          var parts = canonMap['fullname'].trim().split(/\s+/);
+          if (parts.length) return parts[0];
+        }
+        if (canon === 'lastname' && canonMap['fullname']) {
+          var parts2 = canonMap['fullname'].trim().split(/\s+/);
+          if (parts2.length > 1) return parts2.slice(1).join(' ');
+        }
+        if (canon === 'fullname') {
+          var fn = canonMap['firstname'];
+          var ln = canonMap['lastname'];
+          if (fn || ln) return [fn, ln].filter(Boolean).join(' ');
+        }
+        if (canon === 'confirmpassword' && canonMap['password']) return canonMap['password'];
+      } catch (e) { /* ignore */ }
+
       // More specific field mapping
       if (fieldNameLower.includes('title') && !fieldNameLower.includes('page')) {
         return projectData.title || projectData.projectName;
@@ -437,12 +523,11 @@ export async function GET(request: NextRequest) {
         return projectData.address.street || projectData.address.city || '';
       }
 
-      // Custom field exact key match
+      // Custom field exact key match (fallback)
       var cfMatch = (projectData.customFields || []).find(function(cf){ return (cf.key || '').toLowerCase() === fieldNameLower; });
       if (cfMatch && cfMatch.value) {
         return cfMatch.value;
       }
-      
       return null;
     }
     
