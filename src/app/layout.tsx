@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ConditionalNavbar } from "@/components/conditional-navbar";
 import { Footer } from "@/components/footer";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -92,6 +93,15 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Script id="gtag-src" strategy="afterInteractive" src="https://www.googletagmanager.com/gtag/js?id=G-PYDKFTN2WL" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-PYDKFTN2WL');
+          `}
+        </Script>
         <Providers>
           {/* Removed ErrorBoundary wrapper */}
           <div className="relative flex min-h-screen flex-col">
