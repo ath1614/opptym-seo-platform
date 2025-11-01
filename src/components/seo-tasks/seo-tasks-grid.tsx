@@ -260,7 +260,13 @@ export function SEOTasksGrid() {
     }, 500) // 500ms debounce
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, selectedCategory]) // Remove fetchLinks dependency
+  }, [searchTerm]) // Only debounce search, not category
+
+  // Handle category change immediately (no debounce)
+  useEffect(() => {
+    setCurrentPage(1)
+    fetchLinks(1, selectedCategory, searchTerm)
+  }, [selectedCategory])
 
   const handleFillForm = (link: Link) => {
     // Check if user has reached their submission limit
@@ -349,7 +355,10 @@ export function SEOTasksGrid() {
                 <div>
                   <h2 className="text-2xl font-bold">SEO Tasks</h2>
                   <p className="text-muted-foreground">
-                    Showing {filteredLinks.length} of 1,00,000+ directories
+                    {selectedCategory === 'all' 
+                      ? `Showing ${filteredLinks.length} of ${totalLinks.toLocaleString()}+ directories`
+                      : `Showing ${filteredLinks.length} ${categoryConfig[selectedCategory as keyof typeof categoryConfig]?.name || selectedCategory} directories`
+                    }
                     {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
                   </p>
                 </div>
@@ -407,6 +416,7 @@ export function SEOTasksGrid() {
             size="lg"
             onClick={() => setSelectedCategory('all')}
             className="px-8 py-3 text-base font-semibold"
+            disabled={isLoading}
           >
             All Categories (1,00,000+)
           </Button>
@@ -431,6 +441,7 @@ export function SEOTasksGrid() {
                     size="lg"
                     onClick={() => setSelectedCategory(key)}
                     className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+                    disabled={isLoading}
                   >
                     <IconComponent className="h-6 w-6" />
                     <div>
@@ -460,6 +471,7 @@ export function SEOTasksGrid() {
                     size="lg"
                     onClick={() => setSelectedCategory(key)}
                     className="h-auto p-4 flex flex-col items-center gap-2 text-center min-w-[200px]"
+                    disabled={isLoading}
                   >
                     <IconComponent className="h-6 w-6" />
                     <div>
@@ -489,6 +501,7 @@ export function SEOTasksGrid() {
                     size="lg"
                     onClick={() => setSelectedCategory(key)}
                     className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+                    disabled={isLoading}
                   >
                     <IconComponent className="h-6 w-6" />
                     <div>
