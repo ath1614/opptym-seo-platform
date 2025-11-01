@@ -50,15 +50,24 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
 
   return (
     <nav className={`relative ${navClass} sticky top-0 z-[9999]`}>
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex justify-between items-center ${isLanding ? 'h-16' : 'h-16'}`}>
+      <div className={`${isLanding ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'container mx-auto px-4 sm:px-6 lg:px-8'}`}>
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Logo width={40} height={40} />
+            <Logo 
+              width={32} 
+              height={32} 
+              className="sm:hidden" 
+            />
+            <Logo 
+              width={40} 
+              height={40} 
+              className="hidden sm:flex" 
+            />
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex ml-6 items-baseline space-x-4">
+          <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center">
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -92,7 +101,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
           </div>
 
           {/* Desktop Controls */}
-          <div className="hidden lg:flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-3">
               {status === 'authenticated' ? (
                 <>
                   <Link href="/dashboard">
@@ -135,12 +144,12 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
           </div>
 
           {/* Mobile Controls (visible on small screens) */}
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-1 lg:hidden">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="h-9 w-9"
+              className="h-8 w-8 sm:h-9 sm:w-9"
             >
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -151,11 +160,12 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
               size="icon"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle navigation menu"
+              className="h-8 w-8 sm:h-9 sm:w-9"
             >
               {isMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
               )}
             </Button>
           </div>
@@ -168,66 +178,66 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
             className="fixed inset-0 z-[9999] bg-black text-white overflow-y-auto"
           >
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/20">
-                <div className="flex items-center space-x-2">
-                  <Logo width={28} height={28} />
-                  <span className="font-semibold">Menu</span>
+              <div className="flex items-center justify-between px-4 py-4 border-b border-white/20">
+                <div className="flex items-center space-x-3">
+                  <Logo width={32} height={32} showText={false} />
+                  <span className="font-semibold text-lg">Menu</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMenuOpen(false)}
-                  className="h-8 w-8"
+                  className="h-9 w-9 text-white hover:bg-white/10"
                   aria-label="Close navigation menu"
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </div>
 
-              <nav className="px-4 py-6 space-y-4 flex-1 flex flex-col justify-center">
+              <nav className="px-4 py-8 space-y-6 flex-1 flex flex-col justify-center">
                 <Link
                   href="/#features"
-                  className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Features
                 </Link>
                 <Link
                   href="/#seo-tasks"
-                  className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   SEO Tasks
                 </Link>
                 <Link
                   href="/#pricing"
-                  className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Pricing
                 </Link>
                 <Link
                   href="/#why-choose-us"
-                  className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Why Choose Us
                 </Link>
                 <Link
                   href="/#knowledge-base"
-                  className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Knowledge Base
                 </Link>
               </nav>
 
-              <div className="border-t px-4 py-4 space-y-2 border-white/20">
+              <div className="border-t px-4 py-6 space-y-3 border-white/20">
                 {status === 'authenticated' ? (
                   <>
                     <Link
                       href="/dashboard"
-                      className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                      className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-base font-medium transition-colors text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Dashboard
@@ -237,7 +247,7 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                         setIsMenuOpen(false)
                         handleSignOut()
                       }}
-                      className="text-left block w-full px-3 py-2 rounded-md text-base font-medium text-red-400 hover:bg-red-600/20"
+                      className="text-center block w-full px-4 py-3 rounded-lg text-base font-medium text-red-400 hover:bg-red-600/20 transition-colors"
                     >
                       Sign Out
                     </button>
@@ -246,14 +256,14 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                   <>
                     <Link
                       href="/auth/login"
-                      className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                      className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-base font-medium transition-colors text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Log In
                     </Link>
                     <Link
                       href="/auth/register"
-                      className="text-white hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium transition-colors"
+                      className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-base font-medium transition-colors text-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Sign Up
@@ -261,15 +271,15 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                   </>
                 )}
 
-                <div className="pt-2">
+                <div className="pt-3 flex justify-center">
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={toggleTheme}
-                    className="h-9 w-9 text-white hover:bg-white/10 rounded-md"
+                    className="h-10 w-10 text-white hover:bg-white/10 rounded-lg"
                   >
-                    <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
                   </Button>
                 </div>

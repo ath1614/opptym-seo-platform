@@ -399,77 +399,106 @@ export function SEOTasksGrid() {
       )}
 
       {/* Category Filter */}
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2 items-center">
+      <div className="space-y-4">
+        {/* All Categories Button */}
+        <div className="flex justify-center">
           <Button
             variant={selectedCategory === 'all' ? 'default' : 'outline'}
-            size="sm"
+            size="lg"
             onClick={() => setSelectedCategory('all')}
+            className="px-8 py-3 text-base font-semibold"
           >
-            All (1,00,000+)
+            All Categories (1,00,000+)
           </Button>
         </div>
 
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground">Off‑Page Submissions</div>
-          <div className="flex flex-wrap gap-2">
-            {(['directory','article','press-release','bookmarking'] as const).map((key) => {
-              const config = categoryConfig[key]
-              const IconComponent = config.icon
-              return (
-                <Button
-                  key={key}
-                  variant={selectedCategory === key ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(key)}
-                >
-                  <IconComponent className="h-4 w-4 mr-2" />
-                  {config.name}
-                </Button>
-              )
-            })}
+        {/* Category Groups */}
+        <div className="grid gap-6 md:gap-8">
+          {/* Off-Page Submissions */}
+          <div className="space-y-3">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-foreground mb-1">Off-Page SEO Submissions</h3>
+              <p className="text-sm text-muted-foreground">Build authority and backlinks through content submissions</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {(['directory','article','press-release','bookmarking'] as const).map((key) => {
+                const config = categoryConfig[key]
+                const IconComponent = config.icon
+                return (
+                  <Button
+                    key={key}
+                    variant={selectedCategory === key ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => setSelectedCategory(key)}
+                    className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+                  >
+                    <IconComponent className="h-6 w-6" />
+                    <div>
+                      <div className="font-semibold text-sm">{config.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{config.description}</div>
+                    </div>
+                  </Button>
+                )
+              })}
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground">Local SEO</div>
-          <div className="flex flex-wrap gap-2">
-            {(['business-listing'] as const).map((key) => {
-              const config = categoryConfig[key]
-              const IconComponent = config.icon
-              return (
-                <Button
-                  key={key}
-                  variant={selectedCategory === key ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(key)}
-                >
-                  <IconComponent className="h-4 w-4 mr-2" />
-                  {config.name}
-                </Button>
-              )
-            })}
+          {/* Local SEO */}
+          <div className="space-y-3">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-foreground mb-1">Local SEO</h3>
+              <p className="text-sm text-muted-foreground">Improve local search visibility and citations</p>
+            </div>
+            <div className="flex justify-center">
+              {(['business-listing'] as const).map((key) => {
+                const config = categoryConfig[key]
+                const IconComponent = config.icon
+                return (
+                  <Button
+                    key={key}
+                    variant={selectedCategory === key ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => setSelectedCategory(key)}
+                    className="h-auto p-4 flex flex-col items-center gap-2 text-center min-w-[200px]"
+                  >
+                    <IconComponent className="h-6 w-6" />
+                    <div>
+                      <div className="font-semibold text-sm">{config.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{config.description}</div>
+                    </div>
+                  </Button>
+                )
+              })}
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground">Other Opportunities</div>
-          <div className="flex flex-wrap gap-2">
-            {(['classified','other'] as const).map((key) => {
-              const config = categoryConfig[key]
-              const IconComponent = config.icon
-              return (
-                <Button
-                  key={key}
-                  variant={selectedCategory === key ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(key)}
-                >
-                  <IconComponent className="h-4 w-4 mr-2" />
-                  {config.name}
-                </Button>
-              )
-            })}
+          {/* Other Opportunities */}
+          <div className="space-y-3">
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-foreground mb-1">Additional Opportunities</h3>
+              <p className="text-sm text-muted-foreground">Explore more ways to increase your online presence</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto">
+              {(['classified','other'] as const).map((key) => {
+                const config = categoryConfig[key]
+                const IconComponent = config.icon
+                return (
+                  <Button
+                    key={key}
+                    variant={selectedCategory === key ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => setSelectedCategory(key)}
+                    className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+                  >
+                    <IconComponent className="h-6 w-6" />
+                    <div>
+                      <div className="font-semibold text-sm">{config.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{config.description}</div>
+                    </div>
+                  </Button>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
