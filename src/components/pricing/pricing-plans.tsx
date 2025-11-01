@@ -28,7 +28,6 @@ interface Plan {
     projects: number | string
     submissions: number | string
     seoTools: number | string
-    backlinks: number | string
     reports: number | string
   }
   popular?: boolean
@@ -82,7 +81,6 @@ export function PricingPlans() {
               projects: plan.maxProjects === -1 ? 'Unlimited' : plan.maxProjects,
               submissions: plan.maxSubmissions === -1 ? 'Unlimited' : plan.maxSubmissions,
               seoTools: plan.maxSeoTools === -1 ? 'Unlimited' : plan.maxSeoTools,
-              backlinks: plan.maxBacklinks === -1 ? 'Unlimited' : (plan.maxBacklinks || 0),
               reports: plan.maxReports === -1 ? 'Unlimited' : (plan.maxReports || 1)
             },
             popular: index === 1, // Make second plan popular
@@ -343,10 +341,7 @@ export function PricingPlans() {
                     <span>SEO Tools</span>
                     <span className="font-medium">{plan.limits.seoTools}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Backlinks</span>
-                    <span className="font-medium">{plan.limits.backlinks}</span>
-                  </div>
+
                   <div className="flex justify-between">
                     <span>Reports</span>
                     <span className="font-medium">{plan.limits.reports}</span>

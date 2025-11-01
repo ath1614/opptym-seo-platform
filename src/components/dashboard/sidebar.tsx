@@ -100,7 +100,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className={cn(
-      "fixed left-0 top-0 z-40 flex h-screen flex-col bg-card border-r transition-all duration-300",
+      "hidden md:flex fixed left-0 top-0 z-40 h-screen flex-col bg-card border-r transition-all duration-300",
       isCollapsed ? "w-16" : "w-64",
       className
     )}>

@@ -37,7 +37,7 @@ const getDefaultPlans = (): PricingPlan[] => [
     _id: 'default-pro',
     name: 'Pro',
     price: 999,
-    features: ['Everything in Free', '5 submissions per project per day', '4 SEO tools per day', 'Keyword researcher', 'Backlink scanner', 'Keyword tracker', 'Competitor analyzer', 'Technical SEO auditor', 'Advanced analytics', 'Priority support', 'Custom reports'],
+    features: ['Everything in Free', '5 submissions per project per day', '4 SEO tools per day', 'Keyword researcher', 'Keyword tracker', 'Competitor analyzer', 'Technical SEO auditor', 'Advanced analytics', 'Priority support', 'Custom reports'],
     active: true,
     description: 'Advanced SEO tools for growing businesses',
     maxProjects: 1,
