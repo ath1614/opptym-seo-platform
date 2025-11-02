@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { url, toolType } = body
+    const { url, toolType, selectedTools } = body
 
     if (!url || !toolType) {
       return NextResponse.json(
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Perform real SEO analysis
-    const analysisResult = await performSEOAnalysis(url, toolType)
+    const analysisResult = await performSEOAnalysis(url, toolType, selectedTools)
 
     // Save the analysis result
     await connectDB()
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function performSEOAnalysis(url: string, toolType: string): Promise<AnalysisResult> {
+async function performSEOAnalysis(url: string, toolType: string, selectedTools?: string[]): Promise<AnalysisResult> {
   try {
     // Validate URL format
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -246,34 +246,7 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
     const html = await response.text()
     
     // Parse HTML and extract data
-    const analysis = await analyzeHTML(html, url)
-    
-    // Return different analysis based on tool type
-    if (toolType === 'canonical-checker') {
-      return {
-        url,
-        timestamp: new Date().toISOString(),
-        overallScore: analysis.overallScore,
-        brokenLinks: analysis.brokenLinks,
-        metaTags: analysis.metaTags,
-        altText: analysis.altText,
-        pageSpeed: analysis.pageSpeed,
-        recommendations: analysis.recommendations
-      }
-    }
-    
-    if (toolType === 'alt-text-checker') {
-      return {
-        url,
-        timestamp: new Date().toISOString(),
-        overallScore: analysis.overallScore,
-        brokenLinks: analysis.brokenLinks,
-        metaTags: analysis.metaTags,
-        altText: analysis.altText,
-        pageSpeed: analysis.pageSpeed,
-        recommendations: analysis.recommendations
-      }
-    }
+    const analysis = await analyzeHTML(html, url, selectedTools)
     
     return {
       url,
@@ -391,7 +364,7 @@ async function performSEOAnalysis(url: string, toolType: string): Promise<Analys
   }
 }
 
-async function analyzeHTML(html: string, baseUrl: string) {
+async function analyzeHTML(html: string, baseUrl: string, selectedTools?: string[]) {
   // Simple HTML parsing (in production, you'd use a proper HTML parser)
   type Status = 'good' | 'warning' | 'error'
   type LinkType = 'internal' | 'external'
@@ -544,10 +517,11 @@ async function analyzeHTML(html: string, baseUrl: string) {
   const linkScore = linkHealthScore * 0.2
   const overallScore = Math.round(metaScore + altScore + linkScore)
   
-  // Generate recommendations
+  // Generate recommendations based on selected tools
   const recommendations: RecommendationItem[] = []
+  const tools = selectedTools || ['meta-tags', 'broken-links', 'alt-text', 'page-speed', 'canonical']
   
-  if (titleAnalysis.status !== 'good') {
+  if (tools.includes('meta-tags') && titleAnalysis.status !== 'good') {
     recommendations.push({
       category: 'Meta Tags',
       priority: 'high',
@@ -557,7 +531,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
     })
   }
   
-  if (descriptionAnalysis.status !== 'good') {
+  if (tools.includes('meta-tags') && descriptionAnalysis.status !== 'good') {
     recommendations.push({
       category: 'Meta Tags',
       priority: 'high',
@@ -567,7 +541,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
     })
   }
   
-  if (viewportAnalysis.status === 'error') {
+  if (tools.includes('mobile-friendly') && viewportAnalysis.status === 'error') {
     recommendations.push({
       category: 'Mobile Optimization',
       priority: 'high',
@@ -577,7 +551,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
     })
   }
   
-  if (missingAlt > 0) {
+  if (tools.includes('alt-text') && missingAlt > 0) {
     recommendations.push({
       category: 'Accessibility',
       priority: 'medium',
@@ -587,7 +561,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
     })
   }
   
-  if (brokenLinks > 0) {
+  if (tools.includes('broken-links') && brokenLinks > 0) {
     recommendations.push({
       category: 'Link Health',
       priority: 'medium',

@@ -18,6 +18,7 @@ export default function AnalyzeWebsitePage() {
   const [analysis, setAnalysis] = useState<any | null>(null)
   const [reportStatus, setReportStatus] = useState<string | null>(null)
   const [reportLoading, setReportLoading] = useState(false)
+  const [selectedTools, setSelectedTools] = useState<string[]>(['meta-tags', 'broken-links', 'alt-text', 'page-speed', 'canonical'])
   // Usage banner state
   const [usageStats, setUsageStats] = useState<any | null>(null)
   const [usageLoading, setUsageLoading] = useState(false)
@@ -39,7 +40,7 @@ export default function AnalyzeWebsitePage() {
       const res = await fetch('/api/seo-tools/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: target, toolType: 'website-analyzer' })
+        body: JSON.stringify({ url: target, toolType: 'website-analyzer', selectedTools })
       })
       const json = await res.json()
       if (!res.ok) {
@@ -128,7 +129,7 @@ export default function AnalyzeWebsitePage() {
             <Globe className="h-6 w-6" />
             <span>Analyze Website</span>
           </h1>
-          <p className="text-muted-foreground mt-2">Run a quick, aggregated SEO review across five core checks: meta tags, alt text, broken links, page speed, and canonical.</p>
+          <p className="text-muted-foreground mt-2">Choose up to 5 SEO tools and get detailed analysis for each selected tool.</p>
         </div>
       </div>
 
@@ -188,28 +189,67 @@ export default function AnalyzeWebsitePage() {
       <Card>
         <CardHeader>
           <CardTitle>Enter Website URL</CardTitle>
-          <CardDescription>We’ll fetch the page and analyze key on-page SEO signals.</CardDescription>
+          <CardDescription>Choose up to 5 SEO tools to analyze your website.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-end space-x-3">
-            <div className="flex-1">
-              <Label htmlFor="url">Website URL</Label>
-              <Input id="url" placeholder="https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} />
-            </div>
-            <Button onClick={runAnalysis} disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Run Analysis
-                </>
-              )}
-            </Button>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="url">Website URL</Label>
+            <Input id="url" placeholder="https://example.com" value={url} onChange={(e) => setUrl(e.target.value)} />
           </div>
+          
+          <div>
+            <Label>Select SEO Tools (Choose up to 5)</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+              {[
+                { id: 'meta-tags', name: 'Meta Tags', desc: 'Title, description, OG tags' },
+                { id: 'broken-links', name: 'Broken Links', desc: 'Find broken links' },
+                { id: 'alt-text', name: 'Alt Text', desc: 'Image accessibility' },
+                { id: 'page-speed', name: 'Page Speed', desc: 'Performance analysis' },
+                { id: 'canonical', name: 'Canonical', desc: 'Duplicate content check' },
+                { id: 'mobile-friendly', name: 'Mobile Check', desc: 'Mobile optimization' },
+                { id: 'schema', name: 'Schema Markup', desc: 'Structured data' },
+                { id: 'sitemap-robots', name: 'Sitemap/Robots', desc: 'Crawlability check' }
+              ].map(tool => (
+                <label key={tool.id} className="flex items-start space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-muted/50">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedTools.includes(tool.id)}
+                    onChange={(e) => {
+                      if (e.target.checked && selectedTools.length < 5) {
+                        setSelectedTools([...selectedTools, tool.id])
+                      } else if (!e.target.checked) {
+                        setSelectedTools(selectedTools.filter(t => t !== tool.id))
+                      }
+                    }}
+                    disabled={!selectedTools.includes(tool.id) && selectedTools.length >= 5}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm">{tool.name}</div>
+                    <div className="text-xs text-muted-foreground">{tool.desc}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">
+              {selectedTools.length}/5 tools selected
+            </div>
+          </div>
+          
+          <Button onClick={runAnalysis} disabled={loading || selectedTools.length === 0}>
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing {selectedTools.length} tools...
+              </>
+            ) : (
+              <>
+                <Search className="mr-2 h-4 w-4" />
+                Analyze with {selectedTools.length} tools
+              </>
+            )}
+          </Button>
+          
           {error && (
             <div className="mt-4 flex items-center space-x-2 text-red-600">
               <AlertTriangle className="h-4 w-4" />
@@ -250,117 +290,122 @@ export default function AnalyzeWebsitePage() {
             </CardContent>
           </Card>
 
-          {/* Meta Tags */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Meta Tags</CardTitle>
-              <CardDescription>Title, description, viewport, robots, OG, canonical</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Title</span>
-                    <Badge variant="outline">{analysis.metaTags?.title?.status}</Badge>
+          {/* Conditional rendering based on selected tools */}
+          {selectedTools.includes('meta-tags') && analysis.metaTags && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Meta Tags</CardTitle>
+                <CardDescription>Title, description, viewport, robots, OG, canonical</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Title</span>
+                      <Badge variant="outline">{analysis.metaTags?.title?.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{analysis.metaTags?.title?.recommendation}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{analysis.metaTags?.title?.recommendation}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Description</span>
-                    <Badge variant="outline">{analysis.metaTags?.description?.status}</Badge>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Description</span>
+                      <Badge variant="outline">{analysis.metaTags?.description?.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{analysis.metaTags?.description?.recommendation}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{analysis.metaTags?.description?.recommendation}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Viewport</span>
-                    <Badge variant="outline">{analysis.metaTags?.viewport?.status}</Badge>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Viewport</span>
+                      <Badge variant="outline">{analysis.metaTags?.viewport?.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{analysis.metaTags?.viewport?.recommendation}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{analysis.metaTags?.viewport?.recommendation}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Robots</span>
-                    <Badge variant="outline">{analysis.metaTags?.robots?.status}</Badge>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Robots</span>
+                      <Badge variant="outline">{analysis.metaTags?.robots?.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{analysis.metaTags?.robots?.recommendation}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{analysis.metaTags?.robots?.recommendation}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Open Graph</span>
-                    <Badge variant="outline">{analysis.metaTags?.openGraph?.status}</Badge>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Open Graph</span>
+                      <Badge variant="outline">{analysis.metaTags?.openGraph?.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{analysis.metaTags?.openGraph?.recommendation}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{analysis.metaTags?.openGraph?.recommendation}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Canonical</span>
-                    <Badge variant="outline">{analysis.metaTags?.canonical?.status}</Badge>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">Canonical</span>
+                      <Badge variant="outline">{analysis.metaTags?.canonical?.status}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{analysis.metaTags?.canonical?.recommendation}</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">{analysis.metaTags?.canonical?.recommendation}</div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Broken Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Link Health</CardTitle>
-              <CardDescription>Broken vs working links and redirects</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{analysis.brokenLinks?.total ?? 0}</div>
-                  <div className="text-xs text-muted-foreground">Total Links</div>
+          {selectedTools.includes('broken-links') && analysis.brokenLinks && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Link Health</CardTitle>
+                <CardDescription>Broken vs working links and redirects</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{analysis.brokenLinks?.total ?? 0}</div>
+                    <div className="text-xs text-muted-foreground">Total Links</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">{analysis.brokenLinks?.broken ?? 0}</div>
+                    <div className="text-xs text-muted-foreground">Broken</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{analysis.brokenLinks?.working ?? 0}</div>
+                    <div className="text-xs text-muted-foreground">Working</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-yellow-600">{analysis.brokenLinks?.redirects ?? 0}</div>
+                    <div className="text-xs text-muted-foreground">Redirects</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">{analysis.brokenLinks?.broken ?? 0}</div>
-                  <div className="text-xs text-muted-foreground">Broken</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{analysis.brokenLinks?.working ?? 0}</div>
-                  <div className="text-xs text-muted-foreground">Working</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">{analysis.brokenLinks?.redirects ?? 0}</div>
-                  <div className="text-xs text-muted-foreground">Redirects</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Alt Text */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Alt Text</CardTitle>
-              <CardDescription>Coverage and image accessibility issues</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Alt Text Coverage</span>
-                <Badge variant="outline">{analysis.altText?.healthScore ?? 0}%</Badge>
-              </div>
-              <Progress value={analysis.altText?.healthScore || 0} className="h-2" />
-            </CardContent>
-          </Card>
+          {selectedTools.includes('alt-text') && analysis.altText && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Alt Text</CardTitle>
+                <CardDescription>Coverage and image accessibility issues</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Alt Text Coverage</span>
+                  <Badge variant="outline">{analysis.altText?.healthScore ?? 0}%</Badge>
+                </div>
+                <Progress value={analysis.altText?.healthScore || 0} className="h-2" />
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Page Speed */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Page Speed (Simulated)</CardTitle>
-              <CardDescription>Performance, accessibility, best practices, and SEO scores</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Overall</span>
-                <Badge variant="outline">{analysis.pageSpeed?.overallScore ?? 0}</Badge>
-              </div>
-              <Progress value={analysis.pageSpeed?.overallScore || 0} className="h-2" />
-            </CardContent>
-          </Card>
+          {selectedTools.includes('page-speed') && analysis.pageSpeed && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Page Speed (Simulated)</CardTitle>
+                <CardDescription>Performance, accessibility, best practices, and SEO scores</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Overall</span>
+                  <Badge variant="outline">{analysis.pageSpeed?.overallScore ?? 0}</Badge>
+                </div>
+                <Progress value={analysis.pageSpeed?.overallScore || 0} className="h-2" />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Recommendations */}
           <Card>
