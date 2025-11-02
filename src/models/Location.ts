@@ -46,8 +46,7 @@ const LocationSchema = new Schema<ILocation>({
   timestamps: true
 })
 
-// Index for better query performance
-LocationSchema.index({ code: 1 })
+// Index for better query performance (code and name already have unique indexes)
 LocationSchema.index({ isActive: 1 })
 LocationSchema.index({ priority: -1 })
 

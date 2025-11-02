@@ -68,8 +68,7 @@ const PricingPlanSchema = new Schema<IPricingPlan>({
   timestamps: true
 })
 
-// Create indexes
-PricingPlanSchema.index({ name: 1 })
+// Create indexes (name already has unique index)
 PricingPlanSchema.index({ active: 1 })
 
 export default mongoose.models.PricingPlan || mongoose.model<IPricingPlan>('PricingPlan', PricingPlanSchema)

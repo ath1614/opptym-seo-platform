@@ -3,18 +3,15 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   try {
     return NextResponse.json({
-      status: 'ok',
+      status: 'healthy',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-      nextAuthUrl: process.env.NEXTAUTH_URL,
-      hasMongoUri: !!process.env.MONGODB_URI,
-      hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET
+      version: process.env.npm_package_version || '0.1.0',
+      environment: process.env.NODE_ENV || 'development'
     })
   } catch (error) {
-    console.error('Health check error:', error)
     return NextResponse.json(
       { 
-        status: 'error', 
+        status: 'unhealthy', 
         error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       },

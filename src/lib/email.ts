@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer'
 import { emailTemplates } from './email-templates'
 
+let smtpWarningShown = false
+
 function createTransport() {
   const host = process.env.SMTP_HOST
   const port = parseInt(process.env.SMTP_PORT || '587')
@@ -8,7 +10,10 @@ function createTransport() {
   const pass = process.env.SMTP_PASS
 
   if (!host || !user || !pass) {
-    console.warn('SMTP configuration missing. Emails will not be sent. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM.')
+    if (!smtpWarningShown && process.env.NODE_ENV !== 'production') {
+      console.warn('SMTP configuration missing. Emails will not be sent.')
+      smtpWarningShown = true
+    }
   }
 
   return nodemailer.createTransport({
