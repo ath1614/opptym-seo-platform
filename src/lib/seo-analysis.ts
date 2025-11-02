@@ -1475,16 +1475,32 @@ export async function analyzeKeywordResearch(url: string, projectData?: {
     
     console.log(`✅ Generated ${primaryKeywords.length} primary keywords with real search data`)
     
-    // Get related keywords using Google Autocomplete
+    // Get related keywords using Google Autocomplete with SEO focus
     const relatedKeywordSet = new Set<string>()
+    const seoTerms = ['seo', 'tools', 'optimization', 'marketing', 'analysis', 'research', 'audit', 'ranking']
     
     for (const seedKeyword of seedKeywords.slice(0, 3)) {
       const suggestions = await getAutocompleteSuggestions(seedKeyword)
-      suggestions.slice(0, 5).forEach(suggestion => {
+      
+      // Filter for SEO-relevant suggestions
+      const relevantSuggestions = suggestions.filter(suggestion => {
+        const lower = suggestion.toLowerCase()
+        return seoTerms.some(term => lower.includes(term)) || 
+               seedKeywords.some(seed => lower.includes(seed.toLowerCase()))
+      })
+      
+      relevantSuggestions.slice(0, 5).forEach(suggestion => {
         if (!seedKeywords.includes(suggestion)) {
           relatedKeywordSet.add(suggestion)
         }
       })
+      
+      // If no relevant suggestions, add SEO combinations
+      if (relevantSuggestions.length === 0) {
+        seoTerms.slice(0, 3).forEach(term => {
+          relatedKeywordSet.add(`${seedKeyword} ${term}`)
+        })
+      }
     }
     
     const relatedKeywordsList = Array.from(relatedKeywordSet).slice(0, 8)
@@ -1510,10 +1526,10 @@ export async function analyzeKeywordResearch(url: string, projectData?: {
     // Generate long-tail keywords based on seed keywords
     const longTailTemplates = [
       'best {keyword} tools',
-      'how to {keyword}',
-      '{keyword} for beginners',
-      '{keyword} guide',
-      '{keyword} tips'
+      'how to use {keyword}',
+      '{keyword} for small business',
+      '{keyword} software',
+      '{keyword} platform'
     ]
     
     const longTailKeywords: Array<{ keyword: string; searchVolume: number; difficulty: number }> = []
