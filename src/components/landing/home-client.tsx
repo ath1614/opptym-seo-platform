@@ -233,7 +233,39 @@ export default function HomeClient() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="text-center mb-10">
             <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">🔎 Analyze Your Website</Badge>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">Free Website Analysis</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">Run a quick, professional SEO check on any URL. Sign in to generate and save a full report to your dashboard.</p>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6">Choose up to 5 SEO tools and get detailed analysis for each selected tool. Our comprehensive analysis covers meta tags, broken links, alt text, page speed, mobile optimization, and more.</p>
+            
+            {/* What it does brief */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <Search className="w-6 h-6 text-blue-600" />
+                </div>
+                <p className="text-sm font-medium">Meta Tags</p>
+                <p className="text-xs text-muted-foreground">Title, description, OG tags</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-red-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <LinkIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <p className="text-sm font-medium">Broken Links</p>
+                <p className="text-xs text-muted-foreground">Find & fix broken links</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <Image className="w-6 h-6 text-green-600" />
+                </div>
+                <p className="text-sm font-medium">Alt Text</p>
+                <p className="text-xs text-muted-foreground">Image accessibility</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-yellow-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <Gauge className="w-6 h-6 text-yellow-600" />
+                </div>
+                <p className="text-sm font-medium">Page Speed</p>
+                <p className="text-xs text-muted-foreground">Performance analysis</p>
+              </div>
+            </div>
           </motion.div>
 
           <Card className="border-0 bg-card/50 backdrop-blur-sm shadow-sm">
@@ -243,7 +275,7 @@ export default function HomeClient() {
               </CardTitle>
               <CardDescription className="text-center">We’ll analyze meta tags, broken links, alt text, page speed and more.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <div className="flex flex-col md:flex-row gap-4 items-center">
                 <Input
                   placeholder="https://example.com"
@@ -261,6 +293,17 @@ export default function HomeClient() {
                     Generate Report
                   </Button>
                 </div>
+              </div>
+              
+              {/* Tool Selection Preview */}
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-3">✨ Choose from 8 professional SEO tools including Schema Markup, Mobile Check, and Sitemap validation</p>
+                <Link href="/dashboard/analyze-website">
+                  <Button variant="outline" size="sm">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Customize Tool Selection
+                  </Button>
+                </Link>
               </div>
 
               {analysisError && (
