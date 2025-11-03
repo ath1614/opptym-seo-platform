@@ -1085,9 +1085,12 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
       recommendations.push('Keyword density is within optimal range (0.5-2.5%)')
     }
 
-    // Add general recommendations
-    if (targetKeywords.length === 0) {
-      recommendations.push('Consider specifying target keywords for more focused analysis')
+    // Add transparency about keyword source
+    if (targetKeywords.length > 0) {
+      recommendations.push(`Analyzed ${targetKeywords.length} target keywords from your project settings`)
+    } else {
+      recommendations.push('No target keywords found in project - analyzed content-based keywords')
+      recommendations.push('Add target keywords to your project for more focused analysis')
     }
 
     // Add information about multi-word phrases found
@@ -1095,6 +1098,10 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
     if (multiWordKeywords.length > 0) {
       recommendations.push(`Found ${multiWordKeywords.length} multi-word phrases in analysis`)
     }
+    
+    // Add methodology note
+    recommendations.push('Density calculated as (keyword occurrences / total words) × 100')
+    recommendations.push('Optimal keyword density is typically 0.5-2.5% to avoid over-optimization')
 
     console.log(`✅ Keyword density analysis completed. Found ${keywordAnalysis.length} keywords (${multiWordKeywords.length} multi-word)`)
 
@@ -1130,9 +1137,10 @@ function getFallbackKeywordDensityAnalysis(url: string, targetKeywords: string[]
     totalWords: 1000, // Estimated word count
     keywords,
     recommendations: [
-      'Unable to analyze the webpage content directly',
-      'This is sample data - please check your website URL and try again',
-      'Multi-word phrases are included in the analysis when content is accessible'
+      'Unable to analyze webpage content - check URL accessibility',
+      'Add target keywords to your project for better analysis',
+      'This is sample data based on common SEO keywords',
+      'Ensure your website is accessible and try again'
     ],
     score: 75
   }

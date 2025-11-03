@@ -42,10 +42,17 @@ export async function POST(
       }, { status: 429 })
     }
 
+    // Prepare project keywords for density analysis
+    const projectKeywords = [
+      ...(project.keywords || []),
+      ...(project.targetKeywords || []),
+      ...(project.seoMetadata?.keywords ? [project.seoMetadata.keywords] : [])
+    ].filter(Boolean)
+    
     // Run keyword density analysis
     try {
-      // Run keyword density analysis
-      const analysisResult = await analyzeKeywordDensity(project.websiteURL)
+      // Run keyword density analysis with project keywords
+      const analysisResult = await analyzeKeywordDensity(project.websiteURL, projectKeywords)
       
       // Only save usage to database AFTER successful analysis
       const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')

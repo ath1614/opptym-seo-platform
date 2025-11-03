@@ -20,18 +20,20 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
   const { status } = useSession()
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsMenuOpen(false)
     }
+    
     if (isMenuOpen) {
-      document.body.classList.add('overflow-hidden')
-      window.addEventListener('keydown', onKey)
+      document.body.style.overflow = 'hidden'
+      document.addEventListener('keydown', handleEscape)
     } else {
-      document.body.classList.remove('overflow-hidden')
+      document.body.style.overflow = 'unset'
     }
+    
     return () => {
-      document.body.classList.remove('overflow-hidden')
-      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = 'unset'
+      document.removeEventListener('keydown', handleEscape)
     }
   }, [isMenuOpen])
 
@@ -43,31 +45,34 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
     await signOut({ callbackUrl: '/' })
   }
 
+  const closeMenu = () => setIsMenuOpen(false)
+
   const isLanding = variant === 'landing'
   const navClass = isLanding
     ? "mx-auto mt-2 sm:mt-6 w-full sm:w-[min(95%,1100px)] rounded-none sm:rounded-full border-0 sm:border-2 border-border bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/50 shadow-md"
     : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
 
   return (
-    <nav className={`relative ${navClass} sticky top-0 z-[9999]`}>
-      <div className={`${isLanding ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'container mx-auto px-4 sm:px-6 lg:px-8'}`}>
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
-            <Logo 
-              width={28} 
-              height={28} 
-              className="sm:hidden" 
-            />
-            <Logo 
-              width={36} 
-              height={36} 
-              className="hidden sm:flex" 
-            />
-          </div>
+    <>
+      <nav className={`relative ${navClass} sticky top-0 z-50`}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <Logo 
+                width={28} 
+                height={28} 
+                className="sm:hidden" 
+              />
+              <Logo 
+                width={36} 
+                height={36} 
+                className="hidden sm:flex" 
+              />
+            </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center">
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-1 flex-1 justify-center">
               <Link
                 href="/#features"
                 className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors"
@@ -98,10 +103,10 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
               >
                 Knowledge Base
               </Link>
-          </div>
+            </div>
 
-          {/* Desktop Controls */}
-          <div className="hidden lg:flex items-center space-x-3">
+            {/* Desktop Controls */}
+            <div className="hidden lg:flex items-center space-x-3">
               {status === 'authenticated' ? (
                 <>
                   <Link href="/dashboard">
@@ -141,154 +146,148 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                 <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
-          </div>
+            </div>
 
-          {/* Mobile Controls (visible on small screens) */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-9 w-9"
-            >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle navigation menu"
-              className="h-9 w-9"
-            >
-              {isMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
+            {/* Mobile Controls */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-9 w-9"
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="h-9 w-9"
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
           </div>
+        </div>
+      </nav>
 
-        {/* Mobile Navigation - Fullscreen Overlay */}
-        {isMenuOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-[9999] bg-black text-white overflow-y-auto"
-          >
+      {/* Mobile Menu Overlay */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[100] lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeMenu}
+          />
+          
+          {/* Menu Panel */}
+          <div className="absolute top-0 right-0 h-full w-full max-w-sm bg-background border-l shadow-xl">
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-4 py-4 border-b border-white/20">
-                <div className="flex items-center space-x-3">
-                  <Logo width={32} height={32} showText={false} />
-                  <span className="font-semibold text-lg">Menu</span>
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <Logo width={24} height={24} />
+                  <span className="font-semibold">Menu</span>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="h-9 w-9 text-white hover:bg-white/10"
-                  aria-label="Close navigation menu"
+                  onClick={closeMenu}
+                  className="h-8 w-8"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
 
-              <nav className="px-4 py-8 space-y-6 flex-1 flex flex-col justify-center">
-                <Link
-                  href="/#features"
-                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Features
-                </Link>
-                <Link
-                  href="/#seo-tasks"
-                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  SEO Tasks
-                </Link>
-                <Link
-                  href="/#pricing"
-                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="/#why-choose-us"
-                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Why Choose Us
-                </Link>
-                <Link
-                  href="/#knowledge-base"
-                  className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-lg font-medium transition-colors text-center"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Knowledge Base
-                </Link>
-              </nav>
+              {/* Navigation Links */}
+              <div className="flex-1 overflow-y-auto py-4">
+                <nav className="space-y-1 px-4">
+                  <Link
+                    href="/#features"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Features
+                  </Link>
+                  <Link
+                    href="/#seo-tasks"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={closeMenu}
+                  >
+                    SEO Tasks
+                  </Link>
+                  <Link
+                    href="/#pricing"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Pricing
+                  </Link>
+                  <Link
+                    href="/#why-choose-us"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Why Choose Us
+                  </Link>
+                  <Link
+                    href="/#knowledge-base"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Knowledge Base
+                  </Link>
+                </nav>
+              </div>
 
-              <div className="border-t px-4 py-6 space-y-3 border-white/20">
+              {/* Footer Actions */}
+              <div className="border-t p-4 space-y-2">
                 {status === 'authenticated' ? (
                   <>
-                    <Link
-                      href="/dashboard"
-                      className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-base font-medium transition-colors text-center"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Dashboard
+                    <Link href="/dashboard" onClick={closeMenu}>
+                      <Button variant="outline" className="w-full justify-start gap-2">
+                        <User className="h-4 w-4" />
+                        Dashboard
+                      </Button>
                     </Link>
-                    <button
+                    <Button
+                      variant="destructive"
+                      className="w-full justify-start gap-2"
                       onClick={() => {
-                        setIsMenuOpen(false)
+                        closeMenu()
                         handleSignOut()
                       }}
-                      className="text-center block w-full px-4 py-3 rounded-lg text-base font-medium text-red-400 hover:bg-red-600/20 transition-colors"
                     >
+                      <LogOut className="h-4 w-4" />
                       Sign Out
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
-                    <Link
-                      href="/auth/login"
-                      className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-base font-medium transition-colors text-center"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Log In
+                    <Link href="/auth/login" onClick={closeMenu}>
+                      <Button variant="outline" className="w-full">
+                        Log In
+                      </Button>
                     </Link>
-                    <Link
-                      href="/auth/register"
-                      className="text-white hover:bg-white/10 block px-4 py-3 rounded-lg text-base font-medium transition-colors text-center"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Sign Up
+                    <Link href="/auth/register" onClick={closeMenu}>
+                      <Button className="w-full">
+                        Sign Up
+                      </Button>
                     </Link>
                   </>
                 )}
-
-                <div className="pt-3 flex justify-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleTheme}
-                    className="h-10 w-10 text-white hover:bg-white/10 rounded-lg"
-                  >
-                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span className="sr-only">Toggle theme</span>
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
-        )}
         </div>
-      </div>
-    </nav>
+      )}
+    </>
   )
 }
