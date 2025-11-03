@@ -90,11 +90,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Script id="gtag-src" strategy="afterInteractive" src="https://www.googletagmanager.com/gtag/js?id=G-PYDKFTN2WL" />
-        <Script id="gtag-init" strategy="afterInteractive">
+      <head>
+        <meta name="google-site-verification" content="google68f6546bc9cf0b40" />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-PYDKFTN2WL"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
@@ -102,8 +104,11 @@ export default function RootLayout({
             gtag('config', 'G-PYDKFTN2WL');
           `}
         </Script>
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <Providers>
-          {/* Removed ErrorBoundary wrapper */}
           <div className="relative flex min-h-screen flex-col">
             <ConditionalNavbar />
             <main className="flex-1">{children}</main>
