@@ -55,8 +55,16 @@ export async function POST(
     }
     
     try {
-      // Run keyword tracking analysis
-    const analysisResult = await analyzeKeywordTracking(websiteURL)
+      // Prepare project data for keyword tracking
+    const projectKeywordData = {
+      keywords: project.keywords || [],
+      targetKeywords: project.targetKeywords || [],
+      seoKeywords: project.seoMetadata?.keywords ? [project.seoMetadata.keywords] : [],
+      businessDescription: project.businessDescription || project.projectDescription || ''
+    }
+    
+    // Run keyword tracking analysis with project data
+    const analysisResult = await analyzeKeywordTracking(websiteURL, projectKeywordData)
       
       // Only save usage to database AFTER successful analysis
       const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')

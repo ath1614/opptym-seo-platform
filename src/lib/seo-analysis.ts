@@ -2027,21 +2027,41 @@ export async function analyzeBacklinks(url: string): Promise<BacklinkAnalysis> {
   }
 }
 
-// Keyword Tracker - Real rank tracking using search simulation
-export async function analyzeKeywordTracking(url: string): Promise<KeywordTrackingAnalysis> {
-  console.log(`🔍 Starting real keyword rank tracking for ${url}`)
+// Keyword Tracker - Enhanced rank tracking with project-based keywords
+export async function analyzeKeywordTracking(url: string, projectData?: {
+  keywords?: string[]
+  targetKeywords?: string[]
+  seoKeywords?: string[]
+  businessDescription?: string
+}): Promise<KeywordTrackingAnalysis> {
+  console.log(`🔍 Starting enhanced keyword rank tracking for ${url}`)
   
   const domain = new URL(url).hostname
-  const $ = await fetchAndParseHTML(url)
   
-  // Extract target keywords from page content for tracking
-  const title = $?.('title').text() || ''
-  const metaDescription = $?.('meta[name="description"]').attr('content') || ''
-  const h1Text = $?.('h1').first().text() || ''
+  // Use project target keywords instead of extracting from content
+  const targetKeywords = [
+    ...(projectData?.keywords || []),
+    ...(projectData?.targetKeywords || []),
+    ...(projectData?.seoKeywords || [])
+  ].filter(Boolean)
   
-  // Extract meaningful keywords from page content
-  const allText = [title, metaDescription, h1Text].join(' ').toLowerCase()
-  const extractedKeywords = extractMeaningfulKeywords(allText, 3, 15)
+  console.log(`🎯 Using ${targetKeywords.length} target keywords from project:`, targetKeywords.slice(0, 5))
+  
+  // If no project keywords, use domain-based fallback
+  let keywordsToTrack: string[] = []
+  if (targetKeywords.length === 0) {
+    const domainName = domain.replace('www.', '').split('.')[0]
+    keywordsToTrack = [
+      domainName,
+      `${domainName} services`,
+      `${domainName} solutions`,
+      'professional services',
+      'business solutions'
+    ]
+    console.log(`🌐 Using domain-based keywords:`, keywordsToTrack.slice(0, 3))
+  } else {
+    keywordsToTrack = targetKeywords
+  }
   
   console.log(`🎯 Extracted ${extractedKeywords.length} target keywords:`, extractedKeywords.slice(0, 5))
   
@@ -2061,14 +2081,33 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
   
   console.log(`📊 Retrieved search volume data for ${Object.keys(keywordMetrics).length} keywords`)
   
-  // Simulate rank checking for each keyword
-  for (const keyword of extractedKeywords) {
+  // Get search volume data for target keywords
+  const keywordMetrics = await getSearchVolumeDataForKeywords(keywordsToTrack)
+  
+  console.log(`📊 Retrieved search volume data for ${Object.keys(keywordMetrics).length} keywords`)
+  
+  // Track each keyword with enhanced simulation
+  for (const keyword of keywordsToTrack) {
     try {
-      console.log(`🔍 Checking rank for keyword: "${keyword}"`)
+      console.log(`🔍 Tracking keyword: "${keyword}"`)
       
-      // Simulate search result analysis
+      // Enhanced rank checking
       const currentRank = await simulateRankCheck(keyword, domain)
-      const previousRank = currentRank + Math.floor(Math.random() * 6) - 3 // ±3 positions
+      
+      // Generate more realistic previous rank (based on typical SEO fluctuations)
+      let previousRank: number
+      if (currentRank <= 10) {
+        // Top 10 rankings have smaller fluctuations
+        previousRank = currentRank + Math.floor(Math.random() * 6) - 3 // ±3 positions
+      } else if (currentRank <= 30) {
+        // Mid-range rankings have moderate fluctuations
+        previousRank = currentRank + Math.floor(Math.random() * 10) - 5 // ±5 positions
+      } else {
+        // Lower rankings have larger fluctuations
+        previousRank = currentRank + Math.floor(Math.random() * 20) - 10 // ±10 positions
+      }
+      
+      previousRank = Math.max(1, Math.min(100, previousRank))
       const change = previousRank - currentRank
       
       const metrics = keywordMetrics[keyword]
@@ -2085,28 +2124,20 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
         url
       })
       
-      console.log(`✅ Rank tracked: "${keyword}" - Position ${currentRank} (${change > 0 ? '+' : ''}${change})`)
+      console.log(`✅ Tracked: "${keyword}" - Position ${currentRank} (${change > 0 ? '+' : ''}${change})`)
       
     } catch (error) {
       console.error(`❌ Error tracking keyword "${keyword}":`, error)
     }
   }
   
-  // If no keywords extracted, use common business keywords
-  if (trackedKeywords.length === 0) {
-    console.log('⚠️ No keywords extracted, using common business keywords')
+  // Ensure we have keywords to track
+  if (trackedKeywords.length === 0 && keywordsToTrack.length > 0) {
+    console.log('⚠️ No keywords successfully tracked, retrying with fallback method')
     
-    const fallbackKeywords = [
-      'business solutions',
-      'professional services', 
-      'online platform',
-      'digital tools',
-      'website services'
-    ]
-    
-    for (const keyword of fallbackKeywords) {
+    for (const keyword of keywordsToTrack.slice(0, 5)) {
       const currentRank = await simulateRankCheck(keyword, domain)
-      const previousRank = currentRank + Math.floor(Math.random() * 6) - 3
+      const previousRank = Math.max(1, Math.min(100, currentRank + Math.floor(Math.random() * 6) - 3))
       const change = previousRank - currentRank
       
       trackedKeywords.push({
@@ -2178,6 +2209,16 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
     recommendations.push(`Quick wins available: ${lowDifficultyKeywords.length} low-difficulty keywords to target`)
   }
   
+  // Add methodology transparency
+  if (targetKeywords.length > 0) {
+    recommendations.push(`Using ${targetKeywords.length} target keywords from your project settings`)
+  } else {
+    recommendations.push('No target keywords found in project - using domain-based keywords')
+    recommendations.push('Add target keywords to your project for more accurate tracking')
+  }
+  
+  recommendations.push('Rankings are simulated based on keyword characteristics and domain factors')
+  recommendations.push('For real-time rankings, consider using dedicated rank tracking tools')
   recommendations.push('Monitor rankings weekly to track progress and identify trends')
   recommendations.push('Create content clusters around your best-performing keywords')
   recommendations.push('Analyze competitor rankings for keyword gap opportunities')
@@ -2205,60 +2246,61 @@ export async function analyzeKeywordTracking(url: string): Promise<KeywordTracki
   }
 }
 
-// Helper function to simulate rank checking
+// Enhanced rank checking with more realistic simulation
 async function simulateRankCheck(keyword: string, domain: string): Promise<number> {
   try {
-    // Simulate checking search results for the keyword
-    console.log(`🔍 Simulating rank check for "${keyword}" and domain ${domain}`)
+    console.log(`🔍 Enhanced rank simulation for "${keyword}" and domain ${domain}`)
     
     // Use Google Autocomplete to validate keyword relevance
     const { getAutocompleteSuggestions } = await import('@/lib/providers/seo-data')
     const suggestions = await getAutocompleteSuggestions(keyword)
     
-    // If keyword appears in suggestions, it's more likely to rank well
+    // Check keyword characteristics for more realistic ranking
     const isRelevantKeyword = suggestions.some(s => 
       s.toLowerCase().includes(keyword.toLowerCase())
     )
     
-    // Simulate ranking based on various factors
-    let baseRank = Math.floor(Math.random() * 50) + 20 // Base rank 20-70
+    const isHighCompetition = keyword.split(' ').length <= 2 && !keyword.includes(domain.split('.')[0])
+    const isLongTail = keyword.split(' ').length >= 3
+    const isBrandedKeyword = keyword.toLowerCase().includes(domain.split('.')[0].toLowerCase())
     
-    // Adjust rank based on keyword characteristics
-    if (isRelevantKeyword) {
-      baseRank -= 10 // Better rank for relevant keywords
+    // More realistic base ranking logic
+    let baseRank: number
+    
+    if (isBrandedKeyword) {
+      // Branded keywords typically rank well
+      baseRank = Math.floor(Math.random() * 15) + 1 // 1-15
+    } else if (isLongTail && isRelevantKeyword) {
+      // Long-tail keywords with relevance
+      baseRank = Math.floor(Math.random() * 30) + 15 // 15-45
+    } else if (isHighCompetition) {
+      // High competition keywords rank lower
+      baseRank = Math.floor(Math.random() * 40) + 50 // 50-90
+    } else {
+      // Medium competition keywords
+      baseRank = Math.floor(Math.random() * 35) + 25 // 25-60
     }
     
-    // Adjust based on domain characteristics
-    if (domain.includes('.com')) {
-      baseRank -= 5 // .com domains tend to rank better
-    }
+    // Domain authority adjustments (simplified)
+    const domainAge = domain.includes('.com') ? -5 : 0
+    const domainLength = domain.length < 15 ? -3 : domain.length > 25 ? 5 : 0
     
-    if (domain.length < 15) {
-      baseRank -= 3 // Shorter domains tend to rank better
-    }
+    baseRank += domainAge + domainLength
     
-    // Adjust based on keyword length (long-tail keywords rank better)
-    const wordCount = keyword.split(' ').length
-    if (wordCount >= 3) {
-      baseRank -= 8 // Long-tail keywords easier to rank
-    } else if (wordCount === 2) {
-      baseRank -= 3
-    }
+    // Add realistic variation
+    const variation = Math.floor(Math.random() * 10) - 5 // ±5 positions
+    const finalRank = Math.max(1, Math.min(100, baseRank + variation))
     
-    // Add some randomness for realistic variation
-    baseRank += Math.floor(Math.random() * 20) - 10 // ±10 positions
-    
-    // Ensure rank is within realistic bounds
-    const finalRank = Math.max(1, Math.min(100, baseRank))
-    
-    console.log(`🎯 Simulated rank for "${keyword}": position ${finalRank}`)
+    console.log(`🎯 Enhanced rank for "${keyword}": position ${finalRank} (branded: ${isBrandedKeyword}, long-tail: ${isLongTail})`)
     
     return finalRank
     
   } catch (error) {
-    console.error(`Error in rank simulation for "${keyword}":`, error)
-    // Return a random rank if simulation fails
-    return Math.floor(Math.random() * 80) + 20
+    console.error(`Error in enhanced rank simulation for "${keyword}":`, error)
+    // Return more realistic fallback based on keyword type
+    const wordCount = keyword.split(' ').length
+    const fallbackRank = wordCount >= 3 ? Math.floor(Math.random() * 40) + 20 : Math.floor(Math.random() * 60) + 30
+    return Math.min(100, fallbackRank)
   }
 }
 
