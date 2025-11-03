@@ -7,7 +7,7 @@ const { default: SeoToolUsage } = await import('@/models/SeoToolUsage')
 import { analyzeCompetitors } from '@/lib/seo-analysis'
 import { trackUsage } from '@/lib/limit-middleware'
 
-// Enhanced fallback data for when analysis fails
+// Conservative fallback data for when analysis fails (only used when no project competitors available)
 const generateFallbackAnalysis = (url: string, projectName?: string) => {
   const domain = url ? new URL(url).hostname : 'example.com'
   const industry = projectName?.toLowerCase().includes('tech') ? 'Technology' : 
@@ -78,14 +78,12 @@ const generateFallbackAnalysis = (url: string, projectName?: string) => {
       }
     ],
     recommendations: [
-      'Network connectivity issues detected - showing enhanced example analysis',
-      `Focus on improving domain authority in the ${industry.toLowerCase()} sector`,
-      'Target competitive gaps with high opportunity scores',
-      'Develop content strategy around competitor weaknesses',
-      'Monitor competitor keyword strategies regularly',
-      `Consider partnerships in the ${industry.toLowerCase()} space`,
-      'Invest in mobile optimization and user experience',
-      'Build thought leadership content for better brand recognition'
+      'NOTICE: This is example data due to service unavailability',
+      'Add known competitors to your project settings for real analysis',
+      `Research actual competitors in the ${industry.toLowerCase()} sector`,
+      'Focus on improving domain authority through quality content',
+      'Monitor competitor strategies when service is available',
+      'This analysis will be more accurate with your actual competitor data'
     ],
     score: Math.floor(Math.random() * 30) + 60, // 60-90
     marketPosition: 'challenger',
@@ -163,23 +161,41 @@ export async function POST(
     let analysisResult
     let isFromFallback = false
 
+    // Prepare project data for competitor analysis
+    const projectCompetitorData = {
+      competitors: project.competitors || [],
+      keywords: project.keywords || [],
+      targetKeywords: project.targetKeywords || [],
+      businessDescription: project.businessDescription || project.projectDescription || '',
+      industry: project.industry || ''
+    }
+    
     try {
-      // Attempt analysis with retry mechanism
+      // Attempt analysis with project data and retry mechanism
       analysisResult = await retryWithBackoff(
-        () => analyzeCompetitors(project.websiteURL),
-        3, // max retries
-        2000 // base delay 2 seconds
+        () => analyzeCompetitors(project.websiteURL, projectCompetitorData),
+        2, // reduced max retries
+        1500 // base delay 1.5 seconds
       )
       
       console.log('Competitor analysis completed successfully')
     } catch (analysisError) {
-      console.error('All competitor analysis attempts failed:', analysisError)
+      console.error('Competitor analysis failed:', analysisError)
       
-      // Generate enhanced fallback data
-      analysisResult = generateFallbackAnalysis(project.websiteURL, project.projectName)
-      isFromFallback = true
-      
-      console.log('Using enhanced fallback analysis data')
+      // Only use fallback if absolutely necessary and make it clear
+      if (projectCompetitorData.competitors.length === 0) {
+        analysisResult = generateFallbackAnalysis(project.websiteURL, project.projectName)
+        isFromFallback = true
+        console.log('Using fallback analysis - no project competitors available')
+      } else {
+        // Return error instead of misleading fallback data
+        return NextResponse.json({
+          error: 'Competitor analysis temporarily unavailable',
+          message: 'Please try again later. Your project competitors are saved and will be used when the service is available.',
+          projectCompetitors: projectCompetitorData.competitors,
+          timestamp: new Date().toISOString()
+        }, { status: 503 })
+      }
     }
 
     try {
@@ -220,13 +236,11 @@ export async function POST(
       const fallbackData = generateFallbackAnalysis('https://example.com', 'Sample Project')
       
       return NextResponse.json({
-        success: true,
-        data: fallbackData,
-        message: 'Service temporarily unavailable. Showing example competitor analysis.',
-        isFromFallback: true,
         error: 'Service temporarily unavailable',
+        message: 'Competitor analysis is currently unavailable. Please add competitors to your project settings and try again later.',
+        suggestion: 'Add competitor domains to your project for more accurate analysis when the service is restored.',
         timestamp: new Date().toISOString()
-      }, { status: 200 }) // Return 200 with fallback data instead of 500
+      }, { status: 503 }) // Service Unavailable
     } catch (fallbackError) {
       console.error('Even fallback generation failed:', fallbackError)
       

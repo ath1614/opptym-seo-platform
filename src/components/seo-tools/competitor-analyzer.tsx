@@ -231,10 +231,15 @@ export function CompetitorAnalyzer() {
         setAnalysisData(analysisResult)
         setAnalysisMetrics(generateAnalysisMetrics(analysisResult))
         
+        // Check if analysis used real data or fallback
+        const isFromFallback = data.isFromFallback || false
+        
         showToast({
-          title: "Analysis Complete",
-          description: `Found ${analysisResult.competitors?.length || 0} competitors for analysis.`,
-          variant: "default"
+          title: isFromFallback ? "Analysis Complete (Limited Data)" : "Analysis Complete",
+          description: isFromFallback 
+            ? `Analysis completed with limited data. Found ${analysisResult.competitors?.length || 0} competitors.`
+            : `Found ${analysisResult.competitors?.length || 0} competitors for analysis.`,
+          variant: isFromFallback ? "default" : "default"
         })
       } else {
         throw new Error(data.error || 'Analysis failed')
@@ -242,82 +247,16 @@ export function CompetitorAnalyzer() {
     } catch (error) {
       console.error('Analysis error:', error)
       
-      // Provide fallback analysis on error
-      const fallbackAnalysis: CompetitorAnalysis = {
-        url: useManualUrl ? manualUrl : 'Selected Project',
-        competitors: [
-          {
-            name: "Market Leader",
-            domain: "example-leader.com",
-            domainAuthority: 85,
-            backlinks: 50000,
-            organicTraffic: 500000,
-            keywords: 25000,
-            topKeywords: ['industry leader', 'market share', 'brand recognition'],
-            strengths: ['Strong brand presence', 'High domain authority', 'Extensive backlink profile'],
-            weaknesses: ['High competition', 'Expensive keywords'],
-            opportunities: ['Niche markets', 'Long-tail keywords'],
-            marketShare: 35,
-            trustScore: 92
-          },
-          {
-            name: "Rising Competitor",
-            domain: "rising-competitor.com", 
-            domainAuthority: 65,
-            backlinks: 15000,
-            organicTraffic: 150000,
-            keywords: 8000,
-            topKeywords: ['innovative solutions', 'customer service', 'competitive pricing'],
-            strengths: ['Fast growth', 'Good user experience', 'Active content marketing'],
-            weaknesses: ['Lower domain authority', 'Limited brand recognition'],
-            opportunities: ['Social media expansion', 'Partnership opportunities'],
-            marketShare: 15,
-            trustScore: 78
-          },
-          {
-            name: "Niche Player",
-            domain: "niche-specialist.com",
-            domainAuthority: 45,
-            backlinks: 5000,
-            organicTraffic: 50000,
-            keywords: 3000,
-            topKeywords: ['specialized services', 'expert knowledge', 'niche market'],
-            strengths: ['Specialized expertise', 'Loyal customer base', 'Low competition keywords'],
-            weaknesses: ['Limited market reach', 'Smaller budget'],
-            opportunities: ['Market expansion', 'Content partnerships'],
-            marketShare: 8,
-            trustScore: 85
-          }
-        ],
-        competitiveGaps: [
-          { keyword: 'advanced analytics', opportunity: 85, difficulty: 45 },
-          { keyword: 'mobile optimization', opportunity: 78, difficulty: 35 },
-          { keyword: 'user experience design', opportunity: 72, difficulty: 50 }
-        ],
-        recommendations: [
-          'Network connectivity issues detected - showing example analysis',
-          'Focus on improving domain authority through quality backlinks',
-          'Target competitive gaps with high opportunity scores',
-          'Develop content strategy around competitor weaknesses',
-          'Monitor competitor keyword strategies regularly'
-        ],
-        score: 68,
-        marketPosition: 'challenger',
-        industryBenchmarks: {
-          avgDomainAuthority: 65,
-          avgBacklinks: 23333,
-          avgKeywords: 12000
-        }
-      }
-
-      setAnalysisData(fallbackAnalysis)
-      setAnalysisMetrics(generateAnalysisMetrics(fallbackAnalysis))
-
+      // Show error instead of misleading fallback data
       showToast({
-        title: "Analysis Complete (Offline Mode)",
-        description: "Network error occurred. Showing example competitor analysis for reference.",
-        variant: "default"
+        title: "Analysis Failed",
+        description: data.message || "Competitor analysis is currently unavailable. Please try again later.",
+        variant: "destructive"
       })
+      
+      // Don't set fake analysis data
+      setAnalysisData(null)
+      setAnalysisMetrics(null)
     } finally {
       setIsAnalyzing(false)
     }
@@ -874,7 +813,8 @@ export function CompetitorAnalyzer() {
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Ready to Analyze Competitors</h3>
               <p className="text-muted-foreground mb-4">
-                Select a project or enter a URL to discover your competitors and market opportunities
+                Select a project or enter a URL to discover your competitors and market opportunities.
+                For best results, add known competitors to your project settings.
               </p>
               <Button onClick={runAnalysis} disabled={(!useManualUrl && !selectedProject) || (useManualUrl && !manualUrl)}>
                 <Search className="h-4 w-4 mr-2" />

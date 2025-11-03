@@ -2063,8 +2063,6 @@ export async function analyzeKeywordTracking(url: string, projectData?: {
     keywordsToTrack = targetKeywords
   }
   
-  console.log(`🎯 Extracted ${extractedKeywords.length} target keywords:`, extractedKeywords.slice(0, 5))
-  
   const trackedKeywords: Array<{
     keyword: string
     currentRank: number
@@ -2075,13 +2073,8 @@ export async function analyzeKeywordTracking(url: string, projectData?: {
     url: string
   }> = []
   
-  // Get search volume data for extracted keywords
-  const { getSearchVolumeDataForKeywords } = await import('@/lib/providers/seo-data')
-  const keywordMetrics = await getSearchVolumeDataForKeywords(extractedKeywords)
-  
-  console.log(`📊 Retrieved search volume data for ${Object.keys(keywordMetrics).length} keywords`)
-  
   // Get search volume data for target keywords
+  const { getSearchVolumeDataForKeywords } = await import('@/lib/providers/seo-data')
   const keywordMetrics = await getSearchVolumeDataForKeywords(keywordsToTrack)
   
   console.log(`📊 Retrieved search volume data for ${Object.keys(keywordMetrics).length} keywords`)
@@ -2304,18 +2297,28 @@ async function simulateRankCheck(keyword: string, domain: string): Promise<numbe
   }
 }
 
-// Competitor Analyzer - Enhanced real data analysis with multiple discovery methods
-export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysis> {
-  console.log(`🔍 Starting comprehensive competitor analysis for ${url}`)
+// Competitor Analyzer - Enhanced analysis with project-based competitor discovery
+export async function analyzeCompetitors(url: string, projectData?: {
+  competitors?: string[]
+  keywords?: string[]
+  targetKeywords?: string[]
+  businessDescription?: string
+  industry?: string
+}): Promise<CompetitorAnalysis> {
+  console.log(`🔍 Starting enhanced competitor analysis for ${url}`)
   
   const domain = new URL(url).hostname
-  const $ = await fetchAndParseHTML(url)
   
-  // Extract business context from the website
+  // Use project competitors if available
+  const projectCompetitors = projectData?.competitors || []
+  console.log(`🎯 Using ${projectCompetitors.length} competitors from project:`, projectCompetitors.slice(0, 3))
+  
+  // Extract business context for fallback discovery
+  const $ = await fetchAndParseHTML(url)
   const title = $?.('title').text() || ''
   const metaDesc = $?.('meta[name="description"]').attr('content') || ''
   const h1Text = $?.('h1').first().text() || ''
-  const businessContext = [title, metaDesc, h1Text].join(' ').toLowerCase()
+  const businessContext = [title, metaDesc, h1Text, projectData?.businessDescription || ''].join(' ').toLowerCase()
   
   // Extract seed keywords for competitor discovery
   const seedKeywords = extractMeaningfulKeywords(businessContext, 3, 8)
@@ -2338,15 +2341,43 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
   }> = []
   
   try {
-    // Method 1: Use SEO data providers for competitor discovery
-    const { discoverCompetitors, analyzeCompetitorDomain } = await import('@/lib/providers/seo-data')
-    const discoveredCompetitors = await discoverCompetitors(primarySeedKeyword, domain)
+    // Method 1: Use project competitors first
+    let allCompetitorDomains: string[] = []
     
-    console.log(`🏢 Method 1: Discovered ${discoveredCompetitors.length} competitors via SEO data providers`)
+    if (projectCompetitors.length > 0) {
+      // Clean and validate project competitors
+      const validCompetitors = projectCompetitors
+        .map(comp => {
+          try {
+            // Handle both URLs and domain names
+            if (comp.startsWith('http')) {
+              return new URL(comp).hostname
+            } else if (comp.includes('.')) {
+              return comp.toLowerCase().trim()
+            }
+            return null
+          } catch {
+            return null
+          }
+        })
+        .filter(Boolean) as string[]
+      
+      allCompetitorDomains.push(...validCompetitors)
+      console.log(`🏢 Method 1: Using ${validCompetitors.length} competitors from project`)
+    }
     
-    // Method 2: Analyze external links from the website
-    const linkBasedCompetitors: string[] = []
-    if ($) {
+    // Method 2: Try SEO data providers for additional discovery
+    try {
+      const { discoverCompetitors } = await import('@/lib/providers/seo-data')
+      const discoveredCompetitors = await discoverCompetitors(primarySeedKeyword, domain)
+      allCompetitorDomains.push(...discoveredCompetitors)
+      console.log(`🔍 Method 2: Discovered ${discoveredCompetitors.length} additional competitors via SEO data`)
+    } catch (error) {
+      console.log('⚠️ SEO data provider unavailable, using project competitors only')
+    }
+    
+    // Method 3: Analyze external links only if we have few competitors
+    if (allCompetitorDomains.length < 3 && $) {
       const links = $('a[href]')
       const domainMap = new Map<string, number>()
       
@@ -2380,36 +2411,15 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
       // Get top linked domains as potential competitors
       const topLinkedDomains = Array.from(domainMap.entries())
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 4)
+        .slice(0, 2)
         .map(([domain]) => domain)
       
-      linkBasedCompetitors.push(...topLinkedDomains)
-      console.log(`🔗 Method 2: Found ${linkBasedCompetitors.length} potential competitors from external links`)
+      allCompetitorDomains.push(...topLinkedDomains)
+      console.log(`🔗 Method 3: Found ${topLinkedDomains.length} potential competitors from external links`)
     }
     
-    // Method 3: Industry-based competitor simulation
-    const industryCompetitors: string[] = []
-    const domainParts = domain.split('.')
-    const domainName = domainParts[0].replace('www', '')
-    
-    // Generate industry-based competitor domains
-    const industryVariations = [
-      `${domainName}-pro.com`,
-      `best-${domainName}.com`,
-      `${domainName}-solutions.com`,
-      `top-${domainName}.net`,
-      `${domainName}-expert.org`
-    ]
-    
-    industryCompetitors.push(...industryVariations.slice(0, 3))
-    console.log(`🏢 Method 3: Generated ${industryCompetitors.length} industry-based competitor domains`)
-    
-    // Combine all discovered competitors
-    const allCompetitorDomains = [...new Set([
-      ...discoveredCompetitors,
-      ...linkBasedCompetitors,
-      ...industryCompetitors
-    ])].slice(0, 6)
+    // Remove duplicates and limit to reasonable number
+    allCompetitorDomains = [...new Set(allCompetitorDomains)].slice(0, 5)
     
     console.log(`📊 Analyzing ${allCompetitorDomains.length} total competitor domains...`)
     
@@ -2421,10 +2431,12 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
         let competitorData
         try {
           // Try to get real competitor data
+          const { analyzeCompetitorDomain } = await import('@/lib/providers/seo-data')
           competitorData = await analyzeCompetitorDomain(competitorDomain)
+          console.log(`✅ Retrieved real data for ${competitorDomain}`)
         } catch (error) {
-          console.log(`⚠️ Real data unavailable for ${competitorDomain}, using estimation`)
-          // Generate realistic competitor data based on domain characteristics
+          console.log(`⚠️ Real data unavailable for ${competitorDomain}, using domain-based estimation`)
+          // Generate more conservative competitor data based on domain characteristics
           competitorData = generateRealisticCompetitorData(competitorDomain, seedKeywords)
         }
         
@@ -2578,7 +2590,7 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     console.error('❌ Error in competitive gap analysis:', error)
   }
   
-  // Generate comprehensive recommendations
+  // Generate comprehensive recommendations with transparency
   const recommendations: string[] = []
   
   if (competitors.length > 0) {
@@ -2586,9 +2598,20 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     const avgTraffic = Math.round(competitors.reduce((sum, c) => sum + c.organicTraffic, 0) / competitors.length)
     const totalCompetitorKeywords = competitors.reduce((sum, c) => sum + c.topKeywords.length, 0)
     
-    recommendations.push(`Analyzed ${competitors.length} competitors with average DA of ${avgDA}`)
-    recommendations.push(`Competitor average organic traffic: ${avgTraffic.toLocaleString()} monthly visits`)
+    // Add transparency about data sources
+    if (projectCompetitors.length > 0) {
+      recommendations.push(`Analyzed ${competitors.length} competitors (${projectCompetitors.length} from your project settings)`)
+    } else {
+      recommendations.push(`Analyzed ${competitors.length} competitors discovered through content analysis`)
+      recommendations.push('Add known competitors to your project for more accurate analysis')
+    }
+    
+    recommendations.push(`Competitor average domain authority: ${avgDA}/100`)
+    recommendations.push(`Estimated average organic traffic: ${avgTraffic.toLocaleString()} monthly visits`)
     recommendations.push(`Total competitor keywords identified: ${totalCompetitorKeywords}`)
+    
+    // Add data quality disclaimer
+    recommendations.push('Note: Metrics are estimated based on available data and domain characteristics')
     
     // Strategic recommendations based on competitive landscape
     const strongCompetitors = competitors.filter(c => c.domainAuthority >= 70)
@@ -2608,7 +2631,9 @@ export async function analyzeCompetitors(url: string): Promise<CompetitorAnalysi
     }
     
   } else {
-    recommendations.push('Limited competitor data available - consider manual competitor research')
+    recommendations.push('No competitors found in analysis')
+    recommendations.push('Add known competitors to your project settings for better analysis')
+    recommendations.push('Consider researching competitors in your industry manually')
   }
   
   // Add strategic recommendations
