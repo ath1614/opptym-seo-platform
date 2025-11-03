@@ -53,15 +53,15 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
       <div className={`${isLanding ? 'container mx-auto px-4 sm:px-6 lg:px-8' : 'container mx-auto px-4 sm:px-6 lg:px-8'}`}>
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center">
             <Logo 
-              width={32} 
-              height={32} 
+              width={28} 
+              height={28} 
               className="sm:hidden" 
             />
             <Logo 
-              width={40} 
-              height={40} 
+              width={36} 
+              height={36} 
               className="hidden sm:flex" 
             />
           </div>
@@ -144,12 +144,12 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
           </div>
 
           {/* Mobile Controls (visible on small screens) */}
-          <div className="flex items-center gap-1 lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="h-8 w-8 sm:h-9 sm:w-9"
+              className="h-9 w-9"
             >
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -160,12 +160,12 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
               size="icon"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle navigation menu"
-              className="h-8 w-8 sm:h-9 sm:w-9"
+              className="h-9 w-9"
             >
               {isMenuOpen ? (
-                <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Menu className="h-5 w-5" />
               )}
             </Button>
           </div>

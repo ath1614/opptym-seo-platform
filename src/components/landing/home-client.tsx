@@ -448,7 +448,7 @@ export default function HomeClient() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Our comprehensive suite of 14+ professional SEO tools helps you analyze, optimize, and track your website's performance across all major search engines.</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: Search, title: "Meta Tag Analyzer", description: "Analyze and optimize meta titles, descriptions, and other meta tags for better search visibility.", color: "bg-blue-500/10 text-blue-600" },
               { icon: BarChart3, title: "Keyword Density Checker", description: "Check keyword density and distribution to avoid keyword stuffing and optimize content.", color: "bg-green-500/10 text-green-600" },
@@ -465,16 +465,16 @@ export default function HomeClient() {
               { icon: Eye, title: "Alt Text Checker", description: "Check and optimize alt text for images to improve accessibility and SEO.", color: "bg-rose-500/10 text-rose-600" },
               { icon: LinkIcon, title: "Canonical Checker", description: "Identify and fix canonical URL issues to prevent duplicate content problems.", color: "bg-amber-500/10 text-amber-600" },
             ].map((feature, index) => (
-              <motion.div key={feature.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }}>
-                <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm">
-                  <CardHeader>
+              <motion.div key={feature.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }} className="flex">
+                <Card className="flex-1 hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm">
+                  <CardHeader className="pb-4">
                     <div className={`w-12 h-12 ${feature.color} rounded-lg flex items-center justify-center mb-4`}>
                       <feature.icon className="w-6 h-6" />
                     </div>
-                    <CardTitle className="text-xl">{feature.title}</CardTitle>
+                    <CardTitle className="text-lg leading-tight">{feature.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base leading-relaxed">{feature.description}</CardDescription>
+                  <CardContent className="pt-0">
+                    <CardDescription className="text-sm leading-relaxed">{feature.description}</CardDescription>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -495,7 +495,7 @@ export default function HomeClient() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Streamline your SEO workflow with our automated submission tasks. Submit to directories, publish articles, and build backlinks automatically.</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: Database, title: "Directory Submission", description: "Submit your business to a curated list of high-quality directories automatically." },
               { icon: FileText, title: "Article Submission", description: "Publish articles to top article directories and content platforms." },
@@ -504,16 +504,16 @@ export default function HomeClient() {
               { icon: Building, title: "Business Listing", description: "List your business on Google My Business and other local directories." },
               { icon: ShoppingCart, title: "Classified Ads", description: "Post classified ads on high-traffic classified websites." },
             ].map((task, index) => (
-              <motion.div key={task.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }}>
-                <Card className="h-full hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-card to-card/50">
-                  <CardHeader>
+              <motion.div key={task.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }} className="flex">
+                <Card className="flex-1 hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-card to-card/50">
+                  <CardHeader className="pb-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                       <task.icon className="w-6 h-6 text-primary" />
                     </div>
-                    <CardTitle className="text-xl">{task.title}</CardTitle>
+                    <CardTitle className="text-lg leading-tight">{task.title}</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-base leading-relaxed">{task.description}</CardDescription>
+                  <CardContent className="pt-0">
+                    <CardDescription className="text-sm leading-relaxed">{task.description}</CardDescription>
                   </CardContent>
                 </Card>
               </motion.div>
