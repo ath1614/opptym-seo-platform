@@ -518,6 +518,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       errors['classified.price'] = 'Please enter a valid price (e.g., 99.99)'
     }
     
+    // Condition validation - now required
+    if (!formData.classified.condition?.trim()) {
+      errors['classified.condition'] = 'Product condition is required'
+    }
+    
     // Product Image URL validation - now required
     if (!formData.classified.productImageURL?.trim()) {
       errors['classified.productImageURL'] = 'Product image URL is required'
@@ -673,16 +678,62 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       if (!/^[\+]?[1-9][\d]{0,15}$/.test(value.replace(/[\s\-\(\)]/g, ''))) return 'Please enter a valid phone number (e.g., +1234567890 or 123-456-7890)'
     }
     
+    if (field === 'whatsapp') {
+      if (!value?.trim()) return 'WhatsApp number is required'
+      if (!/^[\+]?[1-9][\d]{0,15}$/.test(value.replace(/[\s\-\(\)]/g, ''))) return 'Please enter a valid WhatsApp number'
+    }
+    
     if (field === 'businessDescription') {
       if (!value?.trim()) return 'Business description is required'
       if (value.length < 50) return 'Business description should be at least 50 characters for better SEO'
       if (value.length > 2000) return 'Business description cannot exceed 2000 characters'
     }
     
+    if (field === 'targetAudience') {
+      if (!value?.trim()) return 'Target audience is required'
+      if (value.length > 500) return 'Target audience cannot exceed 500 characters'
+    }
+    
+    if (field === 'goals') {
+      if (!value?.trim()) return 'Project goals are required'
+      if (value.length > 1000) return 'Goals cannot exceed 1000 characters'
+    }
+    
+    if (field === 'notes') {
+      if (!value?.trim()) return 'Notes are required'
+      if (value.length > 2000) return 'Notes cannot exceed 2000 characters'
+    }
+    
+    if (field === 'businessHours') {
+      if (!value?.trim()) return 'Business hours are required'
+      if (value.length > 200) return 'Business hours cannot exceed 200 characters'
+    }
+    
+    if (field === 'establishedYear') {
+      if (!value || !String(value).trim()) return 'Established year is required'
+      const year = parseInt(String(value))
+      const currentYear = new Date().getFullYear()
+      if (isNaN(year) || year < 1800 || year > currentYear) return `Please enter a valid year between 1800 and ${currentYear}`
+    }
+    
+    if (field === 'logoImageURL') {
+      if (!value?.trim()) return 'Logo image URL is required'
+      if (!/^https?:\/\/.+/.test(value)) return 'Please enter a valid URL starting with http:// or https://'
+      if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)$/i.test(value)) return 'Please enter a valid image URL'
+    }
+    
     // Address validations
+    if (field === 'address.building') {
+      if (!value?.trim()) return 'Building is required'
+    }
+    
     if (field === 'address.addressLine1') {
       if (!value?.trim()) return 'Street address is required'
       if (value.length < 5) return 'Please provide a complete street address'
+    }
+    
+    if (field === 'address.addressLine3') {
+      if (!value?.trim()) return 'Address line 3 is required'
     }
     
     if (field === 'address.district') {
@@ -703,8 +754,12 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     
     if (field === 'address.pincode') {
       if (!value?.trim()) return 'Postal/ZIP code is required'
-      // Allow alphanumeric postal codes for international support (e.g., UK: SW1A 1AA, Canada: K1A 0A6)
-      if (!/^[A-Za-z0-9\s\-]{3,10}$/.test(value)) return 'Please enter a valid postal code (3-10 characters, letters, numbers, spaces, and hyphens allowed)'
+      if (!/^[A-Za-z0-9\s\-]{3,10}$/.test(value)) return 'Please enter a valid postal code'
+    }
+    
+    // Classified validations
+    if (field === 'classified.condition') {
+      if (!value?.trim()) return 'Product condition is required'
     }
     
     return null
@@ -935,73 +990,29 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       const errorCount = Object.keys(validationResult.errors).length
       const errorFields = Object.keys(validationResult.errors)
       
-      // Create structured error message with better formatting
+      // Show only first 5 errors to keep toast readable
+      const displayErrors = errorFields.slice(0, 5)
+      const remainingErrors = errorCount - displayErrors.length
+      
       let errorMessage = `❌ Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
       
-      // Group errors by category for better organization
-      const basicErrors = errorFields.filter(field => 
-        ['projectName', 'title', 'websiteURL', 'email', 'companyName', 'phone', 'businessDescription', 'category'].includes(field)
-      )
-      const addressErrors = errorFields.filter(field => field.startsWith('address.'))
-      const seoErrors = errorFields.filter(field => field.startsWith('seoMetadata.'))
-      const articleErrors = errorFields.filter(field => field.startsWith('articleSubmission.'))
-      const otherErrors = errorFields.filter(field => 
-        !basicErrors.includes(field) && 
-        !addressErrors.includes(field) && 
-        !seoErrors.includes(field) && 
-        !articleErrors.includes(field)
-      )
+      displayErrors.forEach((field, index) => {
+        const fieldName = field
+          .replace('address.', '')
+          .replace('seoMetadata.', '')
+          .replace('articleSubmission.', '')
+          .replace('classified.', '')
+          .replace('social.', '')
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, str => str.toUpperCase())
+        errorMessage += `${index + 1}. ${fieldName}\n`
+      })
       
-      // Add basic info errors
-      if (basicErrors.length > 0) {
-        errorMessage += `📋 Basic Information:\n`
-        basicErrors.forEach((field, index) => {
-          const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
-        })
-        errorMessage += `\n`
+      if (remainingErrors > 0) {
+        errorMessage += `\n...and ${remainingErrors} more error${remainingErrors > 1 ? 's' : ''}\n`
       }
       
-      // Add address errors
-      if (addressErrors.length > 0) {
-        errorMessage += `🏠 Address Information:\n`
-        addressErrors.forEach((field, index) => {
-          const fieldName = field.replace('address.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
-        })
-        errorMessage += `\n`
-      }
-      
-      // Add SEO errors
-      if (seoErrors.length > 0) {
-        errorMessage += `🔍 SEO Information:\n`
-        seoErrors.forEach((field, index) => {
-          const fieldName = field.replace('seoMetadata.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
-        })
-        errorMessage += `\n`
-      }
-      
-      // Add article errors
-      if (articleErrors.length > 0) {
-        errorMessage += `📝 Article Information:\n`
-        articleErrors.forEach((field, index) => {
-          const fieldName = field.replace('articleSubmission.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
-        })
-        errorMessage += `\n`
-      }
-      
-      // Add other errors
-      if (otherErrors.length > 0) {
-        errorMessage += `📄 Additional Information:\n`
-        otherErrors.forEach((field, index) => {
-          const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-          errorMessage += `   • ${fieldName}: ${validationResult.errors[field]}\n`
-        })
-      }
-      
-      errorMessage += `\n💡 Tip: Check the red highlighted fields above for specific guidance.`
+      errorMessage += `\n💡 Check the red highlighted fields below for details.`
       
       showToast({
         title: 'Validation Failed',
@@ -1065,73 +1076,29 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
           const errorFields = Object.keys(data.validationErrors)
           const errorCount = data.errorCount || errorFields.length
           
-          // Create structured error message with better formatting
+          // Show only first 5 errors to keep toast readable
+          const displayErrors = errorFields.slice(0, 5)
+          const remainingErrors = errorCount - displayErrors.length
+          
           let errorMessage = `❌ Please fix ${errorCount} error${errorCount > 1 ? 's' : ''}:\n\n`
           
-          // Group errors by category for better organization
-          const basicErrors = errorFields.filter(field => 
-            ['projectName', 'title', 'websiteURL', 'email', 'companyName', 'phone', 'businessDescription', 'category'].includes(field)
-          )
-          const addressErrors = errorFields.filter(field => field.startsWith('address.'))
-          const seoErrors = errorFields.filter(field => field.startsWith('seoMetadata.'))
-          const articleErrors = errorFields.filter(field => field.startsWith('articleSubmission.'))
-          const otherErrors = errorFields.filter(field => 
-            !basicErrors.includes(field) && 
-            !addressErrors.includes(field) && 
-            !seoErrors.includes(field) && 
-            !articleErrors.includes(field)
-          )
+          displayErrors.forEach((field, index) => {
+            const fieldName = field
+              .replace('address.', '')
+              .replace('seoMetadata.', '')
+              .replace('articleSubmission.', '')
+              .replace('classified.', '')
+              .replace('social.', '')
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/^./, str => str.toUpperCase())
+            errorMessage += `${index + 1}. ${fieldName}\n`
+          })
           
-          // Add basic info errors
-          if (basicErrors.length > 0) {
-            errorMessage += `📋 Basic Information:\n`
-            basicErrors.forEach((field, index) => {
-              const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
-            })
-            errorMessage += `\n`
+          if (remainingErrors > 0) {
+            errorMessage += `\n...and ${remainingErrors} more error${remainingErrors > 1 ? 's' : ''}\n`
           }
           
-          // Add address errors
-          if (addressErrors.length > 0) {
-            errorMessage += `🏠 Address Information:\n`
-            addressErrors.forEach((field, index) => {
-              const fieldName = field.replace('address.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
-            })
-            errorMessage += `\n`
-          }
-          
-          // Add SEO errors
-          if (seoErrors.length > 0) {
-            errorMessage += `🔍 SEO Information:\n`
-            seoErrors.forEach((field, index) => {
-              const fieldName = field.replace('seoMetadata.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
-            })
-            errorMessage += `\n`
-          }
-          
-          // Add article errors
-          if (articleErrors.length > 0) {
-            errorMessage += `📝 Article Information:\n`
-            articleErrors.forEach((field, index) => {
-              const fieldName = field.replace('articleSubmission.', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
-            })
-            errorMessage += `\n`
-          }
-          
-          // Add other errors
-          if (otherErrors.length > 0) {
-            errorMessage += `📄 Additional Information:\n`
-            otherErrors.forEach((field, index) => {
-              const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
-              errorMessage += `   • ${fieldName}: ${data.validationErrors[field]}\n`
-            })
-          }
-          
-          errorMessage += `\n💡 Tip: Check the red highlighted fields above for specific guidance.`
+          errorMessage += `\n💡 Check the red highlighted fields below for details.`
           
           showToast({
             title: 'Validation Failed',
@@ -1388,13 +1355,22 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="whatsapp">WhatsApp</Label>
+                  <Label htmlFor="whatsapp">WhatsApp *</Label>
                   <Input
                     id="whatsapp"
+                    ref={(el) => { fieldRefs.current['whatsapp'] = el }}
                     value={formData.whatsapp}
                     onChange={(e) => handleInputChange('whatsapp', e.target.value)}
                     placeholder="+1 (555) 123-4567"
+                    required
+                    className={getFieldError('whatsapp') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('whatsapp') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('whatsapp')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('whatsapp')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1419,71 +1395,125 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
                 {/* Project-specific fields */}
                 <div className="space-y-2">
-                  <Label htmlFor="targetAudience">Target Audience</Label>
+                  <Label htmlFor="targetAudience">Target Audience *</Label>
                   <Textarea
                     id="targetAudience"
+                    ref={(el) => { fieldRefs.current['targetAudience'] = el }}
                     value={formData.targetAudience}
                     onChange={(e) => handleInputChange('targetAudience', e.target.value)}
                     placeholder="Describe your target audience..."
                     rows={3}
+                    required
+                    className={getFieldError('targetAudience') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('targetAudience') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('targetAudience')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('targetAudience')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="goals">Project Goals</Label>
+                  <Label htmlFor="goals">Project Goals *</Label>
                   <Textarea
                     id="goals"
+                    ref={(el) => { fieldRefs.current['goals'] = el }}
                     value={formData.goals}
                     onChange={(e) => handleInputChange('goals', e.target.value)}
                     placeholder="What are your SEO goals for this project?"
                     rows={3}
+                    required
+                    className={getFieldError('goals') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('goals') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('goals')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('goals')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">Notes *</Label>
                   <Textarea
                     id="notes"
+                    ref={(el) => { fieldRefs.current['notes'] = el }}
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
                     placeholder="Additional notes or requirements..."
                     rows={3}
+                    required
+                    className={getFieldError('notes') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('notes') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('notes')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('notes')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="businessHours">Business Hours</Label>
+                    <Label htmlFor="businessHours">Business Hours *</Label>
                     <Input
                       id="businessHours"
+                      ref={(el) => { fieldRefs.current['businessHours'] = el }}
                       value={formData.businessHours}
                       onChange={(e) => handleInputChange('businessHours', e.target.value)}
                       placeholder="Mon-Fri 9AM-5PM"
+                      required
+                      className={getFieldError('businessHours') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('businessHours') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('businessHours')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('businessHours')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="establishedYear">Established Year</Label>
+                    <Label htmlFor="establishedYear">Established Year *</Label>
                     <Input
                       id="establishedYear"
+                      ref={(el) => { fieldRefs.current['establishedYear'] = el }}
                       type="number"
                       value={formData.establishedYear}
                       onChange={(e) => handleInputChange('establishedYear', e.target.value)}
                       placeholder="2020"
                       min="1800"
                       max={new Date().getFullYear()}
+                      required
+                      className={getFieldError('establishedYear') ? 'border-red-500' : ''}
                     />
+                    {getFieldError('establishedYear') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getFieldError('establishedYear')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('establishedYear')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="logoImageURL">Logo Image URL</Label>
+                  <Label htmlFor="logoImageURL">Logo Image URL *</Label>
                   <Input
                     id="logoImageURL"
+                    ref={(el) => { fieldRefs.current['logoImageURL'] = el }}
                     type="url"
                     value={formData.logoImageURL}
                     onChange={(e) => handleInputChange('logoImageURL', e.target.value)}
                     placeholder="https://example.com/logo.png"
+                    required
+                    className={getFieldError('logoImageURL') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('logoImageURL') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('logoImageURL')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('logoImageURL')}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1567,14 +1597,22 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="building">Building</Label>
+                  <Label htmlFor="building">Building *</Label>
                   <Input
                     id="building"
                     ref={(el) => { fieldRefs.current['address.building'] = el }}
                     value={formData.address.building}
                     onChange={(e) => handleInputChange('address.building', e.target.value)}
                     placeholder="Building name or number"
+                    required
+                    className={getNestedFieldError('address', 'building') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('address', 'building') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('address', 'building')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('address.building')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1607,13 +1645,22 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="addressLine3">Address Line 3</Label>
+                  <Label htmlFor="addressLine3">Address Line 3 *</Label>
                   <Input
                     id="addressLine3"
+                    ref={(el) => { fieldRefs.current['address.addressLine3'] = el }}
                     value={formData.address.addressLine3}
                     onChange={(e) => handleInputChange('address.addressLine3', e.target.value)}
                     placeholder="Additional address information"
+                    required
+                    className={getNestedFieldError('address', 'addressLine3') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('address', 'addressLine3') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('address', 'addressLine3')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('address.addressLine3')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1795,9 +1842,10 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="keywords">Keywords</Label>
+                  <Label htmlFor="keywords">Keywords *</Label>
                   <Input
                     id="keywords"
+                    ref={(el) => { fieldRefs.current['keywords'] = el }}
                     value={displayValues.keywords}
                     onChange={(e) => {
                       // Allow natural typing - just update display value
@@ -1832,16 +1880,25 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       }
                     }}
                     placeholder="keyword1, keyword2, keyword3"
+                    required
+                    className={getFieldError('keywords') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('keywords') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('keywords')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('keywords')}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Separate keywords with commas
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="competitors">Competitors</Label>
+                  <Label htmlFor="competitors">Competitors *</Label>
                   <Input
                     id="competitors"
+                    ref={(el) => { fieldRefs.current['competitors'] = el }}
                     value={displayValues.competitors}
                     onChange={(e) => {
                       // Allow natural typing - just update display value
@@ -1876,7 +1933,15 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       }
                     }}
                     placeholder="Enter competitor websites separated by commas"
+                    required
+                    className={getFieldError('competitors') ? 'border-red-500' : ''}
                   />
+                  {getFieldError('competitors') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getFieldError('competitors')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('competitors')}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Separate multiple competitors with commas
                   </p>
@@ -1893,38 +1958,57 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="metaTitle">Meta Title</Label>
+                  <Label htmlFor="metaTitle">Meta Title *</Label>
                   <Input
                     id="metaTitle"
+                    ref={(el) => { fieldRefs.current['seoMetadata.metaTitle'] = el }}
                     value={formData.seoMetadata.metaTitle}
                     onChange={(e) => handleInputChange('seoMetadata.metaTitle', e.target.value)}
                     placeholder="SEO optimized title (max 60 characters)"
                     maxLength={60}
+                    required
+                    className={getNestedFieldError('seoMetadata', 'metaTitle') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('seoMetadata', 'metaTitle') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('seoMetadata', 'metaTitle')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('seoMetadata.metaTitle')}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {formData.seoMetadata.metaTitle.length}/60 characters
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="metaDescription">Meta Description</Label>
+                  <Label htmlFor="metaDescription">Meta Description *</Label>
                   <Textarea
                     id="metaDescription"
+                    ref={(el) => { fieldRefs.current['seoMetadata.metaDescription'] = el }}
                     value={formData.seoMetadata.metaDescription}
                     onChange={(e) => handleInputChange('seoMetadata.metaDescription', e.target.value)}
                     placeholder="SEO optimized description (max 160 characters)"
                     rows={3}
                     maxLength={160}
+                    required
+                    className={getNestedFieldError('seoMetadata', 'metaDescription') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('seoMetadata', 'metaDescription') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('seoMetadata', 'metaDescription')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('seoMetadata.metaDescription')}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {formData.seoMetadata.metaDescription.length}/160 characters
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="keywords">Keywords</Label>
+                  <Label htmlFor="seoKeywords">Keywords *</Label>
                   <Input
-                    id="keywords"
+                    id="seoKeywords"
+                    ref={(el) => { fieldRefs.current['seoMetadata.keywords'] = el }}
                     value={displayValues.seoKeywords}
                     onChange={(e) => {
                       // Allow natural typing - just update display value
@@ -1959,16 +2043,25 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       }
                     }}
                     placeholder="keyword1, keyword2, keyword3"
+                    required
+                    className={getNestedFieldError('seoMetadata', 'keywords') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('seoMetadata', 'keywords') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('seoMetadata', 'keywords')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('seoMetadata.keywords')}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Separate keywords with commas
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="targetKeywords">Target Keywords</Label>
+                  <Label htmlFor="targetKeywords">Target Keywords *</Label>
                   <Input
                     id="targetKeywords"
+                    ref={(el) => { fieldRefs.current['seoMetadata.targetKeywords'] = el }}
                     value={displayValues.targetKeywords}
                     onChange={(e) => {
                       // Allow natural typing - just update display value
@@ -2003,7 +2096,15 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       }
                     }}
                     placeholder="target1, target2, target3"
+                    required
+                    className={getNestedFieldError('seoMetadata', 'targetKeywords') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('seoMetadata', 'targetKeywords') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('seoMetadata', 'targetKeywords')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('seoMetadata.targetKeywords')}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Primary keywords you want to rank for
                   </p>
@@ -2011,24 +2112,42 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="sitemapURL">Sitemap URL</Label>
+                    <Label htmlFor="sitemapURL">Sitemap URL *</Label>
                     <Input
                       id="sitemapURL"
+                      ref={(el) => { fieldRefs.current['seoMetadata.sitemapURL'] = el }}
                       type="url"
                       value={formData.seoMetadata.sitemapURL}
                       onChange={(e) => handleInputChange('seoMetadata.sitemapURL', e.target.value)}
                       placeholder="https://example.com/sitemap.xml"
+                      required
+                      className={getNestedFieldError('seoMetadata', 'sitemapURL') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('seoMetadata', 'sitemapURL') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('seoMetadata', 'sitemapURL')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('seoMetadata.sitemapURL')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="robotsURL">Robots.txt URL</Label>
+                    <Label htmlFor="robotsURL">Robots.txt URL *</Label>
                     <Input
                       id="robotsURL"
+                      ref={(el) => { fieldRefs.current['seoMetadata.robotsURL'] = el }}
                       type="url"
                       value={formData.seoMetadata.robotsURL}
                       onChange={(e) => handleInputChange('seoMetadata.robotsURL', e.target.value)}
                       placeholder="https://example.com/robots.txt"
+                      required
+                      className={getNestedFieldError('seoMetadata', 'robotsURL') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('seoMetadata', 'robotsURL') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('seoMetadata', 'robotsURL')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('seoMetadata.robotsURL')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -2113,40 +2232,68 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="articleTitle">Article Title</Label>
+                  <Label htmlFor="articleTitle">Article Title *</Label>
                   <Input
                     id="articleTitle"
+                    ref={(el) => { fieldRefs.current['articleSubmission.articleTitle'] = el }}
                     value={formData.articleSubmission.articleTitle}
                     onChange={(e) => handleInputChange('articleSubmission.articleTitle', e.target.value)}
                     placeholder="Enter article title"
+                    required
+                    className={getNestedFieldError('articleSubmission', 'articleTitle') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('articleSubmission', 'articleTitle') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('articleSubmission', 'articleTitle')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('articleSubmission.articleTitle')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="articleContent">Article Content</Label>
+                  <Label htmlFor="articleContent">Article Content *</Label>
                   <Textarea
                     id="articleContent"
+                    ref={(el) => { fieldRefs.current['articleSubmission.articleContent'] = el }}
                     value={formData.articleSubmission.articleContent}
                     onChange={(e) => handleInputChange('articleSubmission.articleContent', e.target.value)}
                     placeholder="Write your article content here..."
                     rows={8}
+                    required
+                    className={getNestedFieldError('articleSubmission', 'articleContent') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('articleSubmission', 'articleContent') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('articleSubmission', 'articleContent')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('articleSubmission.articleContent')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="authorName">Author Name</Label>
+                    <Label htmlFor="authorName">Author Name *</Label>
                     <Input
                       id="authorName"
+                      ref={(el) => { fieldRefs.current['articleSubmission.authorName'] = el }}
                       value={formData.articleSubmission.authorName}
                       onChange={(e) => handleInputChange('articleSubmission.authorName', e.target.value)}
                       placeholder="Author name"
+                      required
+                      className={getNestedFieldError('articleSubmission', 'authorName') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('articleSubmission', 'authorName') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('articleSubmission', 'authorName')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('articleSubmission.authorName')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="tags">Tags</Label>
+                    <Label htmlFor="tags">Tags *</Label>
                     <Input
                       id="tags"
+                      ref={(el) => { fieldRefs.current['articleSubmission.tags'] = el }}
                       value={displayValues.tags || ''}
                       onChange={(e) => {
                         // Allow natural typing by storing in display state
@@ -2181,7 +2328,15 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                         }
                       }}
                       placeholder="tag1, tag2, tag3"
+                      required
+                      className={getNestedFieldError('articleSubmission', 'tags') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('articleSubmission', 'tags') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('articleSubmission', 'tags')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('articleSubmission.tags')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -2277,29 +2432,50 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productName">Product Name</Label>
+                  <Label htmlFor="productName">Product Name *</Label>
                   <Input
                     id="productName"
+                    ref={(el) => { fieldRefs.current['classified.productName'] = el }}
                     value={formData.classified.productName}
                     onChange={(e) => handleInputChange('classified.productName', e.target.value)}
                     placeholder="Enter product name"
+                    required
+                    className={getNestedFieldError('classified', 'productName') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('classified', 'productName') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('classified', 'productName')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('classified.productName')}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price</Label>
+                    <Label htmlFor="price">Price *</Label>
                     <Input
                       id="price"
+                      ref={(el) => { fieldRefs.current['classified.price'] = el }}
                       value={formData.classified.price}
                       onChange={(e) => handleInputChange('classified.price', e.target.value)}
                       placeholder="$99.99"
+                      required
+                      className={getNestedFieldError('classified', 'price') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('classified', 'price') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('classified', 'price')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('classified.price')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="condition">Condition</Label>
+                    <Label htmlFor="condition">Condition *</Label>
                     <Select value={formData.classified.condition} onValueChange={(value) => handleInputChange('classified.condition', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger 
+                        ref={(el) => { fieldRefs.current['classified.condition'] = el }}
+                        className={getNestedFieldError('classified', 'condition') ? 'border-red-500' : ''}
+                      >
                         <SelectValue placeholder="Select condition" />
                       </SelectTrigger>
                       <SelectContent>
@@ -2308,18 +2484,33 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                         <SelectItem value="refurbished">Refurbished</SelectItem>
                       </SelectContent>
                     </Select>
+                    {getNestedFieldError('classified', 'condition') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('classified', 'condition')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('classified.condition')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="productImageURL">Product Image URL</Label>
+                  <Label htmlFor="productImageURL">Product Image URL *</Label>
                   <Input
                     id="productImageURL"
+                    ref={(el) => { fieldRefs.current['classified.productImageURL'] = el }}
                     type="url"
                     value={formData.classified.productImageURL}
                     onChange={(e) => handleInputChange('classified.productImageURL', e.target.value)}
                     placeholder="https://example.com/product.jpg"
+                    required
+                    className={getNestedFieldError('classified', 'productImageURL') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('classified', 'productImageURL') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('classified', 'productImageURL')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('classified.productImageURL')}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -2404,59 +2595,104 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="facebook">Facebook</Label>
+                    <Label htmlFor="facebook">Facebook *</Label>
                     <Input
                       id="facebook"
+                      ref={(el) => { fieldRefs.current['social.facebook'] = el }}
                       type="url"
                       value={formData.social.facebook}
                       onChange={(e) => handleInputChange('social.facebook', e.target.value)}
                       placeholder="https://facebook.com/yourpage"
+                      required
+                      className={getNestedFieldError('social', 'facebook') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('social', 'facebook') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('social', 'facebook')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('social.facebook')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="twitter">Twitter</Label>
+                    <Label htmlFor="twitter">Twitter *</Label>
                     <Input
                       id="twitter"
+                      ref={(el) => { fieldRefs.current['social.twitter'] = el }}
                       type="url"
                       value={formData.social.twitter}
                       onChange={(e) => handleInputChange('social.twitter', e.target.value)}
                       placeholder="https://twitter.com/yourhandle"
+                      required
+                      className={getNestedFieldError('social', 'twitter') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('social', 'twitter') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('social', 'twitter')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('social.twitter')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram</Label>
+                    <Label htmlFor="instagram">Instagram *</Label>
                     <Input
                       id="instagram"
+                      ref={(el) => { fieldRefs.current['social.instagram'] = el }}
                       type="url"
                       value={formData.social.instagram}
                       onChange={(e) => handleInputChange('social.instagram', e.target.value)}
                       placeholder="https://instagram.com/yourhandle"
+                      required
+                      className={getNestedFieldError('social', 'instagram') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('social', 'instagram') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('social', 'instagram')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('social.instagram')}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="linkedin">LinkedIn</Label>
+                    <Label htmlFor="linkedin">LinkedIn *</Label>
                     <Input
                       id="linkedin"
+                      ref={(el) => { fieldRefs.current['social.linkedin'] = el }}
                       type="url"
                       value={formData.social.linkedin}
                       onChange={(e) => handleInputChange('social.linkedin', e.target.value)}
                       placeholder="https://linkedin.com/company/yourcompany"
+                      required
+                      className={getNestedFieldError('social', 'linkedin') ? 'border-red-500' : ''}
                     />
+                    {getNestedFieldError('social', 'linkedin') && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-red-600">{getNestedFieldError('social', 'linkedin')}</p>
+                        <p className="text-xs text-gray-500">{getFieldSuggestion('social.linkedin')}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="youtube">YouTube</Label>
+                  <Label htmlFor="youtube">YouTube *</Label>
                   <Input
                     id="youtube"
+                    ref={(el) => { fieldRefs.current['social.youtube'] = el }}
                     type="url"
                     value={formData.social.youtube}
                     onChange={(e) => handleInputChange('social.youtube', e.target.value)}
                     placeholder="https://youtube.com/channel/yourchannel"
+                    required
+                    className={getNestedFieldError('social', 'youtube') ? 'border-red-500' : ''}
                   />
+                  {getNestedFieldError('social', 'youtube') && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-red-600">{getNestedFieldError('social', 'youtube')}</p>
+                      <p className="text-xs text-gray-500">{getFieldSuggestion('social.youtube')}</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

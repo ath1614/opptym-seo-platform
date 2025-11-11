@@ -32,6 +32,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // Check if tool is enabled
+    const { checkSeoToolAccess } = await import('@/lib/seo-tool-middleware')
+    const accessCheck = await checkSeoToolAccess('alt-text-checker')
+    if (!accessCheck.success) {
+      return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status })
+    }
+
     // Track usage
     const usageResult = await trackUsage(session.user.id, 'seoTools', 1, { projectId })
     if (!usageResult.success) {

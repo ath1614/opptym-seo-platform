@@ -60,6 +60,11 @@ const adminNavItems = [
     icon: LinkIcon
   },
   {
+    title: 'SEO Tools',
+    href: '/dashboard/admin/seo-tools',
+    icon: Settings
+  },
+  {
     title: 'Analytics',
     href: '/dashboard/admin/analytics',
     icon: BarChart3

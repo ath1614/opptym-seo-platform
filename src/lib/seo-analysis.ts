@@ -1014,7 +1014,7 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
     // If no target keywords provided, extract meaningful keywords from content
     let keywordsToAnalyze: string[]
     if (targetKeywords.length > 0) {
-      keywordsToAnalyze = targetKeywords.map(k => k.toLowerCase().trim())
+      keywordsToAnalyze = targetKeywords.filter(k => k && typeof k === 'string').map(k => k.toLowerCase().trim())
     } else {
       // Extract meaningful keywords from the content (including multi-word phrases)
       keywordsToAnalyze = extractMeaningfulKeywords(textContent, 3, 20)
@@ -1120,13 +1120,13 @@ export async function analyzeKeywordDensity(url: string, targetKeywords: string[
 
 // Fallback function for keyword density analysis
 function getFallbackKeywordDensityAnalysis(url: string, targetKeywords: string[] = []): KeywordDensityAnalysis {
-  const fallbackKeywords = targetKeywords.length > 0 ? targetKeywords : [
+  const fallbackKeywords = targetKeywords.length > 0 ? targetKeywords.filter(k => k && typeof k === 'string') : [
     'seo', 'marketing', 'digital marketing', 'content strategy', 'search engine optimization',
     'keyword research', 'organic traffic', 'website optimization', 'online presence', 'digital strategy'
   ]
 
   const keywords = fallbackKeywords.map((keyword, index) => ({
-    keyword: keyword.toLowerCase(),
+    keyword: String(keyword).toLowerCase(),
     count: Math.floor(Math.random() * 8) + 2, // 2-9 occurrences
     density: parseFloat((Math.random() * 2 + 0.5).toFixed(2)), // 0.5-2.5% density
     status: 'good' as const
@@ -2051,7 +2051,7 @@ export async function analyzeKeywordTracking(url: string, projectData?: {
     ...(projectData?.keywords || []),
     ...(projectData?.targetKeywords || []),
     ...(projectData?.seoKeywords || [])
-  ].filter(Boolean)
+  ].filter(k => k && typeof k === 'string' && k.trim().length > 0)
   
   console.log(`🎯 Using ${targetKeywords.length} target keywords from project:`, targetKeywords.slice(0, 5))
   
@@ -2090,6 +2090,11 @@ export async function analyzeKeywordTracking(url: string, projectData?: {
   // Track each keyword with enhanced simulation
   for (const keyword of keywordsToTrack) {
     try {
+      if (!keyword || typeof keyword !== 'string') {
+        console.log(`⚠️ Skipping invalid keyword:`, keyword)
+        continue
+      }
+      
       console.log(`🔍 Tracking keyword: "${keyword}"`)
       
       // Enhanced rank checking

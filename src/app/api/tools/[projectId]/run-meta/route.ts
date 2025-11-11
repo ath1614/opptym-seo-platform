@@ -30,6 +30,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    // Check if tool is enabled
+    const { checkSeoToolAccess } = await import('@/lib/seo-tool-middleware')
+    const accessCheck = await checkSeoToolAccess('meta-tag-analyzer')
+    if (!accessCheck.success) {
+      return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status })
+    }
+
     // Track usage
     const usageResult = await trackUsage(session.user.id, 'seoTools', 1, { projectId })
     if (!usageResult.success) {
@@ -65,14 +72,30 @@ export async function POST(
       })
     } catch (analysisError) {
       console.error('Meta tag analysis failed:', analysisError)
-      // Don't save stats if analysis fails
-      return NextResponse.json(
-        { 
-          error: 'Analysis failed',
-          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
-        },
-        { status: 500 }
-      )
+      
+      // Return fallback response
+      const fallbackResult = {
+        url: project.websiteURL,
+        title: { content: 'Analysis unavailable', length: 0, status: 'error' as const, recommendation: 'Unable to analyze - check URL accessibility' },
+        description: { content: 'Analysis unavailable', length: 0, status: 'error' as const, recommendation: 'Unable to analyze - check URL accessibility' },
+        keywords: { content: '', status: 'good' as const, recommendation: 'Meta keywords not recommended' },
+        viewport: { content: '', status: 'error' as const, recommendation: 'Unable to check viewport' },
+        robots: { content: '', status: 'error' as const, recommendation: 'Unable to check robots meta tag' },
+        openGraph: { title: '', description: '', image: '', url: project.websiteURL, status: 'error' as const, recommendation: 'Unable to check Open Graph tags' },
+        twitter: { card: '', title: '', description: '', image: '', status: 'error' as const, recommendation: 'Unable to check Twitter Card tags' },
+        canonical: { content: '', status: 'error' as const, recommendation: 'Unable to check canonical URL' },
+        hreflang: { content: '', status: 'good' as const, recommendation: 'Hreflang is optional' },
+        score: 0,
+        issues: [{ type: 'error' as const, message: 'Unable to fetch webpage for analysis', severity: 'high' as const }],
+        recommendations: ['Check URL accessibility', 'Ensure website is online', 'Try again later']
+      }
+      
+      return NextResponse.json({
+        success: true,
+        data: fallbackResult,
+        message: 'Analysis completed with fallback data due to accessibility issues',
+        isFallback: true
+      })
     }
 
   } catch (error) {

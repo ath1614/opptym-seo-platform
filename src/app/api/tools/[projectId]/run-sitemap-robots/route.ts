@@ -35,6 +35,13 @@ export async function POST(
       return NextResponse.json({ error: 'Website URL not found for project' }, { status: 400 })
     }
 
+    // Check if tool is enabled
+    const { checkSeoToolAccess } = await import('@/lib/seo-tool-middleware')
+    const accessCheck = await checkSeoToolAccess('sitemap-robots-checker')
+    if (!accessCheck.success) {
+      return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status })
+    }
+
     // Track usage
     const usageResult = await trackUsage(session.user.id, 'seoTools', 1)
     if (!usageResult.success) {

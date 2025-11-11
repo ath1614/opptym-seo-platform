@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:seo-tools": "node scripts/seed-seo-tools.js",
+    "fix:seo-routes": "node scripts/fix-seo-routes.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

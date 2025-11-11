@@ -26,18 +26,17 @@ import {
 import { LimitExceededPopup } from '@/components/ui/limit-exceeded-popup'
 
 interface SEOTool {
-  id: string
+  toolId: string
   name: string
   description: string
-  icon: React.ComponentType<{ className?: string }>
+  icon: string
   category: 'analysis' | 'research' | 'technical' | 'content'
-  isAvailable: boolean
   isPremium: boolean
-  lastUsed?: string
-  usageCount?: number
-  difficulty?: 'beginner' | 'intermediate' | 'advanced'
-  estimatedTime?: string
-  recommendedFrequency?: string
+  isEnabled: boolean
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  estimatedTime: string
+  recommendedFrequency: string
+  order: number
 }
 
 interface UsageStats {
@@ -53,148 +52,21 @@ interface UsageStats {
   }
 }
 
-const seoTools: SEOTool[] = [
-  {
-    id: 'meta-tag-analyzer',
-    name: 'Meta Tag Analyzer',
-    description: 'Analyze meta titles, descriptions, and other meta tags for SEO optimization',
-    icon: Search,
-    category: 'analysis',
-    isAvailable: true,
-    isPremium: false,
-    lastUsed: '2023-10-15',
-    usageCount: 24,
-    difficulty: 'beginner',
-    estimatedTime: '2-5 min',
-    recommendedFrequency: 'Weekly'
-  },
-  {
-    id: 'keyword-density-checker',
-    name: 'Keyword Density Checker',
-    description: 'Check keyword density and distribution across your content',
-    icon: BarChart3,
-    category: 'analysis',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'schema-markup-generator',
-    name: 'Schema Markup Generator',
-    description: 'Create structured data markup for better search engine visibility',
-    icon: Code,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'keyword-researcher',
-    name: 'Keyword Research',
-    description: 'Research and discover high-value keywords for your content',
-    icon: TrendingUp,
-    category: 'research',
-    isAvailable: true,
-    isPremium: true
-  },
-  {
-    id: 'broken-link-scanner',
-    name: 'Broken Link Scanner',
-    description: 'Find and identify broken links on your website',
-    icon: Link,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'sitemap-robots-checker',
-    name: 'Sitemap & Robots Checker',
-    description: 'Validate your sitemap and robots.txt files',
-    icon: Map,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'backlink-scanner',
-    name: 'Backlink Scanner',
-    description: 'Analyze backlinks pointing to your website',
-    icon: ExternalLink,
-    category: 'research',
-    isAvailable: true,
-    isPremium: true
-  },
-  {
-    id: 'keyword-tracker',
-    name: 'Keyword Tracker',
-    description: 'Track keyword rankings over time',
-    icon: TrendingUp,
-    category: 'research',
-    isAvailable: true,
-    isPremium: true
-  },
-  {
-    id: 'page-speed-analyzer',
-    name: 'Page Speed Analyzer',
-    description: 'Analyze page loading speed and performance metrics',
-    icon: Gauge,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'mobile-checker',
-    name: 'Mobile Checker',
-    description: 'Check mobile-friendliness and responsive design',
-    icon: Smartphone,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'competitor-analyzer',
-    name: 'Competitor Analyzer',
-    description: 'Analyze competitor websites and strategies',
-    icon: Users,
-    category: 'research',
-    isAvailable: true,
-    isPremium: true
-  },
-  {
-    id: 'technical-seo-auditor',
-    name: 'Technical SEO Auditor',
-    description: 'Comprehensive technical SEO audit of your website',
-    icon: CheckCircle,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: true
-  },
-  {
-    id: 'schema-validator',
-    name: 'Schema Validator',
-    description: 'Validate structured data and schema markup',
-    icon: Code,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'alt-text-checker',
-    name: 'Alt Text Checker',
-    description: 'Check for missing or inadequate alt text on images',
-    icon: Image,
-    category: 'content',
-    isAvailable: true,
-    isPremium: false
-  },
-  {
-    id: 'canonical-checker',
-    name: 'Canonical Checker',
-    description: 'Check canonical URLs and duplicate content issues',
-    icon: FileText,
-    category: 'technical',
-    isAvailable: true,
-    isPremium: false
-  }
-]
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Search,
+  BarChart3,
+  Link,
+  Map,
+  ExternalLink,
+  TrendingUp,
+  Gauge,
+  Smartphone,
+  Users,
+  CheckCircle,
+  Code,
+  Image,
+  FileText
+}
 
 const categoryColors = {
   analysis: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
@@ -205,6 +77,7 @@ const categoryColors = {
 
 export function SEOToolsGrid() {
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
+  const [seoTools, setSeoTools] = useState<SEOTool[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showLimitPopup, setShowLimitPopup] = useState(false)
   const [limitPopupData, setLimitPopupData] = useState<{
@@ -219,12 +92,13 @@ export function SEOToolsGrid() {
 
   useEffect(() => {
     fetchUsageStats()
+    fetchSeoTools()
   }, [])
 
   const fetchUsageStats = async () => {
     try {
       const response = await fetch('/api/dashboard/usage', {
-        credentials: 'include' // Include cookies for authentication
+        credentials: 'include'
       })
       const data = await response.json()
       
@@ -232,7 +106,20 @@ export function SEOToolsGrid() {
         setUsageStats(data)
       }
     } catch {
-      // Handle error silently for now
+      // Handle error silently
+    }
+  }
+
+  const fetchSeoTools = async () => {
+    try {
+      const response = await fetch('/api/seo-tools/config')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setSeoTools(data.tools)
+      }
+    } catch {
+      // Handle error silently
     } finally {
       setIsLoading(false)
     }
@@ -273,7 +160,7 @@ export function SEOToolsGrid() {
     }
 
     // Navigate to tool
-    window.location.href = `/dashboard/seo-tools/${tool.id}`
+    window.location.href = `/dashboard/seo-tools/${tool.toolId}`
   }
 
   const getAvailableTools = () => {
@@ -337,12 +224,12 @@ export function SEOToolsGrid() {
       {/* Tools Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {availableTools.map((tool) => {
-          const IconComponent = tool.icon
+          const IconComponent = iconMap[tool.icon] || Code
           const isDisabled = usageStats?.isAtLimit.seoTools && usageStats?.plan === 'free'
           
           return (
             <Card 
-              key={tool.id} 
+              key={tool.toolId} 
               className={`cursor-pointer transition-all hover:shadow-lg ${
                 isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'
               }`}
@@ -360,11 +247,9 @@ export function SEOToolsGrid() {
                         <Badge className={categoryColors[tool.category]}>
                           {tool.category}
                         </Badge>
-                        {tool.difficulty && (
-                          <Badge variant="outline" className="text-xs">
-                            {tool.difficulty}
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {tool.difficulty}
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -377,30 +262,14 @@ export function SEOToolsGrid() {
                 <CardDescription className="mt-2">
                   {tool.description}
                 </CardDescription>
-                {(tool.estimatedTime || tool.recommendedFrequency || tool.usageCount) && (
-                  <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                    {tool.estimatedTime && (
-                      <div className="flex items-center">
-                        <span className="mr-1">⏱️</span> {tool.estimatedTime}
-                      </div>
-                    )}
-                    {tool.recommendedFrequency && (
-                      <div className="flex items-center">
-                        <span className="mr-1">🔄</span> {tool.recommendedFrequency}
-                      </div>
-                    )}
-                    {tool.usageCount && (
-                      <div className="flex items-center">
-                        <span className="mr-1">📊</span> Used {tool.usageCount} times
-                      </div>
-                    )}
+                <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center">
+                    <span className="mr-1">⏱️</span> {tool.estimatedTime}
                   </div>
-                )}
-                {tool.lastUsed && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Last used: {new Date(tool.lastUsed).toLocaleDateString()}
+                  <div className="flex items-center">
+                    <span className="mr-1">🔄</span> {tool.recommendedFrequency}
                   </div>
-                )}
+                </div>
               </CardHeader>
               <CardContent>
                 <Button 
@@ -428,9 +297,9 @@ export function SEOToolsGrid() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {seoTools.filter(tool => tool.isPremium).map((tool) => {
-                const IconComponent = tool.icon
+                const IconComponent = iconMap[tool.icon] || Code
                 return (
-                  <div key={tool.id} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                  <div key={tool.toolId} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
                     <IconComponent className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium text-sm">{tool.name}</p>

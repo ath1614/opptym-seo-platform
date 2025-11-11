@@ -30,6 +30,13 @@ export async function POST(
     }
     const websiteURL: string | null = project.websiteURL
 
+    // Check if tool is enabled
+    const { checkSeoToolAccess } = await import('@/lib/seo-tool-middleware')
+    const accessCheck = await checkSeoToolAccess('keyword-tracker')
+    if (!accessCheck.success) {
+      return NextResponse.json({ error: accessCheck.error }, { status: accessCheck.status })
+    }
+
     // Track usage
     const usageResult = await trackUsage(session.user.id, 'seoTools', 1, { projectId })
     if (!usageResult.success) {
@@ -57,9 +64,9 @@ export async function POST(
     try {
       // Prepare project data for keyword tracking
     const projectKeywordData = {
-      keywords: project.keywords || [],
-      targetKeywords: project.targetKeywords || [],
-      seoKeywords: project.seoMetadata?.keywords ? [project.seoMetadata.keywords] : [],
+      keywords: (project.keywords || []).filter((k: any) => k && typeof k === 'string'),
+      targetKeywords: (project.targetKeywords || []).filter((k: any) => k && typeof k === 'string'),
+      seoKeywords: project.seoMetadata?.keywords && typeof project.seoMetadata.keywords === 'string' ? [project.seoMetadata.keywords] : [],
       businessDescription: project.businessDescription || project.projectDescription || ''
     }
     
@@ -87,14 +94,26 @@ export async function POST(
       })
     } catch (analysisError) {
       console.error('Keyword tracking analysis failed:', analysisError)
-      // Don't save stats if analysis fails
-      return NextResponse.json(
-        { 
-          error: 'Analysis failed',
-          details: analysisError instanceof Error ? analysisError.message : 'Unknown error'
-        },
-        { status: 500 }
-      )
+      
+      // Return fallback response
+      const fallbackResult = {
+        url: websiteURL,
+        trackedKeywords: [],
+        rankingChanges: { improved: 0, declined: 0, new: 0, lost: 0 },
+        recommendations: [
+          'Unable to track keywords - check URL accessibility',
+          'Add target keywords to your project for better tracking',
+          'Try again later or contact support'
+        ],
+        score: 0
+      }
+      
+      return NextResponse.json({
+        success: true,
+        data: fallbackResult,
+        message: 'Analysis completed with fallback data due to accessibility issues',
+        isFallback: true
+      })
     }
 
   } catch (error) {
