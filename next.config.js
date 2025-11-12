@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable standalone output for more reliable Docker builds
-  // output: 'standalone',
+  // Enable standalone output for Docker
+  output: 'standalone',
   
   // Production optimizations
   compress: true,
@@ -9,16 +9,11 @@ const nextConfig = {
   
   // ESLint configuration
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
   
   // TypeScript configuration
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
     ignoreBuildErrors: true,
   },
   
@@ -31,14 +26,18 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
   
-  // Environment variables
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
-  
-  // Headers for security
+  // Headers optimized for Coolify
   async headers() {
     return [
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [
@@ -54,19 +53,8 @@ const nextConfig = {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin',
           },
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
         ],
       },
-    ];
-  },
-  
-  // Redirects
-  async redirects() {
-    return [
-      // No redirects needed - dashboard should stay on /dashboard
     ];
   },
 };
