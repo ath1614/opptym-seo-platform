@@ -75,6 +75,8 @@ export default function HomeClient() {
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [enabledTools, setEnabledTools] = useState<any[]>([])
+  const [toolsCount, setToolsCount] = useState(11)
 
   const handleAnalyze = async (url?: string) => {
     const targetUrl = (url ?? websiteURL).trim()
@@ -143,8 +145,24 @@ export default function HomeClient() {
     if (preset && autoAnalyze) {
       handleAnalyze(preset)
     }
+    
+    // Fetch enabled SEO tools
+    fetchEnabledTools()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const fetchEnabledTools = async () => {
+    try {
+      const response = await fetch('/api/seo-tools/public')
+      const data = await response.json()
+      if (response.ok && data.tools) {
+        setEnabledTools(data.tools)
+        setToolsCount(data.tools.length)
+      }
+    } catch (error) {
+      console.error('Failed to fetch enabled tools:', error)
+    }
+  }
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -191,7 +209,7 @@ export default function HomeClient() {
                 <span className="bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">with Opptym AI SEO</span>
               </h1>
               <p className="text-xl lg:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-                The most comprehensive SEO platform trusted by 10,000+ businesses. Boost your organic traffic, track rankings, and outrank competitors with our powerful suite of 11+ professional SEO tools.
+                The most comprehensive SEO platform trusted by 10,000+ businesses. Boost your organic traffic, track rankings, and outrank competitors with our powerful suite of {toolsCount}+ professional SEO tools.
               </p>
             </motion.div>
 
@@ -445,40 +463,37 @@ export default function HomeClient() {
               Everything You Need to{" "}
               <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Dominate SEO</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Our comprehensive suite of 11+ professional SEO tools helps you analyze, optimize, and track your website's performance across all major search engines.</p>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Our comprehensive suite of {toolsCount}+ professional SEO tools helps you analyze, optimize, and track your website's performance across all major search engines.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Search, title: "Meta Tag Analyzer", description: "Analyze and optimize meta titles, descriptions, and other meta tags for better search visibility.", color: "bg-blue-500/10 text-blue-600" },
-              { icon: BarChart3, title: "Keyword Density Checker", description: "Check keyword density and distribution to avoid keyword stuffing and optimize content.", color: "bg-green-500/10 text-green-600" },
-              { icon: TrendingUp, title: "Keyword Researcher", description: "Discover high-value keywords with search volume, competition, and trend analysis.", color: "bg-purple-500/10 text-purple-600" },
-              { icon: LinkIcon, title: "Broken Link Scanner", description: "Find and fix broken links that hurt your SEO and user experience.", color: "bg-red-500/10 text-red-600" },
-              { icon: Globe, title: "Sitemap & Robots Checker", description: "Validate your sitemap and robots.txt files for proper search engine crawling.", color: "bg-orange-500/10 text-orange-600" },
-              { icon: Target, title: "Backlink Scanner", description: "Analyze your backlink profile and discover new link building opportunities.", color: "bg-indigo-500/10 text-indigo-600" },
-              { icon: Activity, title: "Keyword Tracker", description: "Monitor your keyword rankings across multiple search engines in real-time.", color: "bg-pink-500/10 text-pink-600" },
-              { icon: Zap, title: "Page Speed Analyzer", description: "Test and optimize your website's loading speed for better user experience.", color: "bg-yellow-500/10 text-yellow-600" },
-              { icon: Smartphone, title: "Mobile Checker", description: "Ensure your website is mobile-friendly and optimized for mobile search.", color: "bg-teal-500/10 text-teal-600" },
-              { icon: Users, title: "Competitor Analyzer", description: "Analyze your competitors' SEO strategies and identify opportunities.", color: "bg-cyan-500/10 text-cyan-600" },
-              { icon: Settings, title: "Technical SEO Auditor", description: "Comprehensive technical SEO audit to identify and fix critical issues.", color: "bg-emerald-500/10 text-emerald-600" },
-              { icon: FileText, title: "Schema Validator", description: "Validate and test your structured data markup for rich snippets.", color: "bg-violet-500/10 text-violet-600" },
-              { icon: Eye, title: "Alt Text Checker", description: "Check and optimize alt text for images to improve accessibility and SEO.", color: "bg-rose-500/10 text-rose-600" },
-              { icon: LinkIcon, title: "Canonical Checker", description: "Identify and fix canonical URL issues to prevent duplicate content problems.", color: "bg-amber-500/10 text-amber-600" },
-            ].map((feature, index) => (
-              <motion.div key={feature.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }} className="flex">
+            {enabledTools.map((tool, index) => {
+              const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+                Search, BarChart3, TrendingUp, LinkIcon, Globe, Target, Activity, Zap, Smartphone, Users, Settings, FileText, Eye
+              }
+              const IconComponent = iconMap[tool.icon] || Search
+              const colors = [
+                "bg-blue-500/10 text-blue-600", "bg-green-500/10 text-green-600", "bg-purple-500/10 text-purple-600",
+                "bg-red-500/10 text-red-600", "bg-orange-500/10 text-orange-600", "bg-indigo-500/10 text-indigo-600",
+                "bg-pink-500/10 text-pink-600", "bg-yellow-500/10 text-yellow-600", "bg-teal-500/10 text-teal-600",
+                "bg-cyan-500/10 text-cyan-600", "bg-emerald-500/10 text-emerald-600", "bg-violet-500/10 text-violet-600",
+                "bg-rose-500/10 text-rose-600", "bg-amber-500/10 text-amber-600"
+              ]
+              return (
+              <motion.div key={tool.toolId} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }} className="flex">
                 <Card className="flex-1 hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm">
                   <CardHeader className="pb-4">
-                    <div className={`w-12 h-12 ${feature.color} rounded-lg flex items-center justify-center mb-4`}>
-                      <feature.icon className="w-6 h-6" />
+                    <div className={`w-12 h-12 ${colors[index % colors.length]} rounded-lg flex items-center justify-center mb-4`}>
+                      <IconComponent className="w-6 h-6" />
                     </div>
-                    <CardTitle className="text-lg leading-tight">{feature.title}</CardTitle>
+                    <CardTitle className="text-lg leading-tight">{tool.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <CardDescription className="text-sm leading-relaxed">{feature.description}</CardDescription>
+                    <CardDescription className="text-sm leading-relaxed">{tool.description}</CardDescription>
                   </CardContent>
                 </Card>
               </motion.div>
-            ))}
+            )})
           </div>
         </div>
       </section>
