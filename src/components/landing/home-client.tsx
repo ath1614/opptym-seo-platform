@@ -156,11 +156,19 @@ export default function HomeClient() {
       const response = await fetch('/api/seo-tools/public')
       const data = await response.json()
       if (response.ok && data.tools) {
-        setEnabledTools(data.tools)
-        setToolsCount(data.tools.length)
+        const enabledOnly = data.tools.filter((tool: any) => tool.isEnabled === true)
+        setEnabledTools(enabledOnly)
+        setToolsCount(enabledOnly.length)
+      } else {
+        // Fallback to empty array if API fails
+        setEnabledTools([])
+        setToolsCount(0)
       }
     } catch (error) {
       console.error('Failed to fetch enabled tools:', error)
+      // Fallback to empty array on error
+      setEnabledTools([])
+      setToolsCount(0)
     }
   }
 
@@ -466,35 +474,42 @@ export default function HomeClient() {
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Our comprehensive suite of {toolsCount}+ professional SEO tools helps you analyze, optimize, and track your website's performance across all major search engines.</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enabledTools.map((tool, index) => {
-              const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-                Search, BarChart3, TrendingUp, LinkIcon, Globe, Target, Activity, Zap, Smartphone, Users, Settings, FileText, Eye
-              }
-              const IconComponent = iconMap[tool.icon] || Search
-              const colors = [
-                "bg-blue-500/10 text-blue-600", "bg-green-500/10 text-green-600", "bg-purple-500/10 text-purple-600",
-                "bg-red-500/10 text-red-600", "bg-orange-500/10 text-orange-600", "bg-indigo-500/10 text-indigo-600",
-                "bg-pink-500/10 text-pink-600", "bg-yellow-500/10 text-yellow-600", "bg-teal-500/10 text-teal-600",
-                "bg-cyan-500/10 text-cyan-600", "bg-emerald-500/10 text-emerald-600", "bg-violet-500/10 text-violet-600",
-                "bg-rose-500/10 text-rose-600", "bg-amber-500/10 text-amber-600"
-              ]
-              return (
-              <motion.div key={tool.toolId} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }} className="flex">
-                <Card className="flex-1 hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm">
-                  <CardHeader className="pb-4">
-                    <div className={`w-12 h-12 ${colors[index % colors.length]} rounded-lg flex items-center justify-center mb-4`}>
-                      <IconComponent className="w-6 h-6" />
-                    </div>
-                    <CardTitle className="text-lg leading-tight">{tool.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <CardDescription className="text-sm leading-relaxed">{tool.description}</CardDescription>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )})
-          </div>
+          {enabledTools.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enabledTools.map((tool, index) => {
+                const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+                  Search, BarChart3, TrendingUp, LinkIcon, Globe, Target, Activity, Zap, Smartphone, Users, Settings, FileText, Eye
+                }
+                const IconComponent = iconMap[tool.icon] || Search
+                const colors = [
+                  "bg-blue-500/10 text-blue-600", "bg-green-500/10 text-green-600", "bg-purple-500/10 text-purple-600",
+                  "bg-red-500/10 text-red-600", "bg-orange-500/10 text-orange-600", "bg-indigo-500/10 text-indigo-600",
+                  "bg-pink-500/10 text-pink-600", "bg-yellow-500/10 text-yellow-600", "bg-teal-500/10 text-teal-600",
+                  "bg-cyan-500/10 text-cyan-600", "bg-emerald-500/10 text-emerald-600", "bg-violet-500/10 text-violet-600",
+                  "bg-rose-500/10 text-rose-600", "bg-amber-500/10 text-amber-600"
+                ]
+                return (
+                  <motion.div key={tool.toolId} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} viewport={{ once: true }} className="flex">
+                    <Card className="flex-1 hover:shadow-xl transition-all duration-300 border-0 bg-card/50 backdrop-blur-sm">
+                      <CardHeader className="pb-4">
+                        <div className={`w-12 h-12 ${colors[index % colors.length]} rounded-lg flex items-center justify-center mb-4`}>
+                          <IconComponent className="w-6 h-6" />
+                        </div>
+                        <CardTitle className="text-lg leading-tight">{tool.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <CardDescription className="text-sm leading-relaxed">{tool.description}</CardDescription>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading SEO tools...</p>
+            </div>
+          )}
         </div>
       </section>
 
