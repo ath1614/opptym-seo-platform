@@ -205,7 +205,7 @@ export function SEOToolsGrid() {
                 <div>
                   <h3 className="font-semibold text-blue-900 dark:text-blue-100">Free Plan Active</h3>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    You have access to {availableTools.length} SEO tools. Upgrade to Pro for access to all 14 tools.
+                    You have access to {availableTools.length} SEO tools. Upgrade to Pro for access to all 11+ tools.
                   </p>
                 </div>
               </div>

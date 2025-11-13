@@ -187,11 +187,11 @@ export default function HomeClient() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">🚀 #1 SEO Platform for Businesses</Badge>
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
-                Dominate Search Rankings with{" "}
-                <span className="bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">Opptym AI SEO</span>
+                Dominate Search Engine Rankings{" "}
+                <span className="bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent">with Opptym AI SEO</span>
               </h1>
               <p className="text-xl lg:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-                The most comprehensive SEO platform trusted by 10,000+ businesses. Boost your organic traffic, track rankings, and outrank competitors with our powerful suite of 14+ professional SEO tools.
+                The most comprehensive SEO platform trusted by 10,000+ businesses. Boost your organic traffic, track rankings, and outrank competitors with our powerful suite of 11+ professional SEO tools.
               </p>
             </motion.div>
 
@@ -445,7 +445,7 @@ export default function HomeClient() {
               Everything You Need to{" "}
               <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Dominate SEO</span>
             </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Our comprehensive suite of 14+ professional SEO tools helps you analyze, optimize, and track your website's performance across all major search engines.</p>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Our comprehensive suite of 11+ professional SEO tools helps you analyze, optimize, and track your website's performance across all major search engines.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
