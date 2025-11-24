@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/toast'
 import { Link, CheckCircle, AlertCircle, TrendingUp, RefreshCw } from 'lucide-react'
+import { HelpContactDialog } from './help-contact-dialog'
 
 interface UsageStats {
   plan: string
@@ -99,7 +100,7 @@ export function SEOTasksStats() {
   const dailyUsed = stats.todayUsage?.submissions ?? 0
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Submissions Usage */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -192,7 +193,8 @@ export function SEOTasksStats() {
         </CardContent>
       </Card>
 
-      {/* Quick Actions removed as per request */}
+      {/* Help Contact */}
+      <HelpContactDialog />
     </div>
   )
 }
