@@ -56,12 +56,19 @@ export async function GET(request: NextRequest) {
     // Get submissions with pagination
     const skip = (page - 1) * limit
     const submissions = await Submission.find(query)
-      .populate('userId', 'email name username')
-      .populate('projectId', 'projectName')
+      .populate({ path: 'userId', select: 'email name username', model: 'User' })
+      .populate({ path: 'projectId', select: 'projectName', model: 'Project' })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean()
+
+    // Transform the data to match component expectations
+    const transformedSubmissions = submissions.map(submission => ({
+      ...submission,
+      user: submission.userId,
+      project: submission.projectId
+    }))
 
     // Get total count for pagination
     const totalCount = await Submission.countDocuments(query)
@@ -93,7 +100,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      submissions,
+      submissions: transformedSubmissions,
       totalPages,
       currentPage: page,
       totalCount,

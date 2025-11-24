@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     const [projects, total] = await Promise.all([
       Project.find(query)
-        .populate('userId', 'username email')
+        .populate({ path: 'userId', select: 'username email name', model: 'User' })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -55,8 +55,14 @@ export async function GET(request: NextRequest) {
       Project.countDocuments(query)
     ])
 
+    // Transform the data to match component expectations
+    const transformedProjects = projects.map(project => ({
+      ...project,
+      user: project.userId
+    }))
+
     return NextResponse.json({
-      projects,
+      projects: transformedProjects,
       total,
       page,
       limit,

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
-import { Moon, Sun, Menu, X, User, LogOut } from "lucide-react"
+import { Moon, Sun, Menu, X, User, LogOut, Youtube } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 
@@ -103,6 +103,15 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
               >
                 Knowledge Base
               </Link>
+              <a
+                href="https://www.youtube.com/@OpptymAI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
+              >
+                <Youtube className="h-4 w-4" />
+                Tutorials
+              </a>
             </div>
 
             {/* Desktop Controls */}
@@ -244,6 +253,16 @@ export function Navbar({ variant = 'default' }: NavbarProps) {
                   >
                     Knowledge Base
                   </Link>
+                  <a
+                    href="https://www.youtube.com/@OpptymAI"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                    onClick={closeMenu}
+                  >
+                    <Youtube className="h-4 w-4" />
+                    Video Tutorials
+                  </a>
                 </nav>
               </div>
 

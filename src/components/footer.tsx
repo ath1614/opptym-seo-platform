@@ -1,6 +1,6 @@
 "use client"
 
-import { Linkedin, Mail, Facebook, Instagram } from "lucide-react"
+import { Linkedin, Mail, Facebook, Instagram, Youtube } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -22,10 +22,20 @@ export function Footer() {
             </p>
             <div className="flex space-x-4">
               <a
+                href="https://www.youtube.com/@OpptymAI"
+                className="text-muted-foreground hover:text-primary transition-colors"
+                aria-label="YouTube"
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Youtube className="h-5 w-5" />
+              </a>
+              <a
                 href="https://www.linkedin.com/company/opptym/"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="LinkedIn"
-                target="_blank" rel="noopener noreferrer"
+                target="_blank" 
+                rel="noopener noreferrer"
               >
                 <Linkedin className="h-5 w-5" />
               </a>
@@ -33,7 +43,8 @@ export function Footer() {
                 href="https://www.facebook.com/Opptym"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Facebook"
-                target="_blank" rel="noopener noreferrer"
+                target="_blank" 
+                rel="noopener noreferrer"
               >
                 <Facebook className="h-5 w-5" />
               </a>
@@ -41,7 +52,8 @@ export function Footer() {
                 href="https://www.instagram.com/opptym_ai"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Instagram"
-                target="_blank" rel="noopener noreferrer"
+                target="_blank" 
+                rel="noopener noreferrer"
               >
                 <Instagram className="h-5 w-5" />
               </a>
@@ -107,6 +119,15 @@ export function Footer() {
                 >
                   Support
                 </Link>
+              </li>
+              <li>
+                <a
+                  href="https://www.youtube.com/@OpptymAI"
+                  className="text-muted-foreground hover:text-primary transition-colors text-sm"
+                  target="_blank" rel="noopener noreferrer"
+                >
+                  Video Tutorials
+                </a>
               </li>
             </ul>
           </div>

@@ -38,6 +38,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { LandingPricing } from "@/components/pricing/landing-pricing"
+import { YouTubeSection } from "@/components/landing/youtube-section"
 import { useSession } from "next-auth/react"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
@@ -228,6 +229,15 @@ export default function HomeClient() {
                   Start Free Trial
                 </Button>
               </Link>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-8 py-6 border-2 hover:bg-primary hover:text-primary-foreground"
+                onClick={() => document.getElementById('video-tutorials')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <Video className="mr-2 h-5 w-5" />
+                Watch Tutorials
+              </Button>
             </motion.div>
 
             {/* Trust Indicators */}
@@ -252,6 +262,9 @@ export default function HomeClient() {
           </div>
         </div>
       </section>
+
+      {/* YouTube Video Tutorials Section */}
+      <YouTubeSection />
 
       {/* Analyze Website Section */}
       <section id="analyze-website" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
