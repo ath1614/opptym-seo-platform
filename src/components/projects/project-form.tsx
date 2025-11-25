@@ -530,13 +530,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
       errors['classified.productImageURL'] = 'Please enter a valid image URL (jpg, jpeg, png, gif, webp)'
     }
     
-    // Social Media URL validations - now required
+    // Social Media URL validations - optional but must be valid if provided
     const socialFields = ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube']
     socialFields.forEach(field => {
       const value = formData.social[field as keyof typeof formData.social]
-      if (!value?.trim()) {
-        errors[`social.${field}`] = `${field.charAt(0).toUpperCase() + field.slice(1)} URL is required`
-      } else if (!/^https?:\/\/.+/.test(value)) {
+      if (value?.trim() && !/^https?:\/\/.+/.test(value)) {
         errors[`social.${field}`] = `${field.charAt(0).toUpperCase() + field.slice(1)} URL must start with http:// or https://`
       }
     })
@@ -1635,12 +1633,12 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="addressLine2">Address Line 2</Label>
+                  <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
                   <Input
                     id="addressLine2"
                     value={formData.address.addressLine2}
                     onChange={(e) => handleInputChange('address.addressLine2', e.target.value)}
-                    placeholder="Apartment, suite, unit, etc."
+                    placeholder="Apartment, suite, unit, etc. (Optional)"
                   />
                 </div>
 
@@ -2595,15 +2593,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="facebook">Facebook *</Label>
+                    <Label htmlFor="facebook">Facebook (Optional)</Label>
                     <Input
                       id="facebook"
                       ref={(el) => { fieldRefs.current['social.facebook'] = el }}
                       type="url"
                       value={formData.social.facebook}
                       onChange={(e) => handleInputChange('social.facebook', e.target.value)}
-                      placeholder="https://facebook.com/yourpage"
-                      required
+                      placeholder="https://facebook.com/yourpage (Optional)"
                       className={getNestedFieldError('social', 'facebook') ? 'border-red-500' : ''}
                     />
                     {getNestedFieldError('social', 'facebook') && (
@@ -2614,15 +2611,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="twitter">Twitter *</Label>
+                    <Label htmlFor="twitter">Twitter (Optional)</Label>
                     <Input
                       id="twitter"
                       ref={(el) => { fieldRefs.current['social.twitter'] = el }}
                       type="url"
                       value={formData.social.twitter}
                       onChange={(e) => handleInputChange('social.twitter', e.target.value)}
-                      placeholder="https://twitter.com/yourhandle"
-                      required
+                      placeholder="https://twitter.com/yourhandle (Optional)"
                       className={getNestedFieldError('social', 'twitter') ? 'border-red-500' : ''}
                     />
                     {getNestedFieldError('social', 'twitter') && (
@@ -2636,15 +2632,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram *</Label>
+                    <Label htmlFor="instagram">Instagram (Optional)</Label>
                     <Input
                       id="instagram"
                       ref={(el) => { fieldRefs.current['social.instagram'] = el }}
                       type="url"
                       value={formData.social.instagram}
                       onChange={(e) => handleInputChange('social.instagram', e.target.value)}
-                      placeholder="https://instagram.com/yourhandle"
-                      required
+                      placeholder="https://instagram.com/yourhandle (Optional)"
                       className={getNestedFieldError('social', 'instagram') ? 'border-red-500' : ''}
                     />
                     {getNestedFieldError('social', 'instagram') && (
@@ -2655,15 +2650,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="linkedin">LinkedIn *</Label>
+                    <Label htmlFor="linkedin">LinkedIn (Optional)</Label>
                     <Input
                       id="linkedin"
                       ref={(el) => { fieldRefs.current['social.linkedin'] = el }}
                       type="url"
                       value={formData.social.linkedin}
                       onChange={(e) => handleInputChange('social.linkedin', e.target.value)}
-                      placeholder="https://linkedin.com/company/yourcompany"
-                      required
+                      placeholder="https://linkedin.com/company/yourcompany (Optional)"
                       className={getNestedFieldError('social', 'linkedin') ? 'border-red-500' : ''}
                     />
                     {getNestedFieldError('social', 'linkedin') && (
@@ -2676,15 +2670,14 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="youtube">YouTube *</Label>
+                  <Label htmlFor="youtube">YouTube (Optional)</Label>
                   <Input
                     id="youtube"
                     ref={(el) => { fieldRefs.current['social.youtube'] = el }}
                     type="url"
                     value={formData.social.youtube}
                     onChange={(e) => handleInputChange('social.youtube', e.target.value)}
-                    placeholder="https://youtube.com/channel/yourchannel"
-                    required
+                    placeholder="https://youtube.com/channel/yourchannel (Optional)"
                     className={getNestedFieldError('social', 'youtube') ? 'border-red-500' : ''}
                   />
                   {getNestedFieldError('social', 'youtube') && (

@@ -38,6 +38,10 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
+          if (user.banned) {
+            return null
+          }
+
           return {
             id: user._id.toString(),
             email: user.email,

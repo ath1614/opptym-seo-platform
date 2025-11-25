@@ -44,6 +44,9 @@ export interface IUser extends Document {
   }
   isNewUser?: boolean
   lastLogin?: Date
+  banned?: boolean
+  bannedAt?: Date
+  bannedReason?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -217,6 +220,18 @@ const UserSchema = new Schema<IUser>({
   lastLogin: {
     type: Date,
     default: null
+  },
+  banned: {
+    type: Boolean,
+    default: false
+  },
+  bannedAt: {
+    type: Date,
+    default: null
+  },
+  bannedReason: {
+    type: String,
+    default: ''
   }
 }, {
   timestamps: true

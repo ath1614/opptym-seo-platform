@@ -38,7 +38,9 @@ import {
   Crown,
   Building,
   Star,
-  Plus
+  Plus,
+  Ban,
+  UserCheck
 } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
@@ -50,6 +52,9 @@ interface User {
   role: 'user' | 'admin'
   plan: 'free' | 'pro' | 'business' | 'enterprise'
   verified: boolean
+  banned?: boolean
+  bannedAt?: string
+  bannedReason?: string
   createdAt: string
   usage?: {
     projects: number
@@ -136,6 +141,51 @@ export function UserManagement() {
       showToast({
         title: 'Error',
         description: 'Failed to update user',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleBanToggle = async (user: User) => {
+    const action = user.banned ? 'unban' : 'ban'
+    const reason = user.banned ? '' : prompt('Enter reason for banning this user:')
+    
+    if (!user.banned && !reason) {
+      return // User cancelled or didn't provide reason
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${user._id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          banned: !user.banned,
+          bannedReason: reason
+        }),
+      })
+
+      if (response.ok) {
+        showToast({
+          title: 'Success',
+          description: `User ${action}ned successfully`,
+          variant: 'default'
+        })
+        fetchUsers()
+      } else {
+        const error = await response.json()
+        showToast({
+          title: 'Error',
+          description: error.error || `Failed to ${action} user`,
+          variant: 'destructive'
+        })
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} user:`, error)
+      showToast({
+        title: 'Error',
+        description: `Failed to ${action} user`,
         variant: 'destructive'
       })
     }
@@ -312,6 +362,7 @@ export function UserManagement() {
                 <TableHead>Plan</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Account</TableHead>
                 <TableHead>Usage</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Actions</TableHead>
@@ -362,6 +413,11 @@ export function UserManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    <Badge variant={user.banned ? 'destructive' : 'default'}>
+                      {user.banned ? 'Banned' : 'Active'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <div className="text-sm text-muted-foreground">
                       <div>Projects: {user.usage?.projects || 0}</div>
                       <div>Submissions: {user.usage?.submissions || 0}</div>
@@ -381,6 +437,14 @@ export function UserManagement() {
                         }}
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleBanToggle(user)}
+                        className={user.banned ? 'text-green-600 hover:text-green-700' : 'text-orange-600 hover:text-orange-700'}
+                      >
+                        {user.banned ? <UserCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                       </Button>
                       <Button
                         variant="outline"

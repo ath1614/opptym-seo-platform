@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
@@ -6,12 +5,23 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import { logActivity } from '@/lib/activity-logger'
 
+interface ExtendedUser {
+  id: string
+  email?: string
+  name?: string
+  role?: string
+}
+
+interface ExtendedSession {
+  user?: ExtendedUser
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as ExtendedSession | null
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -21,7 +31,7 @@ export async function PATCH(
     }
 
     // Check if user is admin
-    if ((session.user as any).role !== 'admin') {
+    if (!session.user || session.user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },
         { status: 403 }
@@ -42,6 +52,17 @@ export async function PATCH(
       )
     }
 
+    // Handle ban/unban logic
+    if (updates.banned !== undefined) {
+      if (updates.banned) {
+        updates.bannedAt = new Date()
+        updates.bannedReason = updates.bannedReason || 'No reason provided'
+      } else {
+        updates.bannedAt = null
+        updates.bannedReason = ''
+      }
+    }
+
     // Update the user
     const updatedUser = await User.findByIdAndUpdate(
       id,
@@ -59,8 +80,8 @@ export async function PATCH(
     // Log the activity
     await logActivity({
       userId: session.user.id,
-      userEmail: (session.user as any).email,
-      userName: (session.user as any).name,
+      userEmail: session.user.email || '',
+      userName: session.user.name || '',
       action: 'user_updated',
       resource: 'user',
       resourceId: id,
@@ -90,7 +111,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as ExtendedSession | null
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -100,7 +121,7 @@ export async function DELETE(
     }
 
     // Check if user is admin
-    if ((session.user as any).role !== 'admin') {
+    if (!session.user || session.user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Forbidden - Admin access required' },
         { status: 403 }
@@ -134,8 +155,8 @@ export async function DELETE(
     // Log the activity
     await logActivity({
       userId: session.user.id,
-      userEmail: (session.user as any).email,
-      userName: (session.user as any).name,
+      userEmail: session.user.email || '',
+      userName: session.user.name || '',
       action: 'user_deleted',
       resource: 'user',
       resourceId: id,
@@ -144,8 +165,8 @@ export async function DELETE(
         metadata: {
           deletedBy: 'admin',
           deletedUser: {
-            username: (user as any).username,
-            email: (user as any).email
+            username: (user as Record<string, unknown>).username as string,
+            email: (user as Record<string, unknown>).email as string
           }
         }
       }

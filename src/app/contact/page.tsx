@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, Clock, Send, CheckCircle, Info } from "lucide-react";
+import { Mail, Phone, Clock, Send, CheckCircle, Info, MessageCircle } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 
 export default function ContactPage() {
@@ -296,6 +296,24 @@ export default function ContactPage() {
                     <h3 className="font-semibold text-foreground">Call Us</h3>
                     <p className="text-muted-foreground">+1 (909) 348-8855</p>
                     <p className="text-sm text-muted-foreground">Mon-Fri, 9 AM - 6 PM PST</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-4">
+                  <div className="bg-green-500/10 p-3 rounded-lg">
+                    <MessageCircle className="h-6 w-6 text-green-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">WhatsApp</h3>
+                    <a 
+                      href="https://wa.me/19093488855" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-green-500 hover:text-green-600 transition-colors"
+                    >
+                      +1 (909) 348-8855
+                    </a>
+                    <p className="text-sm text-muted-foreground">Quick support via WhatsApp</p>
                   </div>
                 </div>
 
