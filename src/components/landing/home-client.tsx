@@ -76,7 +76,15 @@ export default function HomeClient() {
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
-  const [enabledTools, setEnabledTools] = useState<any[]>([])
+  interface SEOTool {
+    toolId: string
+    name: string
+    description: string
+    icon: string
+    isEnabled: boolean
+  }
+  
+  const [enabledTools, setEnabledTools] = useState<SEOTool[]>([])
   const [toolsCount, setToolsCount] = useState(11)
 
   const handleAnalyze = async (url?: string) => {
@@ -157,7 +165,7 @@ export default function HomeClient() {
       const response = await fetch('/api/seo-tools/public')
       const data = await response.json()
       if (response.ok && data.tools) {
-        const enabledOnly = data.tools.filter((tool: any) => tool.isEnabled === true)
+        const enabledOnly = data.tools.filter((tool: SEOTool) => tool.isEnabled === true)
         setEnabledTools(enabledOnly)
         setToolsCount(enabledOnly.length)
       } else {
