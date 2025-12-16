@@ -356,9 +356,9 @@ export function PricingPlans() {
                 </h4>
                 <ul className="space-y-2">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center space-x-2 text-sm">
-                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                      <span>{feature}</span>
+                    <li key={index} className="flex items-start space-x-2 text-sm">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span className="break-words leading-tight">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -366,28 +366,30 @@ export function PricingPlans() {
 
               {/* Action Button */}
               <Button
-                className="w-full"
+                className="w-full text-sm px-2 py-2 h-auto min-h-[40px]"
                 variant={plan.popular ? 'default' : 'outline'}
                 onClick={() => handleUpgrade(plan.id, plan.name)}
                 disabled={loadingPlan === plan.id || plan.name.toLowerCase() === currentPlan.toLowerCase()}
               >
-                {loadingPlan === plan.id ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : plan.id === currentPlan ? (
-                  'Current Plan'
-                ) : plan.id === 'free' ? (
-                  'Downgrade'
-                ) : stripeConfigured === false ? (
-                  'Contact Support'
-                ) : (
-                  <>
-                    Upgrade to {plan.name}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
+                <div className="flex items-center justify-center w-full">
+                  {loadingPlan === plan.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin flex-shrink-0" />
+                      <span className="truncate">Processing...</span>
+                    </>
+                  ) : plan.id === currentPlan ? (
+                    <span className="truncate">Current Plan</span>
+                  ) : plan.id === 'free' ? (
+                    <span className="truncate">Downgrade</span>
+                  ) : stripeConfigured === false ? (
+                    <span className="truncate">Contact Support</span>
+                  ) : (
+                    <>
+                      <span className="truncate">Upgrade to {plan.name}</span>
+                      <ArrowRight className="ml-2 h-4 w-4 flex-shrink-0" />
+                    </>
+                  )}
+                </div>
               </Button>
             </CardContent>
           </Card>

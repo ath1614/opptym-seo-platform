@@ -30,6 +30,8 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [customFields, setCustomFields] = useState<CustomField[]>([])
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [urlCheckResult, setUrlCheckResult] = useState<{ exists: boolean; project?: { name: string; createdAt: string } } | null>(null)
+  const [isCheckingUrl, setIsCheckingUrl] = useState(false)
   
   // Field references for scrolling to validation errors
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({})
@@ -217,6 +219,28 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
     }
   }, [initialData])
 
+  const checkUrlDuplicate = async (url: string) => {
+    if (!url || !url.startsWith('http')) return
+    
+    setIsCheckingUrl(true)
+    try {
+      const response = await fetch('/api/projects/check-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        setUrlCheckResult(result)
+      }
+    } catch (error) {
+      console.error('URL check error:', error)
+    } finally {
+      setIsCheckingUrl(false)
+    }
+  }
+
   const handleInputChange = (field: string, value: unknown) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.')
@@ -242,6 +266,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         return newErrors
       })
     }
+
+    // Clear URL check result when URL changes
+    if (field === 'websiteURL') {
+      setUrlCheckResult(null)
+    }
     
     // Real-time validation - validate field after a short delay
     setTimeout(() => {
@@ -260,6 +289,11 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
         })
       }
     }, 500) // 500ms delay to avoid validation while typing
+
+    // Check for duplicate URL after a delay
+    if (field === 'websiteURL' && typeof value === 'string') {
+      setTimeout(() => checkUrlDuplicate(value), 1000)
+    }
   }
 
   const handleArrayFieldChange = (field: string, value: string) => {
@@ -1223,22 +1257,48 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="websiteURL">Website URL *</Label>
-                  <Input
-                    id="websiteURL"
-                    ref={(el) => { fieldRefs.current['websiteURL'] = el }}
-                    type="url"
-                    value={formData.websiteURL}
-                    onChange={(e) => handleInputChange('websiteURL', e.target.value)}
-                    placeholder="https://example.com"
-                    required
-                    className={getFieldError('websiteURL') ? 'border-red-500' : ''}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="websiteURL"
+                      ref={(el) => { fieldRefs.current['websiteURL'] = el }}
+                      type="url"
+                      value={formData.websiteURL}
+                      onChange={(e) => handleInputChange('websiteURL', e.target.value)}
+                      placeholder="https://example.com"
+                      required
+                      className={getFieldError('websiteURL') ? 'border-red-500' : urlCheckResult?.exists ? 'border-yellow-500' : ''}
+                    />
+                    {isCheckingUrl && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                      </div>
+                    )}
+                  </div>
                   {getFieldError('websiteURL') && (
                       <div className="space-y-1">
                         <p className="text-sm text-red-600">{getFieldError('websiteURL')}</p>
                         <p className="text-xs text-gray-500">{getFieldSuggestion('websiteURL')}</p>
                       </div>
                     )}
+                  {urlCheckResult?.exists && (
+                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-yellow-800">
+                            URL Already Submitted
+                          </h3>
+                          <div className="mt-1 text-sm text-yellow-700">
+                            <p>This URL was already submitted in project "{urlCheckResult.project?.name}" on {new Date(urlCheckResult.project?.createdAt || '').toLocaleDateString()}.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2110,7 +2170,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="sitemapURL">Sitemap URL *</Label>
+                    <Label htmlFor="sitemapURL">Sitemap URL</Label>
                     <Input
                       id="sitemapURL"
                       ref={(el) => { fieldRefs.current['seoMetadata.sitemapURL'] = el }}
@@ -2118,7 +2178,6 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       value={formData.seoMetadata.sitemapURL}
                       onChange={(e) => handleInputChange('seoMetadata.sitemapURL', e.target.value)}
                       placeholder="https://example.com/sitemap.xml"
-                      required
                       className={getNestedFieldError('seoMetadata', 'sitemapURL') ? 'border-red-500' : ''}
                     />
                     {getNestedFieldError('seoMetadata', 'sitemapURL') && (
@@ -2129,7 +2188,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="robotsURL">Robots.txt URL *</Label>
+                    <Label htmlFor="robotsURL">Robots.txt URL</Label>
                     <Input
                       id="robotsURL"
                       ref={(el) => { fieldRefs.current['seoMetadata.robotsURL'] = el }}
@@ -2137,7 +2196,6 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                       value={formData.seoMetadata.robotsURL}
                       onChange={(e) => handleInputChange('seoMetadata.robotsURL', e.target.value)}
                       placeholder="https://example.com/robots.txt"
-                      required
                       className={getNestedFieldError('seoMetadata', 'robotsURL') ? 'border-red-500' : ''}
                     />
                     {getNestedFieldError('seoMetadata', 'robotsURL') && (
@@ -2230,7 +2288,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="articleTitle">Article Title *</Label>
+                  <Label htmlFor="articleTitle">Article *</Label>
                   <Input
                     id="articleTitle"
                     ref={(el) => { fieldRefs.current['articleSubmission.articleTitle'] = el }}
@@ -2250,11 +2308,19 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
 
                 <div className="space-y-2">
                   <Label htmlFor="articleContent">Article Content *</Label>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    Character limit: {formData.articleSubmission.articleContent.length}/5000
+                  </div>
                   <Textarea
                     id="articleContent"
                     ref={(el) => { fieldRefs.current['articleSubmission.articleContent'] = el }}
                     value={formData.articleSubmission.articleContent}
-                    onChange={(e) => handleInputChange('articleSubmission.articleContent', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value.length <= 5000) {
+                        handleInputChange('articleSubmission.articleContent', value)
+                      }
+                    }}
                     placeholder="Write your article content here..."
                     rows={8}
                     required
@@ -2492,7 +2558,7 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="productImageURL">Product Image URL *</Label>
+                  <Label htmlFor="productImageURL">Product Image URL</Label>
                   <Input
                     id="productImageURL"
                     ref={(el) => { fieldRefs.current['classified.productImageURL'] = el }}
@@ -2500,7 +2566,6 @@ export function ProjectForm({ projectId, initialData }: ProjectFormProps) {
                     value={formData.classified.productImageURL}
                     onChange={(e) => handleInputChange('classified.productImageURL', e.target.value)}
                     placeholder="https://example.com/product.jpg"
-                    required
                     className={getNestedFieldError('classified', 'productImageURL') ? 'border-red-500' : ''}
                   />
                   {getNestedFieldError('classified', 'productImageURL') && (

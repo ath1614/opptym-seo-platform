@@ -68,7 +68,8 @@ export function PricingManagement() {
 
   const handleSavePlan = async (plan: PricingPlan) => {
     try {
-      const response = await fetch('/api/admin/pricing', {
+      const url = plan._id ? `/api/admin/pricing/${plan._id}` : '/api/admin/pricing'
+      const response = await fetch(url, {
         method: plan._id ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -225,24 +226,26 @@ export function PricingManagement() {
               Add New Plan
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingPlan ? 'Edit Plan' : 'Add New Plan'}</DialogTitle>
               <DialogDescription>
                 {editingPlan ? 'Update the pricing plan details' : 'Create a new pricing plan'}
               </DialogDescription>
             </DialogHeader>
-            <PlanForm 
-              plan={editingPlan || newPlan}
-              setPlan={editingPlan ? setEditingPlan : setNewPlan}
-              onSave={handleSavePlan}
-              onCancel={() => {
-                setIsDialogOpen(false)
-                setEditingPlan(null)
-              }}
-              addFeature={addFeature}
-              removeFeature={removeFeature}
-            />
+            <div className="max-h-[60vh] overflow-y-auto pr-2">
+              <PlanForm 
+                plan={editingPlan || newPlan}
+                setPlan={editingPlan ? setEditingPlan : setNewPlan}
+                onSave={handleSavePlan}
+                onCancel={() => {
+                  setIsDialogOpen(false)
+                  setEditingPlan(null)
+                }}
+                addFeature={addFeature}
+                removeFeature={removeFeature}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>

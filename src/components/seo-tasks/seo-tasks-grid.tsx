@@ -123,13 +123,13 @@ const categoryConfig = {
     name: 'Classified Ads',
     icon: Tag,
     color: 'bg-yellow-100 text-yellow-800',
-    description: 'Post classified ads to increase reach'
+    description: 'Post ads to increase reach'
   },
   other: {
     name: 'Other Opportunities',
     icon: MoreHorizontal,
     color: 'bg-gray-100 text-gray-800',
-    description: 'Additional SEO submission opportunities'
+    description: 'More SEO opportunities'
   }
 }
 
@@ -144,6 +144,7 @@ export function SEOTasksGrid() {
   const [selectedLink, setSelectedLink] = useState<Link | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [generatedBookmarklets, setGeneratedBookmarklets] = useState<Set<string>>(new Set())
+  const [submittedLinkIds, setSubmittedLinkIds] = useState<Set<string>>(new Set())
   const [submissionStatus, setSubmissionStatus] = useState<{
     current: number
     limit: number
@@ -245,11 +246,25 @@ export function SEOTasksGrid() {
     }
   }, [])
 
+  const fetchSubmittedLinks = useCallback(async () => {
+    try {
+      const response = await fetch('/api/seo-tasks/submitted-links')
+      const data = await response.json()
+      
+      if (response.ok) {
+        setSubmittedLinkIds(new Set(data.submittedLinkIds))
+      }
+    } catch {
+      // Handle error silently
+    }
+  }, [])
+
   // Initial load - only run once
   useEffect(() => {
     fetchLinks(1, 'all', '')
     fetchUsageStats()
     fetchSubmissionStatus()
+    fetchSubmittedLinks()
   }, []) // Remove dependencies to prevent infinite loops
 
   // Handle search with debounce
@@ -290,6 +305,7 @@ export function SEOTasksGrid() {
 
   const handleBookmarkletGenerated = (linkId: string) => {
     setGeneratedBookmarklets(prev => new Set([...prev, linkId]))
+    setSubmittedLinkIds(prev => new Set([...prev, linkId]))
     // Refresh submission status after bookmarklet generation
     fetchSubmissionStatus()
   }
@@ -314,6 +330,7 @@ export function SEOTasksGrid() {
     fetchLinks(currentPage, selectedCategory, searchTerm)
     fetchSubmissionStatus() // Also refresh submission status
     fetchUsageStats() // Refresh usage stats
+    fetchSubmittedLinks() // Refresh submitted links
   }
 
   // Note: Category stats are now handled server-side with pagination
@@ -440,13 +457,13 @@ export function SEOTasksGrid() {
                     variant={selectedCategory === key ? 'default' : 'outline'}
                     size="lg"
                     onClick={() => setSelectedCategory(key)}
-                    className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+                    className="h-auto p-4 flex flex-col items-center gap-2 text-center min-h-[120px]"
                     disabled={isLoading}
                   >
-                    <IconComponent className="h-6 w-6" />
-                    <div>
-                      <div className="font-semibold text-sm">{config.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{config.description}</div>
+                    <IconComponent className="h-6 w-6 flex-shrink-0" />
+                    <div className="flex-1 flex flex-col justify-center">
+                      <div className="font-semibold text-sm leading-tight break-words">{config.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 leading-tight break-words">{config.description}</div>
                     </div>
                   </Button>
                 )
@@ -470,13 +487,13 @@ export function SEOTasksGrid() {
                     variant={selectedCategory === key ? 'default' : 'outline'}
                     size="lg"
                     onClick={() => setSelectedCategory(key)}
-                    className="h-auto p-4 flex flex-col items-center gap-2 text-center min-w-[200px]"
+                    className="h-auto p-4 flex flex-col items-center gap-2 text-center min-w-[200px] min-h-[120px]"
                     disabled={isLoading}
                   >
-                    <IconComponent className="h-6 w-6" />
-                    <div>
-                      <div className="font-semibold text-sm">{config.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{config.description}</div>
+                    <IconComponent className="h-6 w-6 flex-shrink-0" />
+                    <div className="flex-1 flex flex-col justify-center">
+                      <div className="font-semibold text-sm leading-tight break-words">{config.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 leading-tight break-words">{config.description}</div>
                     </div>
                   </Button>
                 )
@@ -500,13 +517,13 @@ export function SEOTasksGrid() {
                     variant={selectedCategory === key ? 'default' : 'outline'}
                     size="lg"
                     onClick={() => setSelectedCategory(key)}
-                    className="h-auto p-4 flex flex-col items-center gap-2 text-center"
+                    className="h-auto p-4 flex flex-col items-center gap-2 text-center min-h-[120px]"
                     disabled={isLoading}
                   >
-                    <IconComponent className="h-6 w-6" />
-                    <div>
-                      <div className="font-semibold text-sm">{config.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{config.description}</div>
+                    <IconComponent className="h-6 w-6 flex-shrink-0" />
+                    <div className="flex-1 flex flex-col justify-center">
+                      <div className="font-semibold text-sm leading-tight break-words">{config.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 leading-tight break-words">{config.description}</div>
                     </div>
                   </Button>
                 )
@@ -578,16 +595,25 @@ export function SEOTasksGrid() {
             const config = categoryConfig[categoryKey]
             const IconComponent = config.icon
             
+            const isSubmitted = submittedLinkIds.has(link._id)
+            
             return (
-              <Card key={link._id} className="hover:shadow-lg transition-shadow">
+              <Card key={link._id} className={`hover:shadow-lg transition-shadow ${isSubmitted ? 'ring-2 ring-green-500 bg-green-50' : ''}`}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <IconComponent className="h-5 w-5 text-primary" />
+                      <div className={`p-2 rounded-lg ${isSubmitted ? 'bg-green-100' : 'bg-primary/10'}`}>
+                        <IconComponent className={`h-5 w-5 ${isSubmitted ? 'text-green-600' : 'text-primary'}`} />
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{link.name}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{link.name}</CardTitle>
+                          {isSubmitted && (
+                            <Badge className="bg-green-100 text-green-800 text-xs">
+                              ✓ Submitted
+                            </Badge>
+                          )}
+                        </div>
                         <Badge className={config.color}>
                           {config.name}
                         </Badge>

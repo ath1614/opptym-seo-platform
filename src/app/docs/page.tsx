@@ -5,18 +5,48 @@ import React from 'react'
 export default function DocsPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <h1 className="text-3xl font-bold text-foreground mb-4">Documentation</h1>
+      <h1 className="text-3xl font-bold text-foreground mb-4">Opptym SEO Platform Documentation</h1>
       <p className="text-muted-foreground mb-6">
-        This is a placeholder documentation page. We will add comprehensive docs covering setup, features, and workflows.
+        Complete guide to using Opptym SEO Platform for optimizing your website's search engine performance.
       </p>
       <div className="space-y-8">
         <section>
-          <h2 className="text-xl font-semibold text-foreground">Getting Started</h2>
-          <p className="text-muted-foreground">Intro content and step-by-step guides will be placed here.</p>
+          <h2 className="text-xl font-semibold text-foreground mb-4">🚀 Getting Started</h2>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium text-foreground mb-2">1. Create Your Account</h3>
+              <p className="text-muted-foreground">Sign up for a free account to access our comprehensive SEO tools and start optimizing your website.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-foreground mb-2">2. Set Up Your First Project</h3>
+              <p className="text-muted-foreground">Create a project for your website to organize your SEO efforts and track progress across different domains.</p>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-foreground mb-2">3. Run Your First Analysis</h3>
+              <p className="text-muted-foreground">Use our website analyzer to get instant insights into your site's SEO performance and identify improvement opportunities.</p>
+            </div>
+          </div>
         </section>
         <section>
-          <h2 className="text-xl font-semibold text-foreground">SEO Tools Overview</h2>
-          <p className="text-muted-foreground">Detailed descriptions and usage instructions for each tool.</p>
+          <h2 className="text-xl font-semibold text-foreground mb-4">🛠️ SEO Tools Overview</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-medium text-foreground mb-2">Meta Tag Analyzer</h3>
+              <p className="text-sm text-muted-foreground">Analyze and optimize your page titles, descriptions, and meta tags for better search visibility.</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-medium text-foreground mb-2">Broken Link Scanner</h3>
+              <p className="text-sm text-muted-foreground">Find and fix broken links that hurt user experience and SEO rankings.</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-medium text-foreground mb-2">Page Speed Analyzer</h3>
+              <p className="text-sm text-muted-foreground">Test your website's loading speed and get recommendations for performance improvements.</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <h3 className="font-medium text-foreground mb-2">Keyword Research Tool</h3>
+              <p className="text-sm text-muted-foreground">Discover high-value keywords and analyze competition to improve your content strategy.</p>
+            </div>
+          </div>
         </section>
 
         {/* 1️⃣ SEO Fundamentals */}

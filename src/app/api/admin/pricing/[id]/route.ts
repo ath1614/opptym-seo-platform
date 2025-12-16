@@ -4,124 +4,80 @@ import { authOptions } from '@/lib/auth'
 import connectDB from '@/lib/mongodb'
 import PricingPlan from '@/models/PricingPlan'
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Check if user is admin
-    if ((session.user as { role?: string }).role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
-        { status: 403 }
-      )
-    }
-
-    const { id } = params
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Plan ID is required' },
-        { status: 400 }
-      )
-    }
-
-    await connectDB()
-
-    // Check if plan exists
-    const existingPlan = await PricingPlan.findById(id)
-    if (!existingPlan) {
-      return NextResponse.json(
-        { error: 'Pricing plan not found' },
-        { status: 404 }
-      )
-    }
-
-    // Delete the plan
-    await PricingPlan.findByIdAndDelete(id)
-
-    return NextResponse.json({
-      message: 'Pricing plan deleted successfully'
-    })
-
-  } catch (error) {
-    console.error('Delete pricing plan error:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete pricing plan' },
-      { status: 500 }
-    )
-  }
-}
-
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin
     if ((session.user as { role?: string }).role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden - Admin access required' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
     }
 
-    const { id } = params
-    const body = await request.json()
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Plan ID is required' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
+    const planData = await request.json()
 
     await connectDB()
 
-    // Check if plan exists
-    const existingPlan = await PricingPlan.findById(id)
-    if (!existingPlan) {
-      return NextResponse.json(
-        { error: 'Pricing plan not found' },
-        { status: 404 }
-      )
-    }
-
-    // Update the plan
     const updatedPlan = await PricingPlan.findByIdAndUpdate(
       id,
-      { ...body, updatedAt: new Date() },
+      planData,
       { new: true, runValidators: true }
     )
 
-    return NextResponse.json({
-      message: 'Pricing plan updated successfully',
+    if (!updatedPlan) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Plan updated successfully',
       plan: updatedPlan
     })
 
   } catch (error) {
-    console.error('Update pricing plan error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update pricing plan' },
-      { status: 500 }
-    )
+    console.error('Pricing plan update error:', error)
+    return NextResponse.json({ error: 'Failed to update pricing plan' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if ((session.user as { role?: string }).role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
+    }
+
+    const { id } = await params
+
+    await connectDB()
+
+    const deletedPlan = await PricingPlan.findByIdAndDelete(id)
+
+    if (!deletedPlan) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Plan deleted successfully'
+    })
+
+  } catch (error) {
+    console.error('Pricing plan delete error:', error)
+    return NextResponse.json({ error: 'Failed to delete pricing plan' }, { status: 500 })
   }
 }

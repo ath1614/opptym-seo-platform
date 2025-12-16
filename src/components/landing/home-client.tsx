@@ -271,9 +271,6 @@ export default function HomeClient() {
         </div>
       </section>
 
-      {/* YouTube Video Tutorials Section */}
-      <YouTubeSection />
-
       {/* Analyze Website Section */}
       <section id="analyze-website" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -483,6 +480,9 @@ export default function HomeClient() {
         </div>
       </section>
 
+      {/* YouTube Video Tutorials Section */}
+      <YouTubeSection />
+
       {/* Features Overview */}
       <section id="features" className="py-24 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -595,7 +595,7 @@ export default function HomeClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
             {[
               { icon: Zap, title: "AI-Powered Analysis", description: "Our advanced AI algorithms analyze your website 10x faster than manual methods, providing insights that human analysis might miss.", benefits: ["Instant website analysis", "AI-driven recommendations", "Predictive SEO insights", "Automated issue detection"] },
-              { icon: Database, title: "Comprehensive Tool Suite", description: "14+ professional SEO tools in one platform - from keyword research to technical audits, everything you need under one roof.", benefits: ["All-in-one platform", "No tool switching", "Unified reporting", "Cost-effective solution"] },
+              { icon: Database, title: "Comprehensive Tool Suite", description: "11+ professional SEO tools in one platform - from keyword research to technical audits, everything you need under one roof.", benefits: ["All-in-one platform", "No tool switching", "Unified reporting", "Cost-effective solution"] },
               { icon: Target, title: "Location-Based SEO", description: "Target specific geographic markets with our location-wise directory submissions and local SEO optimization tools.", benefits: ["Global reach", "Local market targeting", "Geographic analytics", "Multi-location management"] },
               { icon: Shield, title: "Enterprise-Grade Security", description: "Your data is protected with bank-level security, GDPR compliance, and regular security audits.", benefits: ["Data encryption", "GDPR compliant", "Regular backups", "Secure hosting"] },
               { icon: BarChart3, title: "Real-Time Analytics", description: "Track your SEO performance with live dashboards, detailed reports, and actionable insights updated in real-time.", benefits: ["Live performance tracking", "Detailed analytics", "Custom reports", "Progress monitoring"] },
