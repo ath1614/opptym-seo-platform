@@ -63,6 +63,15 @@ export async function POST(
       }, { status: 429 })
     }
 
+    // Extract project keywords for proper keyword research
+    const projectData = {
+      keywords: project.keywords || [],
+      targetKeywords: project.seoMetadata?.targetKeywords || [],
+      seoKeywords: project.seoMetadata?.keywords || [],
+      competitors: project.competitors || [],
+      businessDescription: project.businessDescription || project.description || ''
+    }
+
     // Perform keyword research analysis
     try {
        console.log(`🔍 Starting keyword research for project: ${projectId}, URL: ${websiteURL}`)
@@ -77,15 +86,6 @@ export async function POST(
            },
            { status: 400 }
          )
-       }
-
-       // Extract project keywords for proper keyword research
-       const projectData = {
-         keywords: project.keywords || [],
-         targetKeywords: project.seoMetadata?.targetKeywords || [],
-         seoKeywords: project.seoMetadata?.keywords || [],
-         competitors: project.competitors || [],
-         businessDescription: project.businessDescription || project.description || ''
        }
        
        console.log(`🎯 Using project data: ${projectData.keywords.length} keywords, ${projectData.targetKeywords.length} target keywords`)
@@ -141,13 +141,18 @@ export async function POST(
          // Use project keywords in fallback if available
          if (projectData.keywords.length > 0 || projectData.targetKeywords.length > 0) {
            const allProjectKeywords = [...projectData.keywords, ...projectData.targetKeywords]
-           fallbackResult.primaryKeywords = allProjectKeywords.slice(0, 10).map((keyword, index) => ({
-             keyword,
-             searchVolume: Math.floor(Math.random() * 3000) + 500,
-             difficulty: Math.floor(Math.random() * 60) + 20,
-             cpc: Math.round((Math.random() * 2 + 0.5) * 100) / 100,
-             competition: Math.random() > 0.6 ? 'medium' : Math.random() > 0.3 ? 'low' : 'high'
-           }))
+           fallbackResult.primaryKeywords = allProjectKeywords.slice(0, 10).map((keyword) => {
+             const words = keyword.split(' ').length
+             const volume = Math.max(100, Math.round(3000 / Math.max(1, words)))
+             const diff = Math.min(85, Math.max(20, keyword.length * 3))
+             return {
+               keyword,
+               searchVolume: volume,
+               difficulty: diff,
+               cpc: Math.round((diff * 0.05 + 0.5) * 100) / 100,
+               competition: diff > 60 ? 'high' : diff > 35 ? 'medium' : 'low'
+             }
+           })
          }
          
          if (seedKeyword) {

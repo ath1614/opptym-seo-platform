@@ -190,11 +190,11 @@ export default function TechnicalSeoAuditorPage() {
       siteStructureScore,
       performanceScore,
       securityScore,
-      mobileScore: Math.floor(Math.random() * 30) + 70, // Keep random for now as not in backend
-      totalIssues: totalBackendIssues + Math.floor(Math.random() * 5),
-      criticalIssues: Math.floor(totalBackendIssues * 0.2) + 1,
-      warningIssues: Math.floor(totalBackendIssues * 0.5) + 1,
-      infoIssues: Math.floor(totalBackendIssues * 0.3) + 1,
+      mobileScore: Math.round((performanceScore + siteStructureScore) / 2),
+      totalIssues: totalBackendIssues,
+      criticalIssues: (baseData.security?.issues?.length || 0) + (baseData.indexability?.issues?.length || 0),
+      warningIssues: (baseData.crawlability?.issues?.length || 0) + (baseData.performance?.issues?.length || 0),
+      infoIssues: baseData.siteStructure?.issues?.length || 0,
       overallHealth: (baseData.score || 0) >= 80 ? 'excellent' : (baseData.score || 0) >= 60 ? 'good' : (baseData.score || 0) >= 40 ? 'fair' : 'poor'
     }
 

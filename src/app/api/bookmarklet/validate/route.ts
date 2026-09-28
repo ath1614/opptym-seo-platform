@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
 import Submission from '@/models/Submission'
 import { getPlanLimits, isLimitExceeded, getPlanLimitsWithCustom, isLimitExceededWithCustom } from '@/lib/subscription-limits'
-import { bookmarkletTokens, rateLimitStore, createToken, validateToken, incrementTokenUsage } from '@/lib/bookmarklet-tokens'
+import { createToken, validateToken, incrementTokenUsage } from '@/lib/bookmarklet-tokens'
 import { trackUsage } from '@/lib/limit-middleware'
 import mongoose from 'mongoose'
 
@@ -22,56 +22,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
 
-    // Rate limiting: max 5 requests per minute per user
-    const now = Date.now()
-    const rateLimitKey = `user_${session.user.id}`
-    const rateLimit = rateLimitStore.get(rateLimitKey)
-    
-    if (rateLimit) {
-      if (now - rateLimit.lastReset > 60000) { // Reset after 1 minute
-        rateLimit.count = 0
-        rateLimit.lastReset = now
-      }
-      
-      if (rateLimit.count >= 5) {
-        return NextResponse.json({ 
-          error: 'Rate limit exceeded. Please wait before trying again.',
-          retryAfter: Math.ceil((60000 - (now - rateLimit.lastReset)) / 1000)
-        }, { status: 429 })
-      }
-      
-      rateLimit.count++
-    } else {
-      rateLimitStore.set(rateLimitKey, { count: 1, lastReset: now })
-    }
-
     // Validate token
-    const tokenData = bookmarkletTokens.get(token)
+    const tokenData = await validateToken(token)
     if (!tokenData) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid or expired token or limit reached' }, { status: 400 })
     }
 
     // Check if token belongs to the current user
     if (tokenData.userId !== session.user.id) {
       return NextResponse.json({ error: 'Token does not belong to current user' }, { status: 403 })
-    }
-
-    // Check if token has expired
-    if (new Date() > tokenData.expiresAt) {
-      bookmarkletTokens.delete(token)
-      return NextResponse.json({ error: 'Token has expired' }, { status: 400 })
-    }
-
-    // Check usage limits
-    if (tokenData.usageCount >= tokenData.maxUsage) {
-      // Remove expired token
-      bookmarkletTokens.delete(token)
-      return NextResponse.json({ 
-        error: 'Usage limit exceeded for this bookmarklet',
-        limitType: 'bookmarklet_usage',
-        currentUsage: tokenData.usageCount,
-        maxUsage: tokenData.maxUsage
-      }, { status: 429 })
     }
 
     // Check if this is the correct link and project
@@ -80,15 +39,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment usage count using shared function
-    const success = incrementTokenUsage(token)
+    const success = await incrementTokenUsage(token)
     if (!success) {
       return NextResponse.json({ error: 'Token not found or expired' }, { status: 400 })
-    }
-    
-    // Get updated token data
-    const updatedTokenData = bookmarkletTokens.get(token)
-    if (!updatedTokenData) {
-      return NextResponse.json({ error: 'Token expired after usage' }, { status: 400 })
     }
 
     // Record the submission

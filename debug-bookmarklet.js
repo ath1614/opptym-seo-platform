@@ -74,6 +74,12 @@ function testCustomFieldMatching() {
             
             if (score > 0) {
                 console.log(`  ✅ Match found: ${field.name || field.id} (score: ${score})`);
+                if (!field.value) {
+                    field.value = cf.value;
+                    field.dispatchEvent(new Event('input', { bubbles: true }));
+                    field.dispatchEvent(new Event('change', { bubbles: true }));
+                    console.log(`  📝 Filled ${field.name || field.id} with ${cf.value}`);
+                }
             }
         });
     });

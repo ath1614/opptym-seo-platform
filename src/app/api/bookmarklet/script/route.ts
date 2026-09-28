@@ -34,49 +34,21 @@ export async function GET(request: NextRequest) {
     await connectDB()
     
     // Import the shared token store
-    const { validateToken, bookmarkletTokens, incrementTokenUsage } = await import('@/lib/bookmarklet-tokens')
+    const { validateToken, incrementTokenUsage } = await import('@/lib/bookmarklet-tokens')
     
     // Validate the token
-    const tokenData = validateToken(token)
+    const tokenData = await validateToken(token)
     console.log('Token validation:', { 
       token: token?.substring(0, 10) + '...', 
       hasTokenData: !!tokenData, 
       projectId, 
-      linkId,
-      tokenStoreSize: bookmarkletTokens.size,
-      availableTokens: Array.from(bookmarkletTokens.keys()).map(t => t.substring(0, 10) + '...')
+      linkId
     })
     
     if (!tokenData) {
       console.log('Token validation failed - no token data found')
       return new NextResponse('Invalid or expired token', { 
         status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
-    
-    if (new Date() > tokenData.expiresAt) {
-      console.log('Token expired, removing from store')
-      bookmarkletTokens.delete(token)
-      return new NextResponse('Token expired', { 
-        status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
-    
-    if (tokenData.usageCount >= tokenData.maxUsage) {
-      console.log('Token usage limit reached, removing from store')
-      bookmarkletTokens.delete(token)
-      return new NextResponse('Token usage limit reached', { 
-        status: 429,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, OPTIONS',

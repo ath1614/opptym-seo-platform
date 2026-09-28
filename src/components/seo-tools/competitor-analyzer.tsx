@@ -165,7 +165,7 @@ export function CompetitorAnalyzer() {
       averageDomainAuthority,
       marketLeader,
       competitiveGaps: data.competitiveGaps?.length || 0,
-      opportunityScore: Math.min(100, data.score + Math.floor(Math.random() * 20)),
+      opportunityScore: Math.min(100, Math.max(0, data.score + Math.min(15, (data.competitiveGaps?.length || 0) * 3))),
       marketPosition: data.score >= 80 ? 'leader' : data.score >= 60 ? 'challenger' : data.score >= 40 ? 'follower' : 'niche',
       strengthsCount: data.competitors.reduce((sum, c) => sum + c.strengths.length, 0),
       weaknessesCount: data.competitors.reduce((sum, c) => sum + c.weaknesses.length, 0)
@@ -250,7 +250,7 @@ export function CompetitorAnalyzer() {
       // Show error instead of misleading fallback data
       showToast({
         title: "Analysis Failed",
-        description: data.message || "Competitor analysis is currently unavailable. Please try again later.",
+        description: error instanceof Error ? error.message : "Competitor analysis is currently unavailable. Please try again later.",
         variant: "destructive"
       })
       

@@ -120,8 +120,12 @@ export default function SchemaValidatorPage() {
       validSchemas: basicData.schemaTypes.filter(s => s.status === 'valid').length,
       invalidSchemas: basicData.schemaTypes.filter(s => s.status === 'invalid').length,
       warningSchemas: basicData.schemaTypes.filter(s => s.status === 'warning').length,
-      coverage: basicData.structuredData.found ? 85 + Math.floor(Math.random() * 15) : 20,
-      richSnippetEligible: basicData.structuredData.found ? 70 + Math.floor(Math.random() * 30) : 10,
+      coverage: basicData.structuredData.found 
+        ? Math.min(100, Math.round((basicData.schemaTypes.filter(s => s.status === 'valid').length / Math.max(1, basicData.schemaTypes.length)) * 100))
+        : 0,
+      richSnippetEligible: basicData.structuredData.found 
+        ? Math.min(100, Math.round((basicData.schemaTypes.filter(s => s.status === 'valid').length / Math.max(1, basicData.schemaTypes.length)) * 90))
+        : 0,
       structuredDataScore: basicData.score
     }
 

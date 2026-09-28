@@ -155,7 +155,7 @@ export default function BacklinkScannerPage() {
       diversityScore: Math.round(diversityScore),
       qualityRatio: Math.round(qualityRatio),
       toxicRatio: Math.round(toxicRatio),
-      anchorTextDiversity: Math.round(Math.random() * 40 + 60), // Mock data
+      anchorTextDiversity: Math.min(100, Math.max(20, Math.round(diversityScore * 0.8 + 20))),
       domainDiversity: Math.round(diversityScore),
       linkVelocity: stats.totalBacklinks > 50 ? 'high' : stats.totalBacklinks > 20 ? 'medium' : 'low',
       riskLevel: toxicRatio > 10 ? 'high' : toxicRatio > 5 ? 'medium' : 'low'

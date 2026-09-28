@@ -5,78 +5,43 @@ import connectDB from '@/lib/mongodb'
 import Backlink from '@/models/Backlink'
 import { trackUsage } from '@/lib/limit-middleware'
 
-// Simple backlink discovery function
+import { analyzeBacklinks } from '@/lib/seo-analysis'
+
+// Real backlink discovery function using public citation sources & search mentions
 async function discoverBacklinks(targetUrl: string, userId: string): Promise<any[]> {
   try {
-    // This is a simplified implementation
-    // In a real scenario, you would use services like Ahrefs, Moz, or SEMrush APIs
-    // For now, we'll simulate backlink discovery based on common patterns
-    
+    const analysis = await analyzeBacklinks(targetUrl)
     const targetDomain = new URL(targetUrl).hostname
-    const discoveredBacklinks = []
-    
-    // Simulate finding backlinks from directory submissions
-    const commonDirectories = [
-      'directory1.com',
-      'directory2.com', 
-      'directory3.com',
-      'business-directory.com',
-      'local-directory.net'
-    ]
-    
-    // Simulate finding backlinks from social media and other sources
-    const socialSources = [
-      'linkedin.com',
-      'facebook.com',
-      'twitter.com',
-      'reddit.com',
-      'medium.com'
-    ]
-    
-    // Generate simulated backlinks
-    for (let i = 0; i < Math.floor(Math.random() * 10) + 5; i++) {
-      const isDirectory = Math.random() > 0.5
-      const sourceDomain = isDirectory 
-        ? commonDirectories[Math.floor(Math.random() * commonDirectories.length)]
-        : socialSources[Math.floor(Math.random() * socialSources.length)]
-      
-      const sourceUrl = `https://${sourceDomain}/page-${i + 1}`
-      
-      // Simulate link quality based on domain
+
+    return (analysis.backlinks || []).map((b) => {
       let linkQuality = 'medium'
-      let domainAuthority = Math.floor(Math.random() * 50) + 20
-      
-      if (sourceDomain.includes('linkedin') || sourceDomain.includes('medium')) {
+      if (b.domainAuthority >= 70 && b.spamScore <= 3) {
         linkQuality = 'high'
-        domainAuthority = Math.floor(Math.random() * 30) + 70
-      } else if (sourceDomain.includes('directory')) {
+      } else if (b.domainAuthority < 30 || b.spamScore > 7) {
         linkQuality = 'low'
-        domainAuthority = Math.floor(Math.random() * 20) + 10
       }
-      
-      discoveredBacklinks.push({
-        sourceUrl,
+
+      return {
+        sourceUrl: b.url,
         targetUrl,
-        sourceDomain,
+        sourceDomain: b.domain,
         targetDomain,
-        anchorText: `Visit ${targetDomain}`,
-        linkType: 'dofollow',
+        anchorText: b.anchorText || `Link to ${targetDomain}`,
+        linkType: b.linkType || 'dofollow',
         linkPosition: 'content',
-        domainAuthority,
-        pageAuthority: Math.floor(Math.random() * 20) + domainAuthority - 10,
+        domainAuthority: b.domainAuthority,
+        pageAuthority: Math.max(1, b.domainAuthority - 5),
         linkQuality,
-        linkSource: 'submission',
+        linkSource: 'discovery',
         status: 'active',
         discoveredAt: new Date(),
         lastCheckedAt: new Date(),
-        title: `Page about ${targetDomain}`,
-        description: `Directory listing for ${targetDomain}`,
+        title: b.anchorText,
+        description: `Backlink from ${b.domain}`,
         isIndexed: true,
         isRedirect: false
-      })
-    }
-    
-    return discoveredBacklinks
+      }
+    })
   } catch (error) {
     console.error('Backlink discovery error:', error)
     return []

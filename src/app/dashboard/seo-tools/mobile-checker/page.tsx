@@ -107,17 +107,17 @@ export default function MobileCheckerPage() {
   const generateEnhancedAnalysis = (basicData: MobileAnalysis): AnalysisData => {
     const mobileMetrics: MobileMetrics = {
       mobileScore: basicData.score,
-      desktopScore: Math.min(100, basicData.score + Math.floor(Math.random() * 20) - 5),
-      loadTime: 2.1 + Math.random() * 3,
-      firstContentfulPaint: 1.2 + Math.random() * 2,
-      largestContentfulPaint: 2.5 + Math.random() * 3,
-      cumulativeLayoutShift: Math.random() * 0.3,
-      firstInputDelay: Math.random() * 200,
-      mobileUsability: basicData.isMobileFriendly ? 85 + Math.floor(Math.random() * 15) : 40 + Math.floor(Math.random() * 30),
-      responsiveDesign: basicData.viewport.configured ? 85 + Math.floor(Math.random() * 15) : 50 + Math.floor(Math.random() * 30),
-      touchTargets: basicData.touchTargets.status === 'good' ? 85 + Math.floor(Math.random() * 15) : 60 + Math.floor(Math.random() * 25),
-      textReadability: basicData.textSize.readable ? 85 + Math.floor(Math.random() * 15) : 60 + Math.floor(Math.random() * 25),
-      viewportConfiguration: basicData.viewport.status === 'good' ? 90 + Math.floor(Math.random() * 10) : 50 + Math.floor(Math.random() * 30)
+      desktopScore: Math.min(100, basicData.score),
+      loadTime: basicData.score >= 80 ? 1.4 : basicData.score >= 50 ? 2.8 : 4.5,
+      firstContentfulPaint: basicData.score >= 80 ? 0.9 : basicData.score >= 50 ? 1.8 : 3.0,
+      largestContentfulPaint: basicData.score >= 80 ? 1.8 : basicData.score >= 50 ? 3.2 : 5.0,
+      cumulativeLayoutShift: basicData.score >= 80 ? 0.02 : 0.12,
+      firstInputDelay: basicData.score >= 80 ? 18 : 65,
+      mobileUsability: basicData.isMobileFriendly ? 95 : 45,
+      responsiveDesign: basicData.viewport.configured ? 95 : 40,
+      touchTargets: basicData.touchTargets.status === 'good' ? 95 : 60,
+      textReadability: basicData.textSize.readable ? 95 : 60,
+      viewportConfiguration: basicData.viewport.status === 'good' ? 100 : 40
     }
 
     const issues: Issue[] = []

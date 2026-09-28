@@ -36,39 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate token
-    const tokenData = validateToken(token)
+    const tokenData = await validateToken(token)
     if (!tokenData) {
-      return NextResponse.json({ error: 'Invalid or expired token' }, { 
+      return NextResponse.json({ error: 'Invalid or expired token or limit reached' }, { 
         status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
-
-    // Check if token has expired
-    if (new Date() > tokenData.expiresAt) {
-      return NextResponse.json({ error: 'Token has expired' }, { 
-        status: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      })
-    }
-
-    // Check usage limits
-    if (tokenData.usageCount >= tokenData.maxUsage) {
-      return NextResponse.json({ 
-        error: 'Usage limit exceeded for this bookmarklet',
-        limitType: 'bookmarklet_usage',
-        currentUsage: tokenData.usageCount,
-        maxUsage: tokenData.maxUsage
-      }, { 
-        status: 429,
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -168,7 +139,7 @@ export async function POST(request: NextRequest) {
     console.log('Submission saved successfully:', submission._id)
 
     // Increment usage AFTER successful submission save
-    const success = incrementTokenUsage(token)
+    const success = await incrementTokenUsage(token)
     if (!success) {
       return NextResponse.json({ error: 'Token not found or expired' }, { 
         status: 400,
@@ -181,8 +152,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get updated token data for response
-    const { bookmarkletTokens } = await import('@/lib/bookmarklet-tokens')
-    const updatedTokenData = bookmarkletTokens.get(token)
+    const BookmarkletTokenModel = (await import('@/models/BookmarkletToken')).default
+    const updatedTokenData = await BookmarkletTokenModel.findOne({ token })
     if (!updatedTokenData) {
       return NextResponse.json({ error: 'Token expired after usage' }, { 
         status: 400,
@@ -253,7 +224,7 @@ export async function POST(request: NextRequest) {
           anchorText: project.projectName || 'Visit Website',
           linkType: 'dofollow',
           linkPosition: 'content',
-          domainAuthority: link.daScore || Math.floor(Math.random() * 30) + 20,
+          domainAuthority: link.daScore || (link.url.includes('.gov') || link.url.includes('.edu') ? 80 : link.url.includes('.org') ? 65 : 45),
           linkQuality: link.daScore > 50 ? 'high' : link.daScore > 30 ? 'medium' : 'low',
           linkSource: 'submission',
           status: 'active',

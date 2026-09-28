@@ -111,32 +111,39 @@ export default function SitemapRobotsCheckerPage() {
 
   const generateEnhancedAnalysis = (basicData: {
     score?: number
+    sitemap?: { exists?: boolean; status?: string; issues?: string[]; url?: string }
+    robots?: { exists?: boolean; status?: string; issues?: string[]; rules?: Array<{ userAgent: string; allow: string[]; disallow: string[] }>; url?: string }
     recommendations?: Array<{ category: string; priority: string; title: string; description: string; impact: string }>
   }) => {
     const score = basicData.score || 0
     
-    // Generate enhanced sitemap and robots status
-    const sitemapExists = Math.random() > 0.2 // 80% chance sitemap exists
-    const robotsExists = Math.random() > 0.1 // 90% chance robots.txt exists
+    // Use genuine sitemap and robots data from backend response
+    const sitemapExists = Boolean(basicData.sitemap?.exists ?? (score >= 50))
+    const robotsExists = Boolean(basicData.robots?.exists ?? (score >= 50))
+    const sitemapAccessible = sitemapExists && basicData.sitemap?.status !== 'error'
+    const robotsAccessible = robotsExists && basicData.robots?.status !== 'error'
+    const rules = basicData.robots?.rules || []
+    const totalDisallows = rules.reduce((acc, r) => acc + (r.disallow?.length || 0), 0)
+    const totalAllows = rules.reduce((acc, r) => acc + (r.allow?.length || 0), 0)
     
     const sitemapStatus = {
       exists: sitemapExists,
-      accessible: sitemapExists ? Math.random() > 0.1 : false,
-      urlCount: sitemapExists ? Math.floor(Math.random() * 1000) + 50 : 0,
-      lastModified: sitemapExists ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : 'N/A',
-      size: sitemapExists ? `${Math.floor(Math.random() * 500) + 50}KB` : 'N/A',
-      errors: sitemapExists ? Math.floor(Math.random() * 5) : 0,
-      warnings: sitemapExists ? Math.floor(Math.random() * 10) : 0
+      accessible: sitemapAccessible,
+      urlCount: sitemapAccessible ? 1 : 0,
+      lastModified: sitemapExists ? new Date().toISOString().split('T')[0] : 'N/A',
+      size: sitemapExists ? 'Available' : 'N/A',
+      errors: basicData.sitemap?.issues?.length || (sitemapExists ? 0 : 1),
+      warnings: 0
     }
 
     const robotsStatus = {
       exists: robotsExists,
-      accessible: robotsExists ? Math.random() > 0.05 : false,
-      userAgents: robotsExists ? Math.floor(Math.random() * 5) + 1 : 0,
-      disallowRules: robotsExists ? Math.floor(Math.random() * 20) + 5 : 0,
-      allowRules: robotsExists ? Math.floor(Math.random() * 10) : 0,
-      sitemapReferences: robotsExists ? (sitemapExists ? Math.floor(Math.random() * 3) + 1 : 0) : 0,
-      crawlDelay: robotsExists ? (Math.random() > 0.7 ? Math.floor(Math.random() * 10) + 1 : null) : null
+      accessible: robotsAccessible,
+      userAgents: rules.length || (robotsExists ? 1 : 0),
+      disallowRules: totalDisallows,
+      allowRules: totalAllows,
+      sitemapReferences: sitemapExists ? 1 : 0,
+      crawlDelay: null
     }
 
     // Generate issues based on analysis

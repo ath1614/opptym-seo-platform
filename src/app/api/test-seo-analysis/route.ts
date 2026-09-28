@@ -413,7 +413,7 @@ async function analyzeHTML(html: string, baseUrl: string) {
       status: isBroken ? 404 : isRedirect ? 301 : 200,
       type: isExternal ? 'external' : 'internal',
       foundOn: baseUrl,
-      impact: isBroken ? (Math.random() > 0.5 ? 'high' : 'medium') : 'low'
+      impact: isBroken ? (isExternal ? 'medium' : 'high') : 'low'
     }
   })
   

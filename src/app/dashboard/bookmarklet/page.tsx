@@ -313,7 +313,7 @@ export default function BookmarkletInfoPage() {
             <h3 id="limitations" className="text-lg font-semibold">Known limitations & workarounds</h3>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Non‑standard fields or custom UI may not auto‑fill: manually enter key details and consider reporting the site for improvement.</li>
-              <li>Dynamic forms (React/Vue) may require focusing the field after autofill: click into a field to trigger validation.</li>
+              <li>Dynamic forms (React/Vue) are now automatically handled by the bookmarklet, which dispatches input and change events.</li>
               <li>iFrames or embedded forms can block access: open the direct submission page when possible.</li>
               <li>Enterprise blockers can restrict bookmarklets: test with extensions disabled or on an allowed browser.</li>
             </ul>
@@ -348,7 +348,7 @@ export default function BookmarkletInfoPage() {
             <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
               <li>Did the bookmarklet click do anything? If not, confirm it’s saved correctly and you’re on a form page.</li>
               <li>Are any fields filled? If none, the site may use non‑standard names; fill manually.
-                <span className="block pl-4">If some are filled, focus each required field to trigger validation.</span>
+                <span className="block pl-4">If some are filled but not recognized, you can report the site to us for improvement.</span>
               </li>
               <li>Is data outdated? Update your project in the dashboard, then try on the next submission page.</li>
               <li>Still blocked? Try disabling extensions that may prevent bookmarklets or use another browser.</li>
